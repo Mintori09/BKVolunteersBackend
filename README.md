@@ -125,7 +125,7 @@ The application uses Zod to validate environment variables defined in `.env`.
     "email": "john@example.com",
     "password": "securePassword123",
     "passwordConfirmed": "securePassword123",
-    "role" : "user" | "admin"
+    "role": "user"
 }
 ```
 
