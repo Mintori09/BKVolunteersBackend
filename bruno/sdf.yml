@@ -1,0 +1,15 @@
+info:
+    name: sdf
+    type: http
+    seq: 2
+
+http:
+    method: POST
+    url: http://localhost:4000/api/v1/verify-email/62a6538a-fb7f-4232-bf67-c1d8e2c13143
+    auth: inherit
+
+settings:
+    encodeUrl: true
+    timeout: 0
+    followRedirects: true
+    maxRedirects: 5

@@ -1,0 +1,7 @@
+name: bruno
+version: 1
+defaults:
+  auth: null
+  sendCookies: false
+  storeCookies: false
+  persistCookies: false

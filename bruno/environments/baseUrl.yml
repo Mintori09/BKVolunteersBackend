@@ -1,0 +1,4 @@
+name: baseUrl
+variables:
+    - name: baseUrl
+      value: http://localhost:4000/api/v1

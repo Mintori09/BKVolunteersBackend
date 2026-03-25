@@ -1,0 +1,24 @@
+info:
+    name: Logout
+    type: http
+    seq: 4
+
+http:
+    method: POST
+    url: http://localhost:4000/api/v1/auth/logout
+    body:
+        type: json
+        data: |2-
+        {
+              "email": "use3r@example.com",
+              "password": "password123"
+        }
+    auth:
+        type: bearer
+        token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbW1lYnFjMTQwMDAwcWRxcGh3ZzN1Nm53IiwiaWF0IjoxNzcyNzY5NTY3LCJleHAiOjE3NzI3NzA3Njd9.X2b-SRfUw-kOn1YkWvSO0lJ443IeyBX9oo3Lg7AisEE
+
+settings:
+    encodeUrl: true
+    timeout: 0
+    followRedirects: true
+    maxRedirects: 5

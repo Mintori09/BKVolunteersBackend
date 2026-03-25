@@ -1,0 +1,20 @@
+info:
+    name: verifyEmail
+    type: http
+    seq: 1
+
+http:
+    method: POST
+    url: '{{baseUrl}}/verify-email/501c2b5e-3691-416b-abca-2fe8b2faaaff'
+    auth: inherit
+
+runtime:
+    variables:
+        - name: baseUrl
+          value: http://localhost:4000/api/v1
+
+settings:
+    encodeUrl: true
+    timeout: 0
+    followRedirects: true
+    maxRedirects: 5

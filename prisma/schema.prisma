@@ -1,0 +1,98 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "mysql"
+}
+
+model Account {
+    id                String   @id @default(cuid())
+    userId            String   @map("user_id")
+    type              String
+    provider          String
+    providerAccountId String   @map("provider_account_id")
+    refresh_token     String?  @db.Text
+    access_token      String?  @db.Text
+    expiresAt         DateTime @map("expires_at")
+    tokenType         String?  @map("token_type")
+    scope             String?
+    id_token          String?  @map("id_token") @db.Text
+    sessionState      String?  @map("session_state")
+    createdAt         DateTime @default(now()) @map("created_at")
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([provider, providerAccountId])
+    @@map("Account")
+}
+
+enum UserRole {
+    USER
+    ADMIN
+    MODERATOR
+}
+
+model User {
+    id            String    @id @default(cuid())
+    firstName     String?   @map("first_name")
+    lastName      String?   @map("last_name")
+    name          String
+    password      String
+    email         String?   @unique
+    emailVerified DateTime? @map("email_verified")
+    createdAt     DateTime  @default(now()) @map("created_at")
+    updatedAt     DateTime  @updatedAt @map("updated_at")
+    role          UserRole  @default(USER)
+
+    accounts                Account[]
+    resetTokens             ResetToken[]
+    refreshTokens           RefreshToken[]
+    emailVerificationTokens EmailVerificationToken[]
+
+    @@map("User")
+}
+
+model RefreshToken {
+    id        String   @id @default(cuid())
+    token     String   @unique
+    userId    String   @map("user_id")
+    createdAt DateTime @default(now()) @map("created_at")
+
+    user User @relation(fields: [userId], references: [id])
+
+    @@index([token])
+    @@map("RefreshToken")
+}
+
+model ResetToken {
+    id        String   @id @default(cuid())
+    token     String   @unique
+    expiresAt DateTime @map("expires_at")
+    userId    String   @map("user_id")
+    createdAt DateTime @default(now()) @map("created_at")
+
+    user User @relation(fields: [userId], references: [id])
+
+    @@index([token])
+    @@map("ResetToken")
+}
+
+model EmailVerificationToken {
+    id        String   @id @default(cuid())
+    token     String   @unique
+    expiresAt DateTime @map("expires_at")
+    userId    String   @map("user_id")
+    createdAt DateTime @default(now()) @map("created_at")
+
+    user User @relation(fields: [userId], references: [id])
+
+    @@index([token])
+    @@map("EmailVerificationToken")
+}
