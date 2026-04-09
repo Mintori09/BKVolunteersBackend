@@ -8,9 +8,9 @@ The **Express TypeScript Starter Kit** is a production-ready boilerplate designe
 
 - **TypeScript**: Full type safety across the application.
 - **Layered Architecture (Modular)**:
-    - **Controllers**: Handle request/response logic using `catchAsync`.
-    - **Services**: Contain core business logic, agnostic of HTTP layer.
-    - **Repositories**: Abstract database operations (Prisma) from services.
+  - **Controllers**: Handle request/response logic using `catchAsync`.
+  - **Services**: Contain core business logic, agnostic of HTTP layer.
+  - **Repositories**: Abstract database operations (Prisma) from services.
 - **Centralized Error Handling**: Custom `ApiError` class for operational errors and a global error middleware.
 - **Standardized Responses**: Consistent JSON structure using the `ApiResponse` utility.
 - **Winston Logging**: Production-grade logging system with file transports.
@@ -33,34 +33,45 @@ The **Express TypeScript Starter Kit** is a production-ready boilerplate designe
 
 1. **Clone the repository:**
 
-    ```bash
-    git clone <repository-url>
-    cd express-ts-starter-kit
-    ```
+   ```bash
+
+   git clone <repository-url>
+
+   cd express-ts-starter-kit
+
+   ```
 
 2. **Install dependencies:**
 
-    ```bash
-    pnpm install
-    ```
+   ```bash
+
+   pnpm install
+
+   ```
 
 3. **Configure environment variables:**
 
-    ```bash
-    cp .env-example .env
-    # Edit .env with your database and JWT credentials
-    ```
+   ```bash
+
+   cp .env-example .env
+   # Edit .env with your database and JWT credentials
+   ```
 
 4. **Generate Prisma Client:**
 
-    ```bash
-    pnpm exec prisma generate
-    ```
+   ```bash
+
+   pnpm exec prisma generate
+
+   ```
 
 5. **Start development server:**
-    ```bash
-    pnpm dev
-    ```
+
+   ```bash
+
+   pnpm dev
+
+   ```
 
 ## Usage
 
@@ -98,18 +109,18 @@ This script will attempt to verify the connection and send a test email to the `
 
 The application uses Zod to validate environment variables defined in `.env`.
 
-| Variable               | Description                                          | Default       |
-| :--------------------- | :--------------------------------------------------- | :------------ |
-| `NODE_ENV`             | Environment (development, test, production)          | `development` |
-| `PORT`                 | Server listening port                                | `4000`        |
-| `DATABASE_URL`         | Prisma database connection string                    | `mysql://...` |
-| `ACCESS_TOKEN_SECRET`  | Secret for Access JWT (min 8 chars)                  | -             |
-| `REFRESH_TOKEN_SECRET` | Secret for Refresh JWT (min 8 chars)                 | -             |
-| `SMTP_HOST`            | SMTP server for emails                               | `localhost`   |
-| `SMTP_PORT`            | SMTP server port (465 for SSL/TLS, 587 for STARTTLS) | `587`         |
-| `SMTP_USERNAME`        | SMTP authentication username                         | `test_user`   |
-| `SMTP_PASSWORD`        | SMTP authentication password                         | -             |
-| `EMAIL_FROM`           | Sender address for outgoing emails                   | -             |
+| Variable | Description | Default |
+| :-- | :-- | :-- |
+| `NODE_ENV` | Environment (development, test, production) | `development` |
+| `PORT` | Server listening port | `4000` |
+| `DATABASE_URL` | Prisma database connection string | `mysql://...` |
+| `ACCESS_TOKEN_SECRET` | Secret for Access JWT (min 8 chars) | - |
+| `REFRESH_TOKEN_SECRET` | Secret for Refresh JWT (min 8 chars) | - |
+| `SMTP_HOST` | SMTP server for emails | `localhost` |
+| `SMTP_PORT` | SMTP server port (465 for SSL/TLS, 587 for STARTTLS) | `587` |
+| `SMTP_USERNAME` | SMTP authentication username | `test_user` |
+| `SMTP_PASSWORD` | SMTP authentication password | - |
+| `EMAIL_FROM` | Sender address for outgoing emails | - |
 
 ## Examples
 
@@ -119,13 +130,13 @@ The application uses Zod to validate environment variables defined in `.env`.
 
 ```json
 {
-    "firstName": "John",
-    "lastName": "Doe",
-    "username": "johndoe",
-    "email": "john@example.com",
-    "password": "securePassword123",
-    "passwordConfirmed": "securePassword123",
-    "role": "user"
+  "firstName": "John",
+  "lastName": "Doe",
+  "username": "johndoe",
+  "email": "john@example.com",
+  "password": "securePassword123",
+  "passwordConfirmed": "securePassword123",
+  "role": "user"
 }
 ```
 

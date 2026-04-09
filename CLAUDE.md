@@ -8,16 +8,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Build**: `pnpm build` (runs `pnpm tsc`)
 - **Production Start**: `pnpm start` (runs `node dist/server.ts`)
 - **Testing**:
-    - All tests: `pnpm test`
-    - Single test: `pnpm exec jest <file_path>` (e.g., `pnpm exec jest src/features/auth/tests/auth.controller.test.ts`)
-    - Watch mode: `pnpm exec jest --watch`
+  - All tests: `pnpm test`
+  - Single test: `pnpm exec jest <file_path>` (e.g., `pnpm exec jest src/features/auth/tests/auth.controller.test.ts`)
+  - Watch mode: `pnpm exec jest --watch`
 - **Linting**: `pnpm lint` (currently checks formatting with Prettier)
 - **Database (Prisma)**:
-    - Generate client: `pnpm exec prisma generate`
-    - Create migration: `pnpm exec prisma migrate dev --name <name>`
-    - Open Studio: `pnpm exec prisma studio`
+  - Generate client: `pnpm exec prisma generate`
+  - Create migration: `pnpm exec prisma migrate dev --name <name>`
+  - Open Studio: `pnpm exec prisma studio`
 - **Utilities**:
-    - Test SMTP: `npx tsx src/utils/test-smtp.ts`
+  - Test SMTP: `npx tsx src/utils/test-smtp.ts`
 
 ## Code Architecture
 
@@ -26,13 +26,13 @@ The project follows a **Modular Layered Architecture (Controller-Service-Reposit
 ### Directory Structure
 
 - `src/features/<feature>/`: Contains domain-specific logic.
-    - `*.controller.ts`: Handles request/response using `catchAsync` and `ApiResponse`.
-    - `*.service.ts`: Core business logic, agnostic of the HTTP layer.
-    - `*.repository.ts`: Data access layer (Prisma).
-    - `*.route.ts`: Feature-specific routes.
-    - `*.validation.ts`: Zod schemas for request validation.
-    - `types.ts`: Domain-specific TypeScript types.
-    - `tests/`: Co-located unit tests.
+  - `*.controller.ts`: Handles request/response using `catchAsync` and `ApiResponse`.
+  - `*.service.ts`: Core business logic, agnostic of the HTTP layer.
+  - `*.repository.ts`: Data access layer (Prisma).
+  - `*.route.ts`: Feature-specific routes.
+  - `*.validation.ts`: Zod schemas for request validation.
+  - `types.ts`: Domain-specific TypeScript types.
+  - `tests/`: Co-located unit tests.
 - `src/common/`: Shared middleware, constants, and global router.
 - `src/config/`: Configuration for Prisma, JWT, SMTP, CORS, Helmet, etc.
 - `src/utils/`: Shared utilities like `ApiError`, `ApiResponse`, and helpers.
