@@ -1,170 +1,169 @@
-# Express TypeScript Starter Kit
+# BKVolunteers Backend API
 
-## Overview
+Backend API cho nền tảng quản lý tình nguyện viên và tổ chức sự kiện tình nguyện.
 
-The **Express TypeScript Starter Kit** is a production-ready boilerplate designed for building scalable and maintainable RESTful APIs. It leverages a modern tech stack and follows a clean **Controller-Service-Model** architecture to ensure separation of concerns and high testability.
+## Giới thiệu
 
-## Features
+**BKVolunteers** là một nền tảng kết nối tình nguyện viên với các tổ chức từ thiện. API được xây dựng trên kiến trúc modular với TypeScript, Express và Prisma ORM.
 
-- **TypeScript**: Full type safety across the application.
-- **Layered Architecture (Modular)**:
-    - **Controllers**: Handle request/response logic using `catchAsync`.
-    - **Services**: Contain core business logic, agnostic of HTTP layer.
-    - **Repositories**: Abstract database operations (Prisma) from services.
-- **Centralized Error Handling**: Custom `ApiError` class for operational errors and a global error middleware.
-- **Standardized Responses**: Consistent JSON structure using the `ApiResponse` utility.
-- **Winston Logging**: Production-grade logging system with file transports.
-- **Prisma ORM**: Modern database toolkit for type-safe database access.
-- **JWT Authentication**: Secure authentication using Access and Refresh tokens (with token reuse detection).
-- **Zod Validation**: Robust request validation with automatic type inference.
-- **Unit Testing**: Pre-configured Jest/Babel environment with co-located feature tests.
-- **Security**: Pre-integrated Helmet, CORS, and XSS protection.
-- **Absolute Imports**: Clean import paths starting with `src/`.
+### Đặc điểm chính
 
-## Installation
+- **Ngôn ngữ**: TypeScript với kiểu dữ liệu chặt chẽ
+- **Kiến trúc**: Controller-Service-Repository pattern
+- **Database**: Prisma ORM + MariaDB
+- **Xác thực**: JWT (Access + Refresh tokens)
+- **Validation**: Zod schema validation
+- **Testing**: Jest với Babel
+- **Containerized**: Docker + Docker Compose
 
-### Prerequisites
+## Công nghệ
 
-- [Node.js](https://nodejs.org/) (v18+)
-- [pnpm](https://pnpm.io/) (v10+)
-- A MariaDB or MySQL instance
+| Thành phần | Công nghệ |
+|------------|-----------|
+| Runtime | Node.js 18+ |
+| Framework | Express.js |
+| Language | TypeScript |
+| Database | MariaDB 11 |
+| ORM | Prisma |
+| Validation | Zod |
+| Testing | Jest |
+| Package Manager | pnpm |
+| Container | Docker |
 
-### Setup
+## Cấu trúc Project
 
-1. **Clone the repository:**
+```
+src/
+├── features/           # Domain modules
+│   ├── auth/          # Xác thực (login, register, refresh)
+│   ├── users/         # Quản lý người dùng
+│   ├── events/        # Quản lý sự kiện
+│   └── ...
+├── common/            # Shared middleware & routes
+├── config/            # Configuration (Prisma, JWT, SMTP)
+├── utils/             # Utilities (ApiError, ApiResponse)
+└── types/             # Global TypeScript types
+```
 
-    ```bash
-    git clone <repository-url>
-    cd express-ts-starter-kit
-    ```
+## Bắt đầu
 
-2. **Install dependencies:**
+### Yêu cầu
 
-    ```bash
-    pnpm install
-    ```
+- Node.js 18+
+- pnpm 10+
+- Docker & Docker Compose (tùy chọn)
 
-3. **Configure environment variables:**
+### Cài đặt
 
-    ```bash
-    cp .env-example .env
-    # Edit .env with your database and JWT credentials
-    ```
+1. **Clone repository:**
+
+   ```bash
+   git clone <repository-url>
+   cd BKVolunteersBackend
+   ```
+
+2. **Cài dependencies:**
+
+   ```bash
+   pnpm install
+   ```
+
+3. **Setup môi trường:**
+
+   ```bash
+   cp .env-example .env
+   # Sửa .env với thông tin database và JWT secrets
+   ```
 
 4. **Generate Prisma Client:**
 
-    ```bash
-    pnpm exec prisma generate
-    ```
+   ```bash
+   pnpm exec prisma generate
+   ```
 
-5. **Start development server:**
-    ```bash
-    pnpm dev
-    ```
+### Chạy Development
 
-## Usage
-
-### Adding a New Feature
-
-1. Create a new folder in `src/features/`.
-2. Define the domain types in `types.ts`.
-3. Abstract DB operations in `*.repository.ts`.
-4. Implement the business logic in `*.service.ts`.
-5. Handle requests in `*.controller.ts` using `catchAsync` and `ApiResponse`.
-6. Register routes in `*.route.ts` and add them to `src/common/routes.ts`.
-7. Add unit tests in a `tests/` subdirectory.
-
-### Running Tests
+**Cách 1: Local**
 
 ```bash
-# Run all tests
-pnpm test
-
-# Run tests in watch mode
-pnpm exec jest --watch
+pnpm dev
 ```
 
-### Testing SMTP
-
-You can verify your SMTP configuration by running the built-in test script:
+**Cách 2: Docker Compose**
 
 ```bash
-npx tsx src/utils/test-smtp.ts
+docker-compose up -d
 ```
 
-This script will attempt to verify the connection and send a test email to the `EMAIL_FROM` address specified in your `.env`.
+Server chạy tại: `http://localhost:3000`
 
-## Configuration
+### Các lệnh thường dùng
 
-The application uses Zod to validate environment variables defined in `.env`.
+| Lệnh | Mô tả |
+|------|-------|
+| `pnpm dev` | Chạy development với hot reload |
+| `pnpm build` | Build TypeScript sang JavaScript |
+| `pnpm start` | Chạy production build |
+| `pnpm test` | Chạy tất cả tests |
+| `pnpm lint` | Kiểm tra code format |
+| `pnpm exec prisma migrate dev` | Tạo database migration |
+| `pnpm exec prisma studio` | Mở Prisma Studio |
 
-| Variable               | Description                                          | Default       |
-| :--------------------- | :--------------------------------------------------- | :------------ |
-| `NODE_ENV`             | Environment (development, test, production)          | `development` |
-| `PORT`                 | Server listening port                                | `4000`        |
-| `DATABASE_URL`         | Prisma database connection string                    | `mysql://...` |
-| `ACCESS_TOKEN_SECRET`  | Secret for Access JWT (min 8 chars)                  | -             |
-| `REFRESH_TOKEN_SECRET` | Secret for Refresh JWT (min 8 chars)                 | -             |
-| `SMTP_HOST`            | SMTP server for emails                               | `localhost`   |
-| `SMTP_PORT`            | SMTP server port (465 for SSL/TLS, 587 for STARTTLS) | `587`         |
-| `SMTP_USERNAME`        | SMTP authentication username                         | `test_user`   |
-| `SMTP_PASSWORD`        | SMTP authentication password                         | -             |
-| `EMAIL_FROM`           | Sender address for outgoing emails                   | -             |
+## API Endpoints
 
-## Examples
+### Authentication
 
-### User Registration
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| POST | `/api/v1/auth/signup` | Đăng ký tài khoản |
+| POST | `/api/v1/auth/login` | Đăng nhập |
+| POST | `/api/v1/auth/refresh` | Refresh access token |
+| POST | `/api/v1/auth/logout` | Đăng xuất |
 
-**POST** `/api/v1/auth/signup`
+### Users
 
-```json
-{
-    "firstName": "John",
-    "lastName": "Doe",
-    "username": "johndoe",
-    "email": "john@example.com",
-    "password": "securePassword123",
-    "passwordConfirmed": "securePassword123"
-}
-```
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| GET | `/api/v1/users` | Lấy danh sách users |
+| GET | `/api/v1/users/:id` | Lấy chi tiết user |
+| PATCH | `/api/v1/users/:id` | Cập nhật user |
+| DELETE | `/api/v1/users/:id` | Xóa user |
 
-### Refreshing Access Token
+### Events (sắp triển khai)
 
-**POST** `/api/v1/auth/refresh`
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| GET | `/api/v1/events` | Danh sách sự kiện |
+| POST | `/api/v1/events` | Tạo sự kiện |
+| GET | `/api/v1/events/:id` | Chi tiết sự kiện |
+| PATCH | `/api/v1/events/:id` | Cập nhật sự kiện |
+| DELETE | `/api/v1/events/:id` | Xóa sự kiện |
 
-- _Note: Requires the `refresh_token` cookie to be present._
+## Biến môi trường
 
-## Troubleshooting
+| Variable | Mô tả | Default |
+|----------|-------|---------|
+| `NODE_ENV` | Môi trường | `development` |
+| `PORT` | Cổng server | `3000` |
+| `DATABASE_URL` | Connection string | `mariadb://...` |
+| `ACCESS_TOKEN_SECRET` | JWT access secret | - |
+| `REFRESH_TOKEN_SECRET` | JWT refresh secret | - |
+| `SMTP_HOST` | SMTP server | `localhost` |
+| `SMTP_PORT` | SMTP port | `587` |
+| `SMTP_USERNAME` | SMTP user | - |
+| `SMTP_PASSWORD` | SMTP password | - |
+| `EMAIL_FROM` | Email gửi đi | - |
 
-### Prisma Initialization
+## Thêm Feature mới
 
-If you encounter `@prisma/client did not initialize yet`, run:
-
-```bash
-pnpm exec prisma generate
-```
-
-### Module Not Found
-
-If absolute imports (e.g., `src/...`) fail, ensure `tsconfig.json` contains:
-
-```json
-"baseUrl": ".",
-"paths": { "src/*": ["src/*"] }
-```
-
-### ESM vs CommonJS
-
-If you face `ReferenceError: module is not defined`, ensure Babel config is named `babel.config.cjs` and `package.json` has `"type": "module"`.
-
-## Contributing
-
-1. Fork the project.
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`).
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
-4. Push to the branch (`git push origin feature/AmazingFeature`).
-5. Open a Pull Request.
+1. Tạo folder trong `src/features/<feature>/`
+2. Định nghĩa types trong `types.ts`
+3. Viết repository trong `*.repository.ts`
+4. Viết service trong `*.service.ts`
+5. Viết controller trong `*.controller.ts`
+6. Đăng ký routes trong `*.route.ts` và `src/common/routes.ts`
+7. Viết tests trong `tests/`
 
 ## License
 
-Distributed under the **ISC License**. See `LICENSE` for more information.
+None License
