@@ -1,98 +1,366 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-    provider = "mysql"
+  provider = "mysql"
 }
 
-model Account {
-    id                String   @id @default(cuid())
-    userId            String   @map("user_id")
-    type              String
-    provider          String
-    providerAccountId String   @map("provider_account_id")
-    refresh_token     String?  @db.Text
-    access_token      String?  @db.Text
-    expiresAt         DateTime @map("expires_at")
-    tokenType         String?  @map("token_type")
-    scope             String?
-    id_token          String?  @map("id_token") @db.Text
-    sessionState      String?  @map("session_state")
-    createdAt         DateTime @default(now()) @map("created_at")
-
-    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-    @@unique([provider, providerAccountId])
-    @@map("Account")
-}
+// ============================================
+// ENUMS
+// ============================================
 
 enum UserRole {
-    USER
-    ADMIN
-    MODERATOR
+  CLB // Câu lạc bộ
+  LCD // Liên chi đoàn
+  DOANTRUONG // Đoàn trường
 }
 
+enum CampaignScope {
+  KHOA // Cấp khoa
+  TRUONG // Cấp trường
+}
+
+enum CampaignStatus {
+  DRAFT
+  PENDING
+  ACTIVE
+  REJECTED
+  COMPLETED
+  CANCELLED
+}
+
+enum DonationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum ParticipantStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  WAITLISTED
+}
+
+// ============================================
+// CORE MODELS
+// ============================================
+
+/// Danh mục khoa
+model Faculty {
+  id        Int       @id @default(autoincrement())
+  code      String    @unique @db.VarChar(20)
+  name      String    @db.VarChar(255)
+  users     User[]
+  students  Student[]
+  clubs     Club[]
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@map("faculties")
+}
+
+/// Tài khoản quản lý (Admin, Đoàn trường, Liên chi đoàn, Trưởng CLB)
 model User {
-    id            String    @id @default(cuid())
-    firstName     String?   @map("first_name")
-    lastName      String?   @map("last_name")
-    name          String
-    password      String
-    email         String?   @unique
-    emailVerified DateTime? @map("email_verified")
-    createdAt     DateTime  @default(now()) @map("created_at")
-    updatedAt     DateTime  @updatedAt @map("updated_at")
-    role          UserRole  @default(USER)
+  id             String    @id @default(cuid())
+  username       String    @unique @db.VarChar(50)
+  email          String    @unique @db.VarChar(255)
+  password       String    @db.VarChar(255)
+  role           UserRole  @default(LCD)
+  facultyId      Int?      @map("faculty_id")
+  emailVerified  DateTime? @map("email_verified")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
 
-    accounts                Account[]
-    resetTokens             ResetToken[]
-    refreshTokens           RefreshToken[]
-    emailVerificationTokens EmailVerificationToken[]
+  faculty                 Faculty?                 @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+  clubs                   Club[]
+  campaignsAsCreator      Campaign[]               @relation("CampaignCreator")
+  campaignsAsApprover     Campaign[]               @relation("CampaignApprover")
+  accounts                Account[]
+  resetTokens             ResetToken[]
+  refreshTokens           RefreshToken[]
+  emailVerificationTokens EmailVerificationToken[]
 
-    @@map("User")
+  @@index([email])
+  @@index([username])
+  @@index([facultyId])
+  @@map("users")
+}
+
+/// Sinh viên - người tham gia hoạt động tình nguyện
+model Student {
+  id          String    @id @default(cuid())
+  mssv        String    @unique @db.VarChar(20)
+  fullName    String    @map("full_name") @db.VarChar(255)
+  email       String    @unique @db.VarChar(255)
+  password    String    @db.VarChar(255)
+  facultyId   Int       @map("faculty_id")
+  className   String?   @map("class_name") @db.VarChar(50)
+  phone       String?   @db.VarChar(15)
+  totalPoints Int       @default(0) @map("total_points")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  faculty      Faculty        @relation(fields: [facultyId], references: [id])
+  titles       StudentTitle[]
+  donations    Donation[]
+  participants Participant[]
+
+  @@index([mssv])
+  @@index([email])
+  @@index([facultyId])
+  @@map("students")
+}
+
+// ============================================
+// CLUB SYSTEM
+// ============================================
+
+model Club {
+  id        String    @id @default(cuid())
+  name      String    @db.VarChar(255)
+  facultyId Int?      @map("faculty_id") // NULL = cấp trường
+  leaderId  String?   @map("leader_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  faculty Faculty? @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+  leader  User?    @relation(fields: [leaderId], references: [id], onDelete: SetNull)
+
+  @@index([facultyId])
+  @@map("clubs")
+}
+
+// ============================================
+// CAMPAIGN SYSTEM (STI Pattern)
+// ============================================
+
+/// Chiến dịch tổng - quản lý trạng thái và phê duyệt
+model Campaign {
+  id            String         @id @default(cuid())
+  title         String         @db.VarChar(255)
+  description   String?        @db.Text
+  scope         CampaignScope
+  status        CampaignStatus @default(DRAFT)
+  planFileUrl   String?        @map("plan_file_url")
+  budgetFileUrl String?        @map("budget_file_url")
+  adminComment  String?        @map("admin_comment") @db.Text
+  approverId    String?        @map("approver_id")
+  creatorId     String         @map("creator_id")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  deletedAt     DateTime?      @map("deleted_at")
+
+  approver   User?                  @relation("CampaignApprover", fields: [approverId], references: [id])
+  creator    User                   @relation("CampaignCreator", fields: [creatorId], references: [id])
+  moneyPhase MoneyDonationCampaign?
+  itemPhase  ItemDonationCampaign?
+  eventPhase EventCampaign?
+
+  @@index([creatorId])
+  @@index([approverId])
+  @@index([status])
+  @@index([scope])
+  @@map("campaigns")
+}
+
+/// Chiến dịch quyên góp tiền
+model MoneyDonationCampaign {
+  id            Int       @id @default(autoincrement())
+  campaignId    String    @unique @map("campaign_id")
+  targetAmount  Decimal   @default(0) @map("target_amount") @db.Decimal(15, 0)
+  currentAmount Decimal   @default(0) @map("current_amount") @db.Decimal(15, 0)
+  qrImageUrl    String?   @map("qr_image_url")
+  startDate     DateTime? @map("start_date")
+  endDate       DateTime? @map("end_date")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  campaign  Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  donations Donation[]
+
+  @@index([campaignId])
+  @@map("money_donation_campaigns")
+}
+
+/// Chiến dịch quyên góp vật phẩm
+model ItemDonationCampaign {
+  id                Int       @id @default(autoincrement())
+  campaignId        String    @unique @map("campaign_id")
+  acceptedItems     String    @map("accepted_items") @db.Text // JSON array
+  collectionAddress String?   @map("collection_address")
+  startDate         DateTime? @map("start_date")
+  endDate           DateTime? @map("end_date")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  campaign  Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  donations Donation[]
+
+  @@index([campaignId])
+  @@map("item_donation_campaigns")
+}
+
+/// Chiến dịch sự kiện / tình nguyện
+model EventCampaign {
+  id                Int      @id @default(autoincrement())
+  campaignId        String   @unique @map("campaign_id")
+  location          String   @db.VarChar(255)
+  maxParticipants   Int      @default(0) @map("max_participants")
+  registrationStart DateTime @map("registration_start")
+  registrationEnd   DateTime @map("registration_end")
+  eventStart        DateTime @map("event_start")
+  eventEnd          DateTime @map("event_end")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  campaign     Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  participants Participant[]
+
+  @@index([campaignId])
+  @@index([registrationStart])
+  @@index([eventStart])
+  @@map("event_campaigns")
+}
+
+// ============================================
+// GAMIFICATION SYSTEM
+// ============================================
+
+/// Hệ thống danh hiệu
+model Title {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)
+  description String?  @db.Text
+  minPoints   Int      @default(0) @map("min_points")
+  iconUrl     String?  @map("icon_url")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  students StudentTitle[]
+
+  @@map("titles")
+}
+
+/// Bảng theo dõi danh hiệu sinh viên
+model StudentTitle {
+  studentId  String   @map("student_id")
+  titleId    Int      @map("title_id")
+  unlockedAt DateTime @default(now()) @map("unlocked_at")
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  title   Title   @relation(fields: [titleId], references: [id], onDelete: Cascade)
+
+  @@id([studentId, titleId])
+  @@map("student_titles")
+}
+
+// ============================================
+// DONATIONS & PARTICIPANTS
+// ============================================
+
+/// Chi tiết quyên góp (Lịch sử đóng góp của Sinh viên)
+model Donation {
+  id              String         @id @default(cuid())
+  studentId       String         @map("student_id")
+  moneyPhaseId    Int?           @map("money_phase_id")
+  itemPhaseId     Int?           @map("item_phase_id")
+  amount          Decimal        @default(0) @db.Decimal(15, 0)
+  itemDescription String?        @map("item_description") @db.Text
+  proofImageUrl   String?        @map("proof_image_url")
+  status          DonationStatus @default(PENDING)
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  student    Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  moneyPhase MoneyDonationCampaign? @relation(fields: [moneyPhaseId], references: [id])
+  itemPhase  ItemDonationCampaign?  @relation(fields: [itemPhaseId], references: [id])
+
+  @@index([studentId])
+  @@index([moneyPhaseId])
+  @@index([itemPhaseId])
+  @@index([status])
+  @@map("donations")
+}
+
+/// Đăng ký tham gia sự kiện & chứng nhận
+model Participant {
+  id             String            @id @default(cuid())
+  eventId        Int               @map("event_id")
+  studentId      String            @map("student_id")
+  status         ParticipantStatus @default(PENDING)
+  isCheckedIn    Boolean           @default(false) @map("is_checked_in")
+  certificateUrl String?           @map("certificate_url")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+
+  event   EventCampaign @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  student Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, studentId])
+  @@index([studentId])
+  @@index([eventId])
+  @@index([status])
+  @@map("participants")
+}
+
+// ============================================
+// AUTH MODELS (Existing)
+// ============================================
+
+model Account {
+  id                String @id @default(cuid())
+  userId            String @map("user_id")
+  provider          String
+  providerAccountId String @map("provider_account_id")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
 }
 
 model RefreshToken {
-    id        String   @id @default(cuid())
-    token     String   @unique
-    userId    String   @map("user_id")
-    createdAt DateTime @default(now()) @map("created_at")
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
 
-    user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
-    @@index([token])
-    @@map("RefreshToken")
+  @@index([token])
+  @@map("refresh_tokens")
 }
 
 model ResetToken {
-    id        String   @id @default(cuid())
-    token     String   @unique
-    expiresAt DateTime @map("expires_at")
-    userId    String   @map("user_id")
-    createdAt DateTime @default(now()) @map("created_at")
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
 
-    user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
-    @@index([token])
-    @@map("ResetToken")
+  @@index([token])
+  @@map("reset_tokens")
 }
 
 model EmailVerificationToken {
-    id        String   @id @default(cuid())
-    token     String   @unique
-    expiresAt DateTime @map("expires_at")
-    userId    String   @map("user_id")
-    createdAt DateTime @default(now()) @map("created_at")
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
 
-    user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
-    @@index([token])
-    @@map("EmailVerificationToken")
+  @@index([token])
+  @@map("email_verification_tokens")
 }

@@ -7,9 +7,7 @@ export const createUser = async (
 ) => {
     return prismaClient.user.create({
         data: {
-            firstName: data.firstName,
-            lastName: data.lastName,
-            name: data.username,
+            username: data.username,
             email: data.email,
             password: hashedPassword,
         },
