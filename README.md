@@ -166,4 +166,10 @@ Server chạy tại: `http://localhost:3000`
 
 ## License
 
+<<<<<<< HEAD
 ISC License
+||||||| parent of 75c60e8 (Revise README for BKVolunteers Backend API)
+Distributed under the **ISC License**. See `LICENSE` for more information.
+=======
+None License
+>>>>>>> 75c60e8 (Revise README for BKVolunteers Backend API)
