@@ -1,37 +1,13 @@
 import * as argon2 from 'argon2'
-import { randomUUID } from 'node:crypto'
-import { sendVerifyEmail } from 'src/utils/sendEmail.util'
 import {
     createAccessToken,
     createRefreshToken,
 } from 'src/utils/generateTokens.util'
-import { ChangePasswordData, UserSignUpCredentials } from './types'
+import { ChangePasswordData } from './types'
 import * as jwt from 'jsonwebtoken'
 import * as authRepository from './auth.repository'
 import { ApiError } from 'src/utils/ApiError'
 import { HttpStatus } from 'src/common/constants'
-
-export const createUser = async (data: UserSignUpCredentials) => {
-    const existingUser = await authRepository.getUserByEmail(data.email)
-    if (existingUser) {
-        throw new ApiError(HttpStatus.CONFLICT, 'Email already exists')
-    }
-
-    const hashedPassword = await argon2.hash(data.password)
-    const newUser = await authRepository.createUser(data, hashedPassword)
-
-    const token = randomUUID()
-    const expiresAt = new Date(Date.now() + 3600000)
-
-    await authRepository.createEmailVerificationToken(
-        newUser.id,
-        token,
-        expiresAt
-    )
-
-    sendVerifyEmail(data.email, token)
-    return newUser
-}
 
 export const changePassword = async (
     userId: string,
@@ -80,14 +56,17 @@ export const createSession = async (userId: string, role: string) => {
     return { accessToken, refreshToken }
 }
 
-export const verifyToken = (token: string, secret: string): Promise<any> => {
+export const verifyToken = (
+    token: string,
+    secret: string
+): Promise<jwt.JwtPayload> => {
     return new Promise((resolve, reject) => {
         ;(jwt as any).verify(token, secret, (err: any, payload: any) => {
             if (err)
                 return reject(
                     new ApiError(HttpStatus.FORBIDDEN, 'Invalid token')
                 )
-            resolve(payload)
+            resolve(payload as jwt.JwtPayload)
         })
     })
 }

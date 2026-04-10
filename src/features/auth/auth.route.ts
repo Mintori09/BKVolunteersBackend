@@ -1,10 +1,6 @@
 import { Router } from 'express'
 import validate from 'src/common/middleware/validate'
-import {
-    changePasswordSchema,
-    loginSchema,
-    signupSchema,
-} from './auth.validation'
+import { changePasswordSchema, loginSchema } from './auth.validation'
 
 import * as authController from './auth.controller'
 import isAuth from 'src/common/middleware/isAuth'
@@ -17,49 +13,6 @@ const authRouter = Router()
  *   name: Auth
  *   description: Authentication management
  */
-
-/**
- * @openapi
- * /auth/signup:
- *   post:
- *     summary: Register a new user
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - firstName
- *               - lastName
- *               - username
- *               - email
- *               - password
- *               - passwordConfirmed
- *             properties:
- *               firstName:
- *                 type: string
- *               lastName:
- *                 type: string
- *               username:
- *                 type: string
- *               email:
- *                 type: string
- *                 format: email
- *               password:
- *                 type: string
- *                 format: password
- *               passwordConfirmed:
- *                 type: string
- *                 format: password
- *     responses:
- *       201:
- *         description: Created
- *       400:
- *         description: Bad Request
- */
-authRouter.post('/signup', validate(signupSchema), authController.handleSignup)
 
 /**
  * @openapi

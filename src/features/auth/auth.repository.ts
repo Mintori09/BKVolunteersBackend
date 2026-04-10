@@ -1,4 +1,5 @@
 import { prismaClient } from 'src/config'
+<<<<<<< HEAD
 import { UserSignUpCredentials } from './types'
 
 export const createUser = async (
@@ -13,6 +14,25 @@ export const createUser = async (
         },
     })
 }
+||||||| parent of 814f25f (feat(auth): remove signup functionality)
+import { UserSignUpCredentials } from './types'
+
+export const createUser = async (
+    data: UserSignUpCredentials,
+    hashedPassword: string
+) => {
+    return prismaClient.user.create({
+        data: {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            name: data.username,
+            email: data.email,
+            password: hashedPassword,
+        },
+    })
+}
+=======
+>>>>>>> 814f25f (feat(auth): remove signup functionality)
 
 export const getUserByEmail = async (email: string) => {
     return prismaClient.user.findUnique({ where: { email } })
