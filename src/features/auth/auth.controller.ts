@@ -16,16 +16,16 @@ import { ApiResponse } from 'src/utils/ApiResponse'
 export const handleLogin = catchAsync(
     async (req: TypedRequest<UserLoginCredentials>, res: Response) => {
         const cookies = req.cookies
-        const { email, password } = req.body
+        const { username, password } = req.body
 
-        if (!email || !password) {
+        if (!username || !password) {
             throw new ApiError(
                 HttpStatus.BAD_REQUEST,
                 'Email và mật khẩu là bắt buộc!'
             )
         }
 
-        const user = await authService.getUserByEmail(email)
+        const user = await authService.getUserbyUsernameOrMssv(mssv)
 
         if (!user) {
             throw new ApiError(

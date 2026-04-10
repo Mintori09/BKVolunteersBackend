@@ -95,7 +95,7 @@ model User {
 /// Sinh viên - người tham gia hoạt động tình nguyện
 model Student {
   id          String    @id @default(cuid())
-  mssv        String    @unique @db.VarChar(20)
+  mssv        String    @unique @db.VarChar(9)
   fullName    String    @map("full_name") @db.VarChar(255)
   email       String    @unique @db.VarChar(255)
   password    String    @db.VarChar(255)

@@ -27,12 +27,12 @@ const authRouter = Router()
  *           schema:
  *             type: object
  *             required:
- *               - email
+ *               - mssv
  *               - password
  *             properties:
  *               email:
  *                 type: string
- *                 format: email
+ *                 format: string
  *               password:
  *                 type: string
  *                 format: password
