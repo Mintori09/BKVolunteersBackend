@@ -9,6 +9,7 @@ setup:
     pnpm install
     @if [ ! -f .env ]; then cp .env-example .env; echo "Created .env"; fi
     pnpm exec prisma generate
+    pnpx husky init
 
 # Run dev server
 dev:

@@ -1,1 +1,7 @@
+<<<<<<< HEAD
 npm test
+||||||| parent of 55860b6 (chore: setup husky pre-commit and update project scripts)
+npx lint-staged
+=======
+pnpm test
+>>>>>>> 55860b6 (chore: setup husky pre-commit and update project scripts)
