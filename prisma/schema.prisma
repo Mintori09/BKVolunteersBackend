@@ -66,25 +66,23 @@ model Faculty {
 
 /// Tài khoản quản lý (Admin, Đoàn trường, Liên chi đoàn, Trưởng CLB)
 model User {
-  id             String    @id @default(cuid())
-  username       String    @unique @db.VarChar(50)
-  email          String    @unique @db.VarChar(255)
-  password       String    @db.VarChar(255)
-  role           UserRole  @default(LCD)
-  facultyId      Int?      @map("faculty_id")
-  emailVerified  DateTime? @map("email_verified")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
-  deletedAt      DateTime? @map("deleted_at")
+  id        String    @id @default(cuid())
+  username  String    @unique @db.VarChar(50)
+  email     String    @unique @db.VarChar(255)
+  password  String    @db.VarChar(255)
+  role      UserRole  @default(LCD)
+  facultyId Int?      @map("faculty_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
 
-  faculty                 Faculty?                 @relation(fields: [facultyId], references: [id], onDelete: SetNull)
-  clubs                   Club[]
-  campaignsAsCreator      Campaign[]               @relation("CampaignCreator")
-  campaignsAsApprover     Campaign[]               @relation("CampaignApprover")
-  accounts                Account[]
-  resetTokens             ResetToken[]
-  refreshTokens           RefreshToken[]
-  emailVerificationTokens EmailVerificationToken[]
+  faculty             Faculty?             @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+  clubs               Club[]
+  campaignsAsCreator  Campaign[]           @relation("CampaignCreator")
+  campaignsAsApprover Campaign[]           @relation("CampaignApprover")
+  accounts            Account[]
+  resetTokens         ResetToken[]
+  refreshTokens       RefreshToken[]
 
   @@index([email])
   @@index([username])
@@ -107,10 +105,11 @@ model Student {
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
 
-  faculty      Faculty        @relation(fields: [facultyId], references: [id])
-  titles       StudentTitle[]
-  donations    Donation[]
-  participants Participant[]
+  faculty       Faculty              @relation(fields: [facultyId], references: [id])
+  titles        StudentTitle[]
+  donations     Donation[]
+  participants  Participant[]
+  refreshTokens StudentRefreshToken[]
 
   @@index([mssv])
   @@index([email])
@@ -352,15 +351,14 @@ model ResetToken {
   @@map("reset_tokens")
 }
 
-model EmailVerificationToken {
+model StudentRefreshToken {
   id        String   @id @default(cuid())
   token     String   @unique
-  expiresAt DateTime @map("expires_at")
-  userId    String   @map("user_id")
+  studentId String   @map("student_id")
   createdAt DateTime @default(now()) @map("created_at")
 
-  user User @relation(fields: [userId], references: [id])
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([token])
-  @@map("email_verification_tokens")
+  @@map("student_refresh_tokens")
 }
