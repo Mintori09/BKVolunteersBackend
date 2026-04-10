@@ -68,13 +68,14 @@ Authenticates a user and returns an access token.
 - **Request Body:**
     ```json
     {
-        "email": "user@example.com",
+        "username": "201xxxxxx",
         "password": "password123"
     }
     ```
+    > Note: `username` can be either MSSV (9 digits starting with 1) or email address.
 - **Responses:**
     - `200 OK`: Returns `accessToken` in `data` and sets `refresh_token` cookie.
-    - `401 Unauthorized`: Invalid credentials or email not verified.
+    - `401 Unauthorized`: Invalid credentials.
 
 ### Get Me
 
@@ -108,6 +109,26 @@ Generates a new access token using a refresh token.
     - `200 OK`: Returns new `accessToken` and sets a new `refresh_token` cookie.
     - `401 Unauthorized`: No refresh token provided.
     - `403 Forbidden`: Invalid or expired refresh token.
+
+### Change Password
+
+Changes the authenticated user's password.
+
+- **URL:** `/auth/change-password`
+- **Method:** `PATCH`
+- **Headers:** `Authorization: Bearer <access_token>`
+- **Request Body:**
+    ```json
+    {
+        "oldPassword": "current_password",
+        "newPassword": "new_secure_password",
+        "newPasswordConfirm": "new_secure_password"
+    }
+    ```
+- **Responses:**
+    - `200 OK`: Password changed successfully.
+    - `400 Bad Request`: Passwords don't match or validation failed.
+    - `401 Unauthorized`: Not authenticated or incorrect old password.
 
 ---
 
@@ -149,35 +170,3 @@ Resets the user's password using a valid token.
     - `404 Not Found`: Token missing, invalid, or expired.
 
 ---
-
-## 3. Verify Email Feature
-
-### Send Verification Email
-
-Sends a new verification email to the user.
-
-- **URL:** `/verify-email/send-verification-email`
-- **Method:** `POST`
-- **Request Body:**
-    ```json
-    {
-        "email": "user@example.com"
-    }
-    ```
-- **Responses:**
-    - `200 OK`: Verification email sent.
-    - `400 Bad Request`: Email missing or token already sent.
-    - `404 Not Found`: Email not found.
-    - `409 Conflict`: Email already verified.
-
-### Verify Email
-
-Verifies a user's email using a token.
-
-- **URL:** `/verify-email/:token`
-- **Method:** `GET`
-- **URL Parameters:** `token` (Required)
-- **Responses:**
-    - `200 OK`: Returns an HTML success page.
-    - `400 Bad Request`: Returns an HTML error page (Invalid link).
-    - `410 Gone`: Returns an HTML error page (Token expired).

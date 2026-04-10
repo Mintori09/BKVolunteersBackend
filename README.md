@@ -171,4 +171,5 @@ ISC License
 Distributed under the **ISC License**. See `LICENSE` for more information.
 =======
 None License
->>>>>>> 75c60e8 (Revise README for BKVolunteers Backend API)
+
+> > > > > > > 75c60e8 (Revise README for BKVolunteers Backend API)

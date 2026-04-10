@@ -8,19 +8,19 @@
 
 ## 1. DANH SÁCH EPIC TỔNG QUÁT
 
-| Epic ID | Tên Epic | Mô tả |
-|---------|----------|-------|
-| E-01 | **Authentication & Authorization** | Xác thực đăng ký/đăng nhập cho Student và User (CLB/LCD/Đoàn trường) |
-| E-02 | **Faculty Management** | Quản lý khoa, xác định khoa từ MSSV |
-| E-03 | **Campaign Management** | Quản lý vòng đời chiến dịch (DRAFT → PENDING → ACTIVE → COMPLETED) |
-| E-04 | **Money Donation System** | Hệ thống quyên góp tiền với mã QR |
-| E-05 | **Item Donation System** | Hệ thống quyên góp hiện vật |
-| E-06 | **Event Participation** | Đăng ký tham gia sự kiện, check-in, gửi chứng nhận |
-| E-07 | **Gamification System** | Hệ thống điểm, danh hiệu, chứng nhận |
-| E-08 | **Club Management** | Quản lý câu lạc bộ |
-| E-09 | **Notification System** | Hệ thống thông báo |
-| E-10 | **Statistics & Reporting** | Thống kê và báo cáo |
-| E-11 | **File Management** | Quản lý upload file (ảnh, tài liệu) |
+| Epic ID | Tên Epic                           | Mô tả                                                                |
+| ------- | ---------------------------------- | -------------------------------------------------------------------- |
+| E-01    | **Authentication & Authorization** | Xác thực đăng ký/đăng nhập cho Student và User (CLB/LCD/Đoàn trường) |
+| E-02    | **Faculty Management**             | Quản lý khoa, xác định khoa từ MSSV                                  |
+| E-03    | **Campaign Management**            | Quản lý vòng đời chiến dịch (DRAFT → PENDING → ACTIVE → COMPLETED)   |
+| E-04    | **Money Donation System**          | Hệ thống quyên góp tiền với mã QR                                    |
+| E-05    | **Item Donation System**           | Hệ thống quyên góp hiện vật                                          |
+| E-06    | **Event Participation**            | Đăng ký tham gia sự kiện, check-in, gửi chứng nhận                   |
+| E-07    | **Gamification System**            | Hệ thống điểm, danh hiệu, chứng nhận                                 |
+| E-08    | **Club Management**                | Quản lý câu lạc bộ                                                   |
+| E-09    | **Notification System**            | Hệ thống thông báo                                                   |
+| E-10    | **Statistics & Reporting**         | Thống kê và báo cáo                                                  |
+| E-11    | **File Management**                | Quản lý upload file (ảnh, tài liệu)                                  |
 
 ---
 
@@ -28,137 +28,137 @@
 
 ### Epic E-01: Authentication & Authorization
 
-| ID | User Story | Priority | Est. | API Endpoint |
-|----|------------|----------|------|--------------|
-| US-001 | As a **Student**, I want to **đăng ký tài khoản bằng MSSV**, so that **tôi có thể tham gia hệ thống tình nguyện**. | HIGH | M | `POST /auth/student/register` |
-| US-002 | As a **Student**, I want to **đăng nhập bằng MSSV và mật khẩu**, so that **tôi có thể truy cập tài khoản của mình**. | HIGH | M | `POST /auth/student/login` |
-| US-003 | As a **User (CLB/LCD/Đoàn trường)**, I want to **đăng ký tài khoản với role cụ thể**, so that **tôi có thể thực hiện quyền hạn phù hợp**. | HIGH | M | `POST /auth/user/register` |
-| US-004 | As a **User**, I want to **đăng nhập bằng username và mật khẩu**, so that **tôi có thể quản lý hoạt động**. | HIGH | M | `POST /auth/user/login` |
-| US-005 | As a **User**, I want to **đăng xuất khỏi hệ thống**, so that **tài khoản được bảo vệ an toàn**. | MED | S | `POST /auth/logout` |
-| US-006 | As a **User**, I want to **xem thông tin tài khoản hiện tại**, so that **tôi biết thông tin cá nhân của mình**. | MED | S | `GET /auth/me` |
-| US-007 | As a **User**, I want to **khôi phục mật khẩu qua email**, so that **tôi có thể lấy lại quyền truy cập khi quên mật khẩu**. | MED | M | `POST /password/forgot-password` |
-| US-008 | As a **User**, I want to **xác thực email sau khi đăng ký**, so that **tài khoản được kích hoạt**. | MED | M | `GET /verify-email/:token` |
-| US-009 | As a **User**, I want to **refresh token khi token hết hạn**, so that **tôi không cần đăng nhập lại**. | LOW | S | `POST /auth/refresh` |
+| ID     | User Story                                                                                                                                | Priority | Est. | API Endpoint                     |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------- | -------- | ---- | -------------------------------- |
+| US-001 | As a **Student**, I want to **đăng ký tài khoản bằng MSSV**, so that **tôi có thể tham gia hệ thống tình nguyện**.                        | HIGH     | M    | `POST /auth/student/register`    |
+| US-002 | As a **Student**, I want to **đăng nhập bằng MSSV và mật khẩu**, so that **tôi có thể truy cập tài khoản của mình**.                      | HIGH     | M    | `POST /auth/student/login`       |
+| US-003 | As a **User (CLB/LCD/Đoàn trường)**, I want to **đăng ký tài khoản với role cụ thể**, so that **tôi có thể thực hiện quyền hạn phù hợp**. | HIGH     | M    | `POST /auth/user/register`       |
+| US-004 | As a **User**, I want to **đăng nhập bằng username và mật khẩu**, so that **tôi có thể quản lý hoạt động**.                               | HIGH     | M    | `POST /auth/user/login`          |
+| US-005 | As a **User**, I want to **đăng xuất khỏi hệ thống**, so that **tài khoản được bảo vệ an toàn**.                                          | MED      | S    | `POST /auth/logout`              |
+| US-006 | As a **User**, I want to **xem thông tin tài khoản hiện tại**, so that **tôi biết thông tin cá nhân của mình**.                           | MED      | S    | `GET /auth/me`                   |
+| US-007 | As a **User**, I want to **khôi phục mật khẩu qua email**, so that **tôi có thể lấy lại quyền truy cập khi quên mật khẩu**.               | MED      | M    | `POST /password/forgot-password` |
+| US-008 | As a **User**, I want to **xác thực email sau khi đăng ký**, so that **tài khoản được kích hoạt**.                                        | MED      | M    | `GET /verify-email/:token`       |
+| US-009 | As a **User**, I want to **refresh token khi token hết hạn**, so that **tôi không cần đăng nhập lại**.                                    | LOW      | S    | `POST /auth/refresh`             |
 
 ### Epic E-02: Faculty Management
 
-| ID | User Story | Priority | Est. | API Endpoint |
-|----|------------|----------|------|--------------|
-| US-010 | As a **Student**, I want to **khoa được tự động xác định từ MSSV**, so that **tôi được phân loại đúng khoa**. | HIGH | S | `GET /faculties/code/:code` |
-| US-011 | As a **User**, I want to **xem danh sách tất cả các khoa**, so that **tôi có thể chọn khoa khi đăng ký**. | MED | S | `GET /faculties` |
-| US-012 | As a **User**, I want to **xem thông tin chi tiết của một khoa**, so that **tôi hiểu rõ về khoa đó**. | LOW | S | `GET /faculties/:id` |
+| ID     | User Story                                                                                                    | Priority | Est. | API Endpoint                |
+| ------ | ------------------------------------------------------------------------------------------------------------- | -------- | ---- | --------------------------- |
+| US-010 | As a **Student**, I want to **khoa được tự động xác định từ MSSV**, so that **tôi được phân loại đúng khoa**. | HIGH     | S    | `GET /faculties/code/:code` |
+| US-011 | As a **User**, I want to **xem danh sách tất cả các khoa**, so that **tôi có thể chọn khoa khi đăng ký**.     | MED      | S    | `GET /faculties`            |
+| US-012 | As a **User**, I want to **xem thông tin chi tiết của một khoa**, so that **tôi hiểu rõ về khoa đó**.         | LOW      | S    | `GET /faculties/:id`        |
 
 ### Epic E-03: Campaign Management
 
-| ID | User Story | Priority | Est. | API Endpoint |
-|----|------------|----------|------|--------------|
-| US-013 | As a **CLB/LCD/Đoàn trường**, I want to **tạo chiến dịch mới (Draft)**, so that **tôi có thể lên kế hoạch hoạt động**. | HIGH | M | `POST /campaigns` |
-| US-014 | As a **Creator**, I want to **cập nhật thông tin chiến dịch**, so that **tôi có thể điều chỉnh kế hoạch**. | HIGH | S | `PUT /campaigns/:id` |
-| US-015 | As a **Creator**, I want to **xóa chiến dịch đang Draft**, so that **tôi có thể hủy bỏ kế hoạch không phù hợp**. | MED | S | `DELETE /campaigns/:id` |
-| US-016 | As a **Creator**, I want to **gửi chiến dịch để phê duyệt (DRAFT → PENDING)**, so that **chiến dịch được xem xét duyệt**. | HIGH | S | `POST /campaigns/:id/submit` |
-| US-017 | As a **Đoàn trường**, I want to **phê duyệt chiến dịch (PENDING → ACTIVE)**, so that **chiến dịch có thể bắt đầu**. | HIGH | S | `POST /campaigns/:id/approve` |
-| US-018 | As a **Đoàn trường**, I want to **từ chối chiến dịch với lý do (PENDING → REJECTED)**, so that **người tạo biết lý do bị từ chối**. | HIGH | S | `POST /campaigns/:id/reject` |
-| US-019 | As a **Creator**, I want to **đánh dấu chiến dịch hoàn thành (ACTIVE → COMPLETED)**, so that **chiến dịch kết thúc và gửi chứng nhận**. | HIGH | M | `POST /campaigns/:id/complete` |
-| US-020 | As a **Creator**, I want to **hủy chiến dịch (ACTIVE → CANCELLED)**, so that **chiến dịch không thể tiếp tục**. | MED | S | `POST /campaigns/:id/cancel` |
-| US-021 | As a **Creator**, I want to **upload file kế hoạch (PDF/DOC)**, so that **phương án chiến dịch được lưu trữ**. | HIGH | M | `POST /campaigns/:id/plan-file` |
-| US-022 | As a **Creator**, I want to **upload file dự trù ngân sách (PDF/XLS)**, so that **chi phí được ghi nhận**. | HIGH | M | `POST /campaigns/:id/budget-file` |
-| US-023 | As a **Student**, I want to **xem danh sách chiến dịch có thể tham gia**, so that **tôi có thể chọn hoạt động phù hợp**. | HIGH | M | `GET /campaigns/available` |
-| US-024 | As a **User**, I want to **xem danh sách chiến dịch với bộ lọc (status, scope, faculty)**, so that **tôi tìm được chiến dịch mong muốn**. | MED | M | `GET /campaigns` |
-| US-025 | As a **User**, I want to **xem chi tiết một chiến dịch**, so that **tôi hiểu rõ thông tin chiến dịch**. | MED | S | `GET /campaigns/:id` |
+| ID     | User Story                                                                                                                                | Priority | Est. | API Endpoint                      |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------- | -------- | ---- | --------------------------------- |
+| US-013 | As a **CLB/LCD/Đoàn trường**, I want to **tạo chiến dịch mới (Draft)**, so that **tôi có thể lên kế hoạch hoạt động**.                    | HIGH     | M    | `POST /campaigns`                 |
+| US-014 | As a **Creator**, I want to **cập nhật thông tin chiến dịch**, so that **tôi có thể điều chỉnh kế hoạch**.                                | HIGH     | S    | `PUT /campaigns/:id`              |
+| US-015 | As a **Creator**, I want to **xóa chiến dịch đang Draft**, so that **tôi có thể hủy bỏ kế hoạch không phù hợp**.                          | MED      | S    | `DELETE /campaigns/:id`           |
+| US-016 | As a **Creator**, I want to **gửi chiến dịch để phê duyệt (DRAFT → PENDING)**, so that **chiến dịch được xem xét duyệt**.                 | HIGH     | S    | `POST /campaigns/:id/submit`      |
+| US-017 | As a **Đoàn trường**, I want to **phê duyệt chiến dịch (PENDING → ACTIVE)**, so that **chiến dịch có thể bắt đầu**.                       | HIGH     | S    | `POST /campaigns/:id/approve`     |
+| US-018 | As a **Đoàn trường**, I want to **từ chối chiến dịch với lý do (PENDING → REJECTED)**, so that **người tạo biết lý do bị từ chối**.       | HIGH     | S    | `POST /campaigns/:id/reject`      |
+| US-019 | As a **Creator**, I want to **đánh dấu chiến dịch hoàn thành (ACTIVE → COMPLETED)**, so that **chiến dịch kết thúc và gửi chứng nhận**.   | HIGH     | M    | `POST /campaigns/:id/complete`    |
+| US-020 | As a **Creator**, I want to **hủy chiến dịch (ACTIVE → CANCELLED)**, so that **chiến dịch không thể tiếp tục**.                           | MED      | S    | `POST /campaigns/:id/cancel`      |
+| US-021 | As a **Creator**, I want to **upload file kế hoạch (PDF/DOC)**, so that **phương án chiến dịch được lưu trữ**.                            | HIGH     | M    | `POST /campaigns/:id/plan-file`   |
+| US-022 | As a **Creator**, I want to **upload file dự trù ngân sách (PDF/XLS)**, so that **chi phí được ghi nhận**.                                | HIGH     | M    | `POST /campaigns/:id/budget-file` |
+| US-023 | As a **Student**, I want to **xem danh sách chiến dịch có thể tham gia**, so that **tôi có thể chọn hoạt động phù hợp**.                  | HIGH     | M    | `GET /campaigns/available`        |
+| US-024 | As a **User**, I want to **xem danh sách chiến dịch với bộ lọc (status, scope, faculty)**, so that **tôi tìm được chiến dịch mong muốn**. | MED      | M    | `GET /campaigns`                  |
+| US-025 | As a **User**, I want to **xem chi tiết một chiến dịch**, so that **tôi hiểu rõ thông tin chiến dịch**.                                   | MED      | S    | `GET /campaigns/:id`              |
 
 ### Epic E-04: Money Donation System
 
-| ID | User Story | Priority | Est. | API Endpoint |
-|----|------------|----------|------|--------------|
-| US-026 | As a **Creator**, I want to **tạo giai đoạn quyên góp tiền với mã QR**, so that **sinh viên có thể chuyển khoản**. | HIGH | M | `POST /campaigns/:campaignId/money-phases` |
-| US-027 | As a **Creator**, I want to **cập nhật thông tin giai đoạn quyên góp tiền**, so that **tôi điều chỉnh mục tiêu/QR**. | MED | S | `PUT /campaigns/:campaignId/money-phases/:phaseId` |
-| US-028 | As a **Creator**, I want to **xóa giai đoạn quyên góp tiền**, so that **tôi loại bỏ giai đoạn không cần thiết**. | LOW | S | `DELETE /campaigns/:campaignId/money-phases/:phaseId` |
-| US-029 | As a **User**, I want to **xem các giai đoạn quyên góp tiền của chiến dịch**, so that **tôi biết cách đóng góp**. | MED | S | `GET /campaigns/:campaignId/money-phases` |
-| US-030 | As a **User**, I want to **xem tiến độ gây quỹ tiền**, so that **tôi biết bao nhiêu đã được quyên góp**. | HIGH | S | `GET /campaigns/:campaignId/money-phases/:phaseId/progress` |
-| US-031 | As a **Student**, I want to **đóng góp tiền với ảnh minh chứng**, so that **đóng góp của tôi được ghi nhận**. | HIGH | M | `POST /donations/money` |
-| US-032 | As a **Creator**, I want to **xác thực đóng góp tiền và cộng điểm**, so that **sinh viên được ghi nhận điểm**. | HIGH | M | `POST /donations/:id/verify` |
-| US-033 | As a **Creator**, I want to **từ chối đóng góp với lý do**, so that **sinh viên biết lý do bị từ chối**. | MED | S | `POST /donations/:id/reject` |
-| US-034 | As a **Creator**, I want to **cập nhật số tiền thực tế khi xác thực**, so that **số tiền đúng với minh chứng**. | MED | S | `PUT /donations/:id` |
-| US-035 | As a **Student**, I want to **xem lịch sử đóng góp của tôi**, so that **tôi theo dõi các hoạt động đã làm**. | MED | S | `GET /donations/me` |
-| US-036 | As a **Creator**, I want to **xem danh sách đóng góp của một giai đoạn**, so that **tôi quản lý các đóng góp**. | MED | S | `GET /money-phases/:phaseId/donations` |
+| ID     | User Story                                                                                                           | Priority | Est. | API Endpoint                                                |
+| ------ | -------------------------------------------------------------------------------------------------------------------- | -------- | ---- | ----------------------------------------------------------- |
+| US-026 | As a **Creator**, I want to **tạo giai đoạn quyên góp tiền với mã QR**, so that **sinh viên có thể chuyển khoản**.   | HIGH     | M    | `POST /campaigns/:campaignId/money-phases`                  |
+| US-027 | As a **Creator**, I want to **cập nhật thông tin giai đoạn quyên góp tiền**, so that **tôi điều chỉnh mục tiêu/QR**. | MED      | S    | `PUT /campaigns/:campaignId/money-phases/:phaseId`          |
+| US-028 | As a **Creator**, I want to **xóa giai đoạn quyên góp tiền**, so that **tôi loại bỏ giai đoạn không cần thiết**.     | LOW      | S    | `DELETE /campaigns/:campaignId/money-phases/:phaseId`       |
+| US-029 | As a **User**, I want to **xem các giai đoạn quyên góp tiền của chiến dịch**, so that **tôi biết cách đóng góp**.    | MED      | S    | `GET /campaigns/:campaignId/money-phases`                   |
+| US-030 | As a **User**, I want to **xem tiến độ gây quỹ tiền**, so that **tôi biết bao nhiêu đã được quyên góp**.             | HIGH     | S    | `GET /campaigns/:campaignId/money-phases/:phaseId/progress` |
+| US-031 | As a **Student**, I want to **đóng góp tiền với ảnh minh chứng**, so that **đóng góp của tôi được ghi nhận**.        | HIGH     | M    | `POST /donations/money`                                     |
+| US-032 | As a **Creator**, I want to **xác thực đóng góp tiền và cộng điểm**, so that **sinh viên được ghi nhận điểm**.       | HIGH     | M    | `POST /donations/:id/verify`                                |
+| US-033 | As a **Creator**, I want to **từ chối đóng góp với lý do**, so that **sinh viên biết lý do bị từ chối**.             | MED      | S    | `POST /donations/:id/reject`                                |
+| US-034 | As a **Creator**, I want to **cập nhật số tiền thực tế khi xác thực**, so that **số tiền đúng với minh chứng**.      | MED      | S    | `PUT /donations/:id`                                        |
+| US-035 | As a **Student**, I want to **xem lịch sử đóng góp của tôi**, so that **tôi theo dõi các hoạt động đã làm**.         | MED      | S    | `GET /donations/me`                                         |
+| US-036 | As a **Creator**, I want to **xem danh sách đóng góp của một giai đoạn**, so that **tôi quản lý các đóng góp**.      | MED      | S    | `GET /money-phases/:phaseId/donations`                      |
 
 ### Epic E-05: Item Donation System
 
-| ID | User Story | Priority | Est. | API Endpoint |
-|----|------------|----------|------|--------------|
-| US-037 | As a **Creator**, I want to **tạo giai đoạn quyên góp hiện vật với danh sách vật phẩm chấp nhận**, so that **sinh viên biết vật phẩm có thể đóng góp**. | HIGH | M | `POST /campaigns/:campaignId/item-phases` |
-| US-038 | As a **Creator**, I want to **cập nhật giai đoạn quyên góp hiện vật**, so that **tôi điều chỉnh vật phẩm/địa điểm**. | MED | S | `PUT /campaigns/:campaignId/item-phases/:phaseId` |
-| US-039 | As a **Creator**, I want to **xóa giai đoạn quyên góp hiện vật**, so that **tôi loại bỏ giai đoạn không cần thiết**. | LOW | S | `DELETE /campaigns/:campaignId/item-phases/:phaseId` |
-| US-040 | As a **User**, I want to **xem các giai đoạn quyên góp hiện vật của chiến dịch**, so that **tôi biết cách đóng góp**. | MED | S | `GET /campaigns/:campaignId/item-phases` |
-| US-041 | As a **Student**, I want to **đóng góp hiện vật với mô tả và ảnh minh chứng**, so that **đóng góp được ghi nhận**. | HIGH | M | `POST /donations/items` |
-| US-042 | As a **Creator**, I want to **xác thực đóng góp hiện vật**, so that **sinh viên được cộng điểm**. | HIGH | S | `POST /donations/:id/verify` |
-| US-043 | As a **Creator**, I want to **xem danh sách đóng góp hiện vật của một giai đoạn**, so that **tôi quản lý các đóng góp**. | MED | S | `GET /item-phases/:phaseId/donations` |
+| ID     | User Story                                                                                                                                              | Priority | Est. | API Endpoint                                         |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ---- | ---------------------------------------------------- |
+| US-037 | As a **Creator**, I want to **tạo giai đoạn quyên góp hiện vật với danh sách vật phẩm chấp nhận**, so that **sinh viên biết vật phẩm có thể đóng góp**. | HIGH     | M    | `POST /campaigns/:campaignId/item-phases`            |
+| US-038 | As a **Creator**, I want to **cập nhật giai đoạn quyên góp hiện vật**, so that **tôi điều chỉnh vật phẩm/địa điểm**.                                    | MED      | S    | `PUT /campaigns/:campaignId/item-phases/:phaseId`    |
+| US-039 | As a **Creator**, I want to **xóa giai đoạn quyên góp hiện vật**, so that **tôi loại bỏ giai đoạn không cần thiết**.                                    | LOW      | S    | `DELETE /campaigns/:campaignId/item-phases/:phaseId` |
+| US-040 | As a **User**, I want to **xem các giai đoạn quyên góp hiện vật của chiến dịch**, so that **tôi biết cách đóng góp**.                                   | MED      | S    | `GET /campaigns/:campaignId/item-phases`             |
+| US-041 | As a **Student**, I want to **đóng góp hiện vật với mô tả và ảnh minh chứng**, so that **đóng góp được ghi nhận**.                                      | HIGH     | M    | `POST /donations/items`                              |
+| US-042 | As a **Creator**, I want to **xác thực đóng góp hiện vật**, so that **sinh viên được cộng điểm**.                                                       | HIGH     | S    | `POST /donations/:id/verify`                         |
+| US-043 | As a **Creator**, I want to **xem danh sách đóng góp hiện vật của một giai đoạn**, so that **tôi quản lý các đóng góp**.                                | MED      | S    | `GET /item-phases/:phaseId/donations`                |
 
 ### Epic E-06: Event Participation
 
-| ID | User Story | Priority | Est. | API Endpoint |
-|----|------------|----------|------|--------------|
-| US-044 | As a **Creator**, I want to **tạo giai đoạn sự kiện với địa điểm, số lượng tối đa**, so that **sinh viên có thể đăng ký tham gia**. | HIGH | M | `POST /campaigns/:campaignId/events` |
-| US-045 | As a **Creator**, I want to **cập nhật thông tin sự kiện**, so that **tôi điều chỉnh địa điểm/thời gian**. | MED | S | `PUT /campaigns/:campaignId/events/:eventId` |
-| US-046 | As a **Creator**, I want to **xóa giai đoạn sự kiện**, so that **tôi loại bỏ sự kiện không cần thiết**. | LOW | S | `DELETE /campaigns/:campaignId/events/:eventId` |
-| US-047 | As a **User**, I want to **xem các sự kiện của chiến dịch**, so that **tôi biết lịch trình hoạt động**. | MED | S | `GET /campaigns/:campaignId/events` |
-| US-048 | As a **User**, I want to **xem chi tiết một sự kiện**, so that **tôi hiểu rõ thông tin sự kiện**. | MED | S | `GET /events/:eventId` |
-| US-049 | As a **Student**, I want to **đăng ký tham gia sự kiện**, so that **tôi có thể tham gia hoạt động**. | HIGH | M | `POST /events/:eventId/register` |
-| US-050 | As a **Student**, I want to **hủy đăng ký tham gia sự kiện**, so that **tôi có thể rút lui khi không thể tham gia**. | MED | S | `DELETE /events/:eventId/register` |
-| US-051 | As a **Student**, I want to **xem danh sách đăng ký của tôi**, so that **tôi theo dõi các sự kiện đã đăng ký**. | MED | S | `GET /participants/me` |
-| US-052 | As a **Creator**, I want to **xem danh sách người đăng ký với bộ lọc status**, so that **tôi quản lý người tham gia**. | HIGH | M | `GET /events/:eventId/participants` |
-| US-053 | As a **Creator**, I want to **phê duyệt người đăng ký (PENDING → APPROVED)**, so that **sinh viên được xác nhận tham gia**. | HIGH | S | `POST /participants/:id/approve` |
-| US-054 | As a **Creator**, I want to **từ chối người đăng ký với lý do**, so that **sinh viên biết lý do bị từ chối**. | MED | S | `POST /participants/:id/reject` |
-| US-055 | As a **Creator**, I want to **check-in người tham gia tại sự kiện**, so that **sinh viên được xác nhận có mặt**. | HIGH | S | `POST /participants/:id/check-in` |
-| US-056 | As a **Creator**, I want to **gửi chứng nhận cho một người tham gia qua email**, so that **sinh viên nhận được chứng nhận**. | HIGH | M | `POST /participants/:id/certificate` |
-| US-057 | As a **Creator**, I want to **gửi chứng nhận hàng loạt cho tất cả người đã check-in**, so that **tất cả nhận chứng nhận nhanh chóng**. | HIGH | M | `POST /events/:eventId/certificates` |
+| ID     | User Story                                                                                                                             | Priority | Est. | API Endpoint                                    |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------- | -------- | ---- | ----------------------------------------------- |
+| US-044 | As a **Creator**, I want to **tạo giai đoạn sự kiện với địa điểm, số lượng tối đa**, so that **sinh viên có thể đăng ký tham gia**.    | HIGH     | M    | `POST /campaigns/:campaignId/events`            |
+| US-045 | As a **Creator**, I want to **cập nhật thông tin sự kiện**, so that **tôi điều chỉnh địa điểm/thời gian**.                             | MED      | S    | `PUT /campaigns/:campaignId/events/:eventId`    |
+| US-046 | As a **Creator**, I want to **xóa giai đoạn sự kiện**, so that **tôi loại bỏ sự kiện không cần thiết**.                                | LOW      | S    | `DELETE /campaigns/:campaignId/events/:eventId` |
+| US-047 | As a **User**, I want to **xem các sự kiện của chiến dịch**, so that **tôi biết lịch trình hoạt động**.                                | MED      | S    | `GET /campaigns/:campaignId/events`             |
+| US-048 | As a **User**, I want to **xem chi tiết một sự kiện**, so that **tôi hiểu rõ thông tin sự kiện**.                                      | MED      | S    | `GET /events/:eventId`                          |
+| US-049 | As a **Student**, I want to **đăng ký tham gia sự kiện**, so that **tôi có thể tham gia hoạt động**.                                   | HIGH     | M    | `POST /events/:eventId/register`                |
+| US-050 | As a **Student**, I want to **hủy đăng ký tham gia sự kiện**, so that **tôi có thể rút lui khi không thể tham gia**.                   | MED      | S    | `DELETE /events/:eventId/register`              |
+| US-051 | As a **Student**, I want to **xem danh sách đăng ký của tôi**, so that **tôi theo dõi các sự kiện đã đăng ký**.                        | MED      | S    | `GET /participants/me`                          |
+| US-052 | As a **Creator**, I want to **xem danh sách người đăng ký với bộ lọc status**, so that **tôi quản lý người tham gia**.                 | HIGH     | M    | `GET /events/:eventId/participants`             |
+| US-053 | As a **Creator**, I want to **phê duyệt người đăng ký (PENDING → APPROVED)**, so that **sinh viên được xác nhận tham gia**.            | HIGH     | S    | `POST /participants/:id/approve`                |
+| US-054 | As a **Creator**, I want to **từ chối người đăng ký với lý do**, so that **sinh viên biết lý do bị từ chối**.                          | MED      | S    | `POST /participants/:id/reject`                 |
+| US-055 | As a **Creator**, I want to **check-in người tham gia tại sự kiện**, so that **sinh viên được xác nhận có mặt**.                       | HIGH     | S    | `POST /participants/:id/check-in`               |
+| US-056 | As a **Creator**, I want to **gửi chứng nhận cho một người tham gia qua email**, so that **sinh viên nhận được chứng nhận**.           | HIGH     | M    | `POST /participants/:id/certificate`            |
+| US-057 | As a **Creator**, I want to **gửi chứng nhận hàng loạt cho tất cả người đã check-in**, so that **tất cả nhận chứng nhận nhanh chóng**. | HIGH     | M    | `POST /events/:eventId/certificates`            |
 
 ### Epic E-07: Gamification System
 
-| ID | User Story | Priority | Est. | API Endpoint |
-|----|------------|----------|------|--------------|
-| US-058 | As a **Student**, I want to **xem tổng điểm rèn luyện của mình**, so that **tôi biết mức độ đóng góp**. | HIGH | S | `GET /students/me` |
-| US-059 | As a **Student**, I want to **xem lịch sử tích điểm chi tiết**, so that **tôi biết điểm từ hoạt động nào**. | MED | S | `GET /students/me/points` |
-| US-060 | As a **Student**, I want to **xem danh hiệu đã đạt được**, so that **tôi tự hào về thành tựu**. | MED | S | `GET /students/me/titles` |
-| US-061 | As a **Student**, I want to **cập nhật thông tin cá nhân**, so that **thông tin luôn chính xác**. | LOW | S | `PUT /students/me` |
-| US-062 | As a **Đoàn trường**, I want to **tạo danh hiệu mới với điểm yêu cầu**, so that **hệ thống gamification được mở rộng**. | MED | M | `POST /titles` |
-| US-063 | As a **Đoàn trường**, I want to **cập nhật danh hiệu**, so that **tôi điều chỉnh yêu cầu/tên**. | LOW | S | `PUT /titles/:id` |
-| US-064 | As a **Đoàn trường**, I want to **xóa danh hiệu**, so that **tôi loại bỏ danh hiệu không còn phù hợp**. | LOW | S | `DELETE /titles/:id` |
-| US-065 | As a **User**, I want to **xem danh sách tất cả danh hiệu**, so that **tôi biết các danh hiệu có thể đạt được**. | MED | S | `GET /titles` |
-| US-066 | As a **Creator/Approver**, I want to **xem thông tin sinh viên**, so that **tôi hiểu về người tham gia**. | MED | S | `GET /students/:id` |
+| ID     | User Story                                                                                                              | Priority | Est. | API Endpoint              |
+| ------ | ----------------------------------------------------------------------------------------------------------------------- | -------- | ---- | ------------------------- |
+| US-058 | As a **Student**, I want to **xem tổng điểm rèn luyện của mình**, so that **tôi biết mức độ đóng góp**.                 | HIGH     | S    | `GET /students/me`        |
+| US-059 | As a **Student**, I want to **xem lịch sử tích điểm chi tiết**, so that **tôi biết điểm từ hoạt động nào**.             | MED      | S    | `GET /students/me/points` |
+| US-060 | As a **Student**, I want to **xem danh hiệu đã đạt được**, so that **tôi tự hào về thành tựu**.                         | MED      | S    | `GET /students/me/titles` |
+| US-061 | As a **Student**, I want to **cập nhật thông tin cá nhân**, so that **thông tin luôn chính xác**.                       | LOW      | S    | `PUT /students/me`        |
+| US-062 | As a **Đoàn trường**, I want to **tạo danh hiệu mới với điểm yêu cầu**, so that **hệ thống gamification được mở rộng**. | MED      | M    | `POST /titles`            |
+| US-063 | As a **Đoàn trường**, I want to **cập nhật danh hiệu**, so that **tôi điều chỉnh yêu cầu/tên**.                         | LOW      | S    | `PUT /titles/:id`         |
+| US-064 | As a **Đoàn trường**, I want to **xóa danh hiệu**, so that **tôi loại bỏ danh hiệu không còn phù hợp**.                 | LOW      | S    | `DELETE /titles/:id`      |
+| US-065 | As a **User**, I want to **xem danh sách tất cả danh hiệu**, so that **tôi biết các danh hiệu có thể đạt được**.        | MED      | S    | `GET /titles`             |
+| US-066 | As a **Creator/Approver**, I want to **xem thông tin sinh viên**, so that **tôi hiểu về người tham gia**.               | MED      | S    | `GET /students/:id`       |
 
 ### Epic E-08: Club Management
 
-| ID | User Story | Priority | Est. | API Endpoint |
-|----|------------|----------|------|--------------|
-| US-067 | As a **Đoàn trường**, I want to **tạo câu lạc bộ mới với trưởng CLB**, so that **tổ chức hoạt động được mở rộng**. | MED | M | `POST /clubs` |
-| US-068 | As a **Đoàn trường/Trưởng CLB**, I want to **cập nhật thông tin CLB**, so that **thông tin luôn chính xác**. | LOW | S | `PUT /clubs/:id` |
-| US-069 | As a **Đoàn trường**, I want to **xóa câu lạc bộ**, so that **tôi loại bỏ CLB không còn hoạt động**. | LOW | S | `DELETE /clubs/:id` |
-| US-070 | As a **User**, I want to **xem danh sách tất cả CLB**, so that **tôi biết các CLB trong hệ thống**. | LOW | S | `GET /clubs` |
-| US-071 | As a **User**, I want to **xem chi tiết một CLB**, so that **tôi hiểu về CLB đó**. | LOW | S | `GET /clubs/:id` |
+| ID     | User Story                                                                                                         | Priority | Est. | API Endpoint        |
+| ------ | ------------------------------------------------------------------------------------------------------------------ | -------- | ---- | ------------------- |
+| US-067 | As a **Đoàn trường**, I want to **tạo câu lạc bộ mới với trưởng CLB**, so that **tổ chức hoạt động được mở rộng**. | MED      | M    | `POST /clubs`       |
+| US-068 | As a **Đoàn trường/Trưởng CLB**, I want to **cập nhật thông tin CLB**, so that **thông tin luôn chính xác**.       | LOW      | S    | `PUT /clubs/:id`    |
+| US-069 | As a **Đoàn trường**, I want to **xóa câu lạc bộ**, so that **tôi loại bỏ CLB không còn hoạt động**.               | LOW      | S    | `DELETE /clubs/:id` |
+| US-070 | As a **User**, I want to **xem danh sách tất cả CLB**, so that **tôi biết các CLB trong hệ thống**.                | LOW      | S    | `GET /clubs`        |
+| US-071 | As a **User**, I want to **xem chi tiết một CLB**, so that **tôi hiểu về CLB đó**.                                 | LOW      | S    | `GET /clubs/:id`    |
 
 ### Epic E-09: Notification System
 
-| ID | User Story | Priority | Est. | API Endpoint |
-|----|------------|----------|------|--------------|
-| US-072 | As a **User**, I want to **xem danh sách thông báo của tôi**, so that **tôi không bỏ lỡ thông tin quan trọng**. | MED | M | `GET /notifications/me` |
-| US-073 | As a **User**, I want to **đánh dấu thông báo đã đọc**, so that **tôi quản lý thông báo hiệu quả**. | LOW | S | `PUT /notifications/:id/read` |
-| US-074 | As a **User**, I want to **đánh dấu tất cả thông báo đã đọc**, so that **tôi xử lý nhanh nhiều thông báo**. | LOW | S | `PUT /notifications/read-all` |
+| ID     | User Story                                                                                                      | Priority | Est. | API Endpoint                  |
+| ------ | --------------------------------------------------------------------------------------------------------------- | -------- | ---- | ----------------------------- |
+| US-072 | As a **User**, I want to **xem danh sách thông báo của tôi**, so that **tôi không bỏ lỡ thông tin quan trọng**. | MED      | M    | `GET /notifications/me`       |
+| US-073 | As a **User**, I want to **đánh dấu thông báo đã đọc**, so that **tôi quản lý thông báo hiệu quả**.             | LOW      | S    | `PUT /notifications/:id/read` |
+| US-074 | As a **User**, I want to **đánh dấu tất cả thông báo đã đọc**, so that **tôi xử lý nhanh nhiều thông báo**.     | LOW      | S    | `PUT /notifications/read-all` |
 
 ### Epic E-10: Statistics & Reporting
 
-| ID | User Story | Priority | Est. | API Endpoint |
-|----|------------|----------|------|--------------|
-| US-075 | As a **Creator/Approver**, I want to **xem thống kê chiến dịch (số tiền, người tham gia)**, so that **tôi đánh giá hiệu quả**. | MED | M | `GET /campaigns/:id/statistics` |
-| US-076 | As a **LCD/Đoàn trường**, I want to **xem thống kê theo khoa**, so that **tôi đánh giá hoạt động khoa**. | LOW | M | `GET /faculties/:id/statistics` |
-| US-077 | As a **Đoàn trường**, I want to **xem thống kê toàn hệ thống**, so that **tôi đánh giá tổng quan hệ thống**. | LOW | M | `GET /statistics/system` |
+| ID     | User Story                                                                                                                     | Priority | Est. | API Endpoint                    |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------ | -------- | ---- | ------------------------------- |
+| US-075 | As a **Creator/Approver**, I want to **xem thống kê chiến dịch (số tiền, người tham gia)**, so that **tôi đánh giá hiệu quả**. | MED      | M    | `GET /campaigns/:id/statistics` |
+| US-076 | As a **LCD/Đoàn trường**, I want to **xem thống kê theo khoa**, so that **tôi đánh giá hoạt động khoa**.                       | LOW      | M    | `GET /faculties/:id/statistics` |
+| US-077 | As a **Đoàn trường**, I want to **xem thống kê toàn hệ thống**, so that **tôi đánh giá tổng quan hệ thống**.                   | LOW      | M    | `GET /statistics/system`        |
 
 ### Epic E-11: File Management
 
-| ID | User Story | Priority | Est. | API Endpoint |
-|----|------------|----------|------|--------------|
-| US-078 | As a **User**, I want to **upload ảnh minh chứng (JPG/PNG/WEBP)**, so that **tôi chứng minh hoạt động/đóng góp**. | HIGH | M | `POST /upload/image` |
-| US-079 | As a **User**, I want to **upload tài liệu (PDF/DOC/XLS)**, so that **tôi lưu trữ kế hoạch/báo cáo**. | HIGH | M | `POST /upload/document` |
+| ID     | User Story                                                                                                        | Priority | Est. | API Endpoint            |
+| ------ | ----------------------------------------------------------------------------------------------------------------- | -------- | ---- | ----------------------- |
+| US-078 | As a **User**, I want to **upload ảnh minh chứng (JPG/PNG/WEBP)**, so that **tôi chứng minh hoạt động/đóng góp**. | HIGH     | M    | `POST /upload/image`    |
+| US-079 | As a **User**, I want to **upload tài liệu (PDF/DOC/XLS)**, so that **tôi lưu trữ kế hoạch/báo cáo**.             | HIGH     | M    | `POST /upload/document` |
 
 ---
 
@@ -1142,173 +1142,173 @@ Scenario: Upload thất bại khi file quá lớn
 
 ### Feature: Auth (`src/features/auth`)
 
-| Task ID | Task Name | Mô tả | Priority |
-|---------|-----------|-------|----------|
-| T-001 | Tạo `auth.validation.ts` | Zod schema cho register/login Student & User | HIGH |
-| T-002 | Tạo `auth.repository.ts` | CRUD operations cho User, Student, RefreshToken | HIGH |
-| T-003 | Tạo `auth.service.ts` | Logic đăng ký, đăng nhập, logout, refresh token | HIGH |
-| T-004 | Tạo `auth.controller.ts` | HTTP handlers với catchAsync wrapper | HIGH |
-| T-005 | Tạo `auth.route.ts` | Định nghĩa routes với validate middleware | HIGH |
-| T-006 | Implement JWT token generation | Access token (15min) + Refresh token (7d) | HIGH |
-| T-007 | Implement Argon2 password hashing | Hash khi đăng ký, verify khi đăng nhập | HIGH |
-| T-008 | Implement cookie-based refresh token | HttpOnly, Secure, SameSite cookies | MED |
-| T-009 | Implement email verification | Tạo token, gửi email, verify token | MED |
-| T-010 | Unit tests cho auth.service | Test các business logic | MED |
+| Task ID | Task Name                            | Mô tả                                           | Priority |
+| ------- | ------------------------------------ | ----------------------------------------------- | -------- |
+| T-001   | Tạo `auth.validation.ts`             | Zod schema cho register/login Student & User    | HIGH     |
+| T-002   | Tạo `auth.repository.ts`             | CRUD operations cho User, Student, RefreshToken | HIGH     |
+| T-003   | Tạo `auth.service.ts`                | Logic đăng ký, đăng nhập, logout, refresh token | HIGH     |
+| T-004   | Tạo `auth.controller.ts`             | HTTP handlers với catchAsync wrapper            | HIGH     |
+| T-005   | Tạo `auth.route.ts`                  | Định nghĩa routes với validate middleware       | HIGH     |
+| T-006   | Implement JWT token generation       | Access token (15min) + Refresh token (7d)       | HIGH     |
+| T-007   | Implement Argon2 password hashing    | Hash khi đăng ký, verify khi đăng nhập          | HIGH     |
+| T-008   | Implement cookie-based refresh token | HttpOnly, Secure, SameSite cookies              | MED      |
+| T-009   | Implement email verification         | Tạo token, gửi email, verify token              | MED      |
+| T-010   | Unit tests cho auth.service          | Test các business logic                         | MED      |
 
 ### Feature: Faculty (`src/features/faculty`)
 
-| Task ID | Task Name | Mô tả | Priority |
-|---------|-----------|-------|----------|
-| T-011 | Tạo `faculty.repository.ts` | Query faculties, tìm theo code | HIGH |
-| T-012 | Tạo `faculty.service.ts` | Logic xác định khoa từ MSSV | HIGH |
-| T-013 | Tạo `faculty.controller.ts` | HTTP handlers | MED |
-| T-014 | Tạo `faculty.route.ts` | Routes GET /faculties | MED |
-| T-015 | Seed faculties data | Tạo data mẫu cho các khoa | LOW |
+| Task ID | Task Name                   | Mô tả                          | Priority |
+| ------- | --------------------------- | ------------------------------ | -------- |
+| T-011   | Tạo `faculty.repository.ts` | Query faculties, tìm theo code | HIGH     |
+| T-012   | Tạo `faculty.service.ts`    | Logic xác định khoa từ MSSV    | HIGH     |
+| T-013   | Tạo `faculty.controller.ts` | HTTP handlers                  | MED      |
+| T-014   | Tạo `faculty.route.ts`      | Routes GET /faculties          | MED      |
+| T-015   | Seed faculties data         | Tạo data mẫu cho các khoa      | LOW      |
 
 ### Feature: Campaign (`src/features/campaign`)
 
-| Task ID | Task Name | Mô tả | Priority |
-|---------|-----------|-------|----------|
-| T-016 | Tạo `campaign.validation.ts` | Zod schema cho create/update/submit/approve | HIGH |
-| T-017 | Tạo `campaign.repository.ts` | CRUD Campaign, query với filter/pagination | HIGH |
-| T-018 | Tạo `campaign.service.ts` | Logic trạng thái, permission check, file upload | HIGH |
-| T-019 | Tạo `campaign.controller.ts` | HTTP handlers cho 13 endpoints | HIGH |
-| T-020 | Tạo `campaign.route.ts` | Routes với auth middleware | HIGH |
-| T-021 | Implement status state machine | Validate transitions DRAFT→PENDING→ACTIVE→COMPLETED | HIGH |
-| T-022 | Implement permission check | Chỉ creator có thể edit/submit | HIGH |
-| T-023 | Implement file upload integration | Tích hợp với upload feature | HIGH |
-| T-024 | Implement notification trigger | Gửi notification khi approve/reject | MED |
-| T-025 | Unit tests cho campaign.service | Test state machine, permissions | MED |
+| Task ID | Task Name                         | Mô tả                                               | Priority |
+| ------- | --------------------------------- | --------------------------------------------------- | -------- |
+| T-016   | Tạo `campaign.validation.ts`      | Zod schema cho create/update/submit/approve         | HIGH     |
+| T-017   | Tạo `campaign.repository.ts`      | CRUD Campaign, query với filter/pagination          | HIGH     |
+| T-018   | Tạo `campaign.service.ts`         | Logic trạng thái, permission check, file upload     | HIGH     |
+| T-019   | Tạo `campaign.controller.ts`      | HTTP handlers cho 13 endpoints                      | HIGH     |
+| T-020   | Tạo `campaign.route.ts`           | Routes với auth middleware                          | HIGH     |
+| T-021   | Implement status state machine    | Validate transitions DRAFT→PENDING→ACTIVE→COMPLETED | HIGH     |
+| T-022   | Implement permission check        | Chỉ creator có thể edit/submit                      | HIGH     |
+| T-023   | Implement file upload integration | Tích hợp với upload feature                         | HIGH     |
+| T-024   | Implement notification trigger    | Gửi notification khi approve/reject                 | MED      |
+| T-025   | Unit tests cho campaign.service   | Test state machine, permissions                     | MED      |
 
 ### Feature: Money Donation (`src/features/moneyDonation`)
 
-| Task ID | Task Name | Mô tả | Priority |
-|---------|-----------|-------|----------|
-| T-026 | Tạo `moneyDonation.validation.ts` | Zod schema cho phase & donation | HIGH |
-| T-027 | Tạo `moneyDonation.repository.ts` | CRUD MoneyDonationCampaign, Donation | HIGH |
-| T-028 | Tạo `moneyDonation.service.ts` | Logic tạo phase, progress, verify donation | HIGH |
-| T-029 | Tạo `moneyDonation.controller.ts` | HTTP handlers | HIGH |
-| T-030 | Tạo `moneyDonation.route.ts` | Routes | HIGH |
-| T-031 | Implement progress calculation | Tính currentAmount, percentage | MED |
-| T-032 | Implement point calculation | Cộng điểm khi verify donation | HIGH |
-| T-033 | Unit tests cho moneyDonation.service | Test progress, verify logic | MED |
+| Task ID | Task Name                            | Mô tả                                      | Priority |
+| ------- | ------------------------------------ | ------------------------------------------ | -------- |
+| T-026   | Tạo `moneyDonation.validation.ts`    | Zod schema cho phase & donation            | HIGH     |
+| T-027   | Tạo `moneyDonation.repository.ts`    | CRUD MoneyDonationCampaign, Donation       | HIGH     |
+| T-028   | Tạo `moneyDonation.service.ts`       | Logic tạo phase, progress, verify donation | HIGH     |
+| T-029   | Tạo `moneyDonation.controller.ts`    | HTTP handlers                              | HIGH     |
+| T-030   | Tạo `moneyDonation.route.ts`         | Routes                                     | HIGH     |
+| T-031   | Implement progress calculation       | Tính currentAmount, percentage             | MED      |
+| T-032   | Implement point calculation          | Cộng điểm khi verify donation              | HIGH     |
+| T-033   | Unit tests cho moneyDonation.service | Test progress, verify logic                | MED      |
 
 ### Feature: Item Donation (`src/features/itemDonation`)
 
-| Task ID | Task Name | Mô tả | Priority |
-|---------|-----------|-------|----------|
-| T-034 | Tạo `itemDonation.validation.ts` | Zod schema | HIGH |
-| T-035 | Tạo `itemDonation.repository.ts` | CRUD ItemDonationCampaign, Donation | HIGH |
-| T-036 | Tạo `itemDonation.service.ts` | Logic tạo phase, verify donation | HIGH |
-| T-037 | Tạo `itemDonation.controller.ts` | HTTP handlers | HIGH |
-| T-038 | Tạo `itemDonation.route.ts` | Routes | HIGH |
-| T-039 | Unit tests | | MED |
+| Task ID | Task Name                        | Mô tả                               | Priority |
+| ------- | -------------------------------- | ----------------------------------- | -------- |
+| T-034   | Tạo `itemDonation.validation.ts` | Zod schema                          | HIGH     |
+| T-035   | Tạo `itemDonation.repository.ts` | CRUD ItemDonationCampaign, Donation | HIGH     |
+| T-036   | Tạo `itemDonation.service.ts`    | Logic tạo phase, verify donation    | HIGH     |
+| T-037   | Tạo `itemDonation.controller.ts` | HTTP handlers                       | HIGH     |
+| T-038   | Tạo `itemDonation.route.ts`      | Routes                              | HIGH     |
+| T-039   | Unit tests                       |                                     | MED      |
 
 ### Feature: Event (`src/features/event`)
 
-| Task ID | Task Name | Mô tả | Priority |
-|---------|-----------|-------|----------|
-| T-040 | Tạo `event.validation.ts` | Zod schema cho event & participant | HIGH |
-| T-041 | Tạo `event.repository.ts` | CRUD EventCampaign, Participant | HIGH |
-| T-042 | Tạo `event.service.ts` | Logic tạo event, registration, check-in, certificate | HIGH |
-| T-043 | Tạo `event.controller.ts` | HTTP handlers cho 9 endpoints | HIGH |
-| T-044 | Tạo `event.route.ts` | Routes | HIGH |
-| T-045 | Implement registration validation | Check max participants, deadline, duplicate | HIGH |
-| T-046 | Implement check-in logic | Validate status APPROVED, update isCheckedIn | HIGH |
-| T-047 | Implement certificate email | Gửi email với attachment qua nodemailer | HIGH |
-| T-048 | Implement bulk certificate | Gửi hàng loạt email với error handling | HIGH |
-| T-049 | Unit tests cho event.service | Test registration, check-in logic | MED |
+| Task ID | Task Name                         | Mô tả                                                | Priority |
+| ------- | --------------------------------- | ---------------------------------------------------- | -------- |
+| T-040   | Tạo `event.validation.ts`         | Zod schema cho event & participant                   | HIGH     |
+| T-041   | Tạo `event.repository.ts`         | CRUD EventCampaign, Participant                      | HIGH     |
+| T-042   | Tạo `event.service.ts`            | Logic tạo event, registration, check-in, certificate | HIGH     |
+| T-043   | Tạo `event.controller.ts`         | HTTP handlers cho 9 endpoints                        | HIGH     |
+| T-044   | Tạo `event.route.ts`              | Routes                                               | HIGH     |
+| T-045   | Implement registration validation | Check max participants, deadline, duplicate          | HIGH     |
+| T-046   | Implement check-in logic          | Validate status APPROVED, update isCheckedIn         | HIGH     |
+| T-047   | Implement certificate email       | Gửi email với attachment qua nodemailer              | HIGH     |
+| T-048   | Implement bulk certificate        | Gửi hàng loạt email với error handling               | HIGH     |
+| T-049   | Unit tests cho event.service      | Test registration, check-in logic                    | MED      |
 
 ### Feature: Student (`src/features/student`)
 
-| Task ID | Task Name | Mô tả | Priority |
-|---------|-----------|-------|----------|
-| T-050 | Tạo `student.validation.ts` | Zod schema cho update profile | MED |
-| T-051 | Tạo `student.repository.ts` | Query Student, titles, donations | HIGH |
-| T-052 | Tạo `student.service.ts` | Logic get profile, update, points history | HIGH |
-| T-053 | Tạo `student.controller.ts` | HTTP handlers | HIGH |
-| T-054 | Tạo `student.route.ts` | Routes với auth middleware (Student role) | HIGH |
-| T-055 | Implement points history query | Query donations & participants với points | MED |
-| T-056 | Unit tests | | LOW |
+| Task ID | Task Name                      | Mô tả                                     | Priority |
+| ------- | ------------------------------ | ----------------------------------------- | -------- |
+| T-050   | Tạo `student.validation.ts`    | Zod schema cho update profile             | MED      |
+| T-051   | Tạo `student.repository.ts`    | Query Student, titles, donations          | HIGH     |
+| T-052   | Tạo `student.service.ts`       | Logic get profile, update, points history | HIGH     |
+| T-053   | Tạo `student.controller.ts`    | HTTP handlers                             | HIGH     |
+| T-054   | Tạo `student.route.ts`         | Routes với auth middleware (Student role) | HIGH     |
+| T-055   | Implement points history query | Query donations & participants với points | MED      |
+| T-056   | Unit tests                     |                                           | LOW      |
 
 ### Feature: Title (Gamification) (`src/features/title`)
 
-| Task ID | Task Name | Mô tả | Priority |
-|---------|-----------|-------|----------|
-| T-057 | Tạo `title.validation.ts` | Zod schema cho CRUD title | MED |
-| T-058 | Tạo `title.repository.ts` | CRUD Title, StudentTitle | MED |
-| T-059 | Tạo `title.service.ts` | Logic CRUD, tự động unlock title khi đủ điểm | MED |
-| T-060 | Tạo `title.controller.ts` | HTTP handlers | MED |
-| T-061 | Tạo `title.route.ts` | Routes (admin: DOANTRUONG) | MED |
-| T-062 | Implement auto-title unlock | Kiểm tra & gán title khi student đạt minPoints | MED |
-| T-063 | Unit tests | | LOW |
+| Task ID | Task Name                   | Mô tả                                          | Priority |
+| ------- | --------------------------- | ---------------------------------------------- | -------- |
+| T-057   | Tạo `title.validation.ts`   | Zod schema cho CRUD title                      | MED      |
+| T-058   | Tạo `title.repository.ts`   | CRUD Title, StudentTitle                       | MED      |
+| T-059   | Tạo `title.service.ts`      | Logic CRUD, tự động unlock title khi đủ điểm   | MED      |
+| T-060   | Tạo `title.controller.ts`   | HTTP handlers                                  | MED      |
+| T-061   | Tạo `title.route.ts`        | Routes (admin: DOANTRUONG)                     | MED      |
+| T-062   | Implement auto-title unlock | Kiểm tra & gán title khi student đạt minPoints | MED      |
+| T-063   | Unit tests                  |                                                | LOW      |
 
 ### Feature: Club (`src/features/club`)
 
-| Task ID | Task Name | Mô tả | Priority |
-|---------|-----------|-------|----------|
-| T-064 | Tạo `club.validation.ts` | Zod schema | LOW |
-| T-065 | Tạo `club.repository.ts` | CRUD Club | LOW |
-| T-066 | Tạo `club.service.ts` | Logic CRUD với permission | LOW |
-| T-067 | Tạo `club.controller.ts` | HTTP handlers | LOW |
-| T-068 | Tạo `club.route.ts` | Routes (admin: DOANTRUONG) | LOW |
-| T-069 | Unit tests | | LOW |
+| Task ID | Task Name                | Mô tả                      | Priority |
+| ------- | ------------------------ | -------------------------- | -------- |
+| T-064   | Tạo `club.validation.ts` | Zod schema                 | LOW      |
+| T-065   | Tạo `club.repository.ts` | CRUD Club                  | LOW      |
+| T-066   | Tạo `club.service.ts`    | Logic CRUD với permission  | LOW      |
+| T-067   | Tạo `club.controller.ts` | HTTP handlers              | LOW      |
+| T-068   | Tạo `club.route.ts`      | Routes (admin: DOANTRUONG) | LOW      |
+| T-069   | Unit tests               |                            | LOW      |
 
 ### Feature: Notification (`src/features/notification`)
 
-| Task ID | Task Name | Mô tả | Priority |
-|---------|-----------|-------|----------|
-| T-070 | Tạo Notification model trong Prisma | Bảng notifications | MED |
-| T-071 | Tạo `notification.repository.ts` | CRUD Notification | MED |
-| T-072 | Tạo `notification.service.ts` | Logic tạo notification, mark read | MED |
-| T-073 | Tạo `notification.controller.ts` | HTTP handlers | MED |
-| T-074 | Tạo `notification.route.ts` | Routes | MED |
-| T-075 | Implement notification helper | Hàm tiện ích để tạo notification từ các feature khác | MED |
-| T-076 | Unit tests | | LOW |
+| Task ID | Task Name                           | Mô tả                                                | Priority |
+| ------- | ----------------------------------- | ---------------------------------------------------- | -------- |
+| T-070   | Tạo Notification model trong Prisma | Bảng notifications                                   | MED      |
+| T-071   | Tạo `notification.repository.ts`    | CRUD Notification                                    | MED      |
+| T-072   | Tạo `notification.service.ts`       | Logic tạo notification, mark read                    | MED      |
+| T-073   | Tạo `notification.controller.ts`    | HTTP handlers                                        | MED      |
+| T-074   | Tạo `notification.route.ts`         | Routes                                               | MED      |
+| T-075   | Implement notification helper       | Hàm tiện ích để tạo notification từ các feature khác | MED      |
+| T-076   | Unit tests                          |                                                      | LOW      |
 
 ### Feature: Statistics (`src/features/statistics`)
 
-| Task ID | Task Name | Mô tả | Priority |
-|---------|-----------|-------|----------|
-| T-077 | Tạo `statistics.service.ts` | Aggregation queries | LOW |
-| T-078 | Tạo `statistics.controller.ts` | HTTP handlers | LOW |
-| T-079 | Tạo `statistics.route.ts` | Routes với permission check | LOW |
-| T-080 | Implement campaign statistics | Total donations, participants, check-ins | LOW |
-| T-081 | Implement faculty statistics | Thống kê theo khoa | LOW |
-| T-082 | Implement system statistics | Tổng quan toàn hệ thống | LOW |
+| Task ID | Task Name                      | Mô tả                                    | Priority |
+| ------- | ------------------------------ | ---------------------------------------- | -------- |
+| T-077   | Tạo `statistics.service.ts`    | Aggregation queries                      | LOW      |
+| T-078   | Tạo `statistics.controller.ts` | HTTP handlers                            | LOW      |
+| T-079   | Tạo `statistics.route.ts`      | Routes với permission check              | LOW      |
+| T-080   | Implement campaign statistics  | Total donations, participants, check-ins | LOW      |
+| T-081   | Implement faculty statistics   | Thống kê theo khoa                       | LOW      |
+| T-082   | Implement system statistics    | Tổng quan toàn hệ thống                  | LOW      |
 
 ### Feature: Upload (`src/features/upload`)
 
-| Task ID | Task Name | Mô tả | Priority |
-|---------|-----------|-------|----------|
-| T-083 | Tạo `upload.validation.ts` | Validate file type, size | HIGH |
-| T-084 | Cấu hình storage | Local storage hoặc cloud (S3, Cloudinary) | HIGH |
-| T-085 | Tạo `upload.controller.ts` | HTTP handlers cho image & document | HIGH |
-| T-086 | Tạo `upload.route.ts` | Routes với multer middleware | HIGH |
-| T-087 | Implement file naming | UUID + extension, organized folder structure | HIGH |
-| T-088 | Implement file validation | Magic number check, MIME type validation | MED |
+| Task ID | Task Name                  | Mô tả                                        | Priority |
+| ------- | -------------------------- | -------------------------------------------- | -------- |
+| T-083   | Tạo `upload.validation.ts` | Validate file type, size                     | HIGH     |
+| T-084   | Cấu hình storage           | Local storage hoặc cloud (S3, Cloudinary)    | HIGH     |
+| T-085   | Tạo `upload.controller.ts` | HTTP handlers cho image & document           | HIGH     |
+| T-086   | Tạo `upload.route.ts`      | Routes với multer middleware                 | HIGH     |
+| T-087   | Implement file naming      | UUID + extension, organized folder structure | HIGH     |
+| T-088   | Implement file validation  | Magic number check, MIME type validation     | MED      |
 
 ### Common & Infrastructure
 
-| Task ID | Task Name | Mô tả | Priority |
-|---------|-----------|-------|----------|
-| T-089 | Tạo `src/common/middleware/auth.ts` | Middleware verify JWT, extract user info | HIGH |
-| T-090 | Tạo `src/common/middleware/authorize.ts` | Middleware kiểm tra role (RBAC) | HIGH |
-| T-091 | Tạo `src/common/middleware/validate.ts` | Middleware validate Zod schema | HIGH |
-| T-092 | Cấu hình Swagger documentation | Tích hợp swagger-jsdoc, swagger-ui-express | LOW |
-| T-093 | Cấu hình rate limiting | Giới hạn request cho auth endpoints | MED |
-| T-094 | Cấu hình logging | Winston logger cho error & info | MED |
-| T-095 | Tạo seed data script | Students, Users, Clubs, Titles mẫu | LOW |
-| T-096 | Tạo Docker configuration | Dockerfile, docker-compose.yml | LOW |
-| T-097 | Cấu hình CI/CD | GitHub Actions cho test & deploy | LOW |
+| Task ID | Task Name                                | Mô tả                                      | Priority |
+| ------- | ---------------------------------------- | ------------------------------------------ | -------- |
+| T-089   | Tạo `src/common/middleware/auth.ts`      | Middleware verify JWT, extract user info   | HIGH     |
+| T-090   | Tạo `src/common/middleware/authorize.ts` | Middleware kiểm tra role (RBAC)            | HIGH     |
+| T-091   | Tạo `src/common/middleware/validate.ts`  | Middleware validate Zod schema             | HIGH     |
+| T-092   | Cấu hình Swagger documentation           | Tích hợp swagger-jsdoc, swagger-ui-express | LOW      |
+| T-093   | Cấu hình rate limiting                   | Giới hạn request cho auth endpoints        | MED      |
+| T-094   | Cấu hình logging                         | Winston logger cho error & info            | MED      |
+| T-095   | Tạo seed data script                     | Students, Users, Clubs, Titles mẫu         | LOW      |
+| T-096   | Tạo Docker configuration                 | Dockerfile, docker-compose.yml             | LOW      |
+| T-097   | Cấu hình CI/CD                           | GitHub Actions cho test & deploy           | LOW      |
 
 ### Prisma Schema Tasks
 
-| Task ID | Task Name | Mô tả | Priority |
-|---------|-----------|-------|----------|
-| T-098 | Tạo migration cho Notification model | Prisma migrate | MED |
-| T-099 | Tạo migration cho PointsHistory model | Nếu cần bảng riêng cho lịch sử điểm | LOW |
-| T-100 | Seed data cho Titles | Danh hiệu mẫu (TNX, TNN, TNA, TNV, TNTH) | LOW |
+| Task ID | Task Name                             | Mô tả                                    | Priority |
+| ------- | ------------------------------------- | ---------------------------------------- | -------- |
+| T-098   | Tạo migration cho Notification model  | Prisma migrate                           | MED      |
+| T-099   | Tạo migration cho PointsHistory model | Nếu cần bảng riêng cho lịch sử điểm      | LOW      |
+| T-100   | Seed data cho Titles                  | Danh hiệu mẫu (TNX, TNN, TNA, TNV, TNTH) | LOW      |
 
 ---
 
@@ -1316,72 +1316,72 @@ Scenario: Upload thất bại khi file quá lớn
 
 ### Thống kê Product Backlog
 
-| Epic | Số User Stories | High Priority | Med Priority | Low Priority |
-|------|-----------------|---------------|--------------|--------------|
-| E-01: Auth & Auth | 9 | 4 | 4 | 1 |
-| E-02: Faculty | 3 | 1 | 1 | 1 |
-| E-03: Campaign | 13 | 9 | 4 | 0 |
-| E-04: Money Donation | 11 | 5 | 5 | 1 |
-| E-05: Item Donation | 7 | 2 | 4 | 1 |
-| E-06: Event | 14 | 7 | 6 | 1 |
-| E-07: Gamification | 9 | 1 | 4 | 4 |
-| E-08: Club | 5 | 0 | 1 | 4 |
-| E-09: Notification | 3 | 0 | 1 | 2 |
-| E-10: Statistics | 3 | 0 | 1 | 2 |
-| E-11: File Management | 2 | 2 | 0 | 0 |
-| **TỔNG** | **79** | **31** | **31** | **17** |
+| Epic                  | Số User Stories | High Priority | Med Priority | Low Priority |
+| --------------------- | --------------- | ------------- | ------------ | ------------ |
+| E-01: Auth & Auth     | 9               | 4             | 4            | 1            |
+| E-02: Faculty         | 3               | 1             | 1            | 1            |
+| E-03: Campaign        | 13              | 9             | 4            | 0            |
+| E-04: Money Donation  | 11              | 5             | 5            | 1            |
+| E-05: Item Donation   | 7               | 2             | 4            | 1            |
+| E-06: Event           | 14              | 7             | 6            | 1            |
+| E-07: Gamification    | 9               | 1             | 4            | 4            |
+| E-08: Club            | 5               | 0             | 1            | 4            |
+| E-09: Notification    | 3               | 0             | 1            | 2            |
+| E-10: Statistics      | 3               | 0             | 1            | 2            |
+| E-11: File Management | 2               | 2             | 0            | 0            |
+| **TỔNG**              | **79**          | **31**        | **31**       | **17**       |
 
 ### Thống kê Technical Tasks
 
-| Feature | Số Tasks | High Priority | Med Priority | Low Priority |
-|---------|----------|---------------|--------------|--------------|
-| Auth | 10 | 5 | 4 | 1 |
-| Faculty | 5 | 2 | 2 | 1 |
-| Campaign | 10 | 7 | 2 | 1 |
-| Money Donation | 8 | 5 | 2 | 1 |
-| Item Donation | 6 | 4 | 1 | 1 |
-| Event | 10 | 6 | 3 | 1 |
-| Student | 7 | 3 | 3 | 1 |
-| Title | 7 | 0 | 5 | 2 |
-| Club | 6 | 0 | 2 | 4 |
-| Notification | 7 | 0 | 5 | 2 |
-| Statistics | 6 | 0 | 1 | 5 |
-| Upload | 6 | 4 | 1 | 1 |
-| Common & Infrastructure | 9 | 3 | 3 | 3 |
-| Prisma Schema | 3 | 0 | 1 | 2 |
-| **TỔNG** | **100** | **39** | **35** | **26** |
+| Feature                 | Số Tasks | High Priority | Med Priority | Low Priority |
+| ----------------------- | -------- | ------------- | ------------ | ------------ |
+| Auth                    | 10       | 5             | 4            | 1            |
+| Faculty                 | 5        | 2             | 2            | 1            |
+| Campaign                | 10       | 7             | 2            | 1            |
+| Money Donation          | 8        | 5             | 2            | 1            |
+| Item Donation           | 6        | 4             | 1            | 1            |
+| Event                   | 10       | 6             | 3            | 1            |
+| Student                 | 7        | 3             | 3            | 1            |
+| Title                   | 7        | 0             | 5            | 2            |
+| Club                    | 6        | 0             | 2            | 4            |
+| Notification            | 7        | 0             | 5            | 2            |
+| Statistics              | 6        | 0             | 1            | 5            |
+| Upload                  | 6        | 4             | 1            | 1            |
+| Common & Infrastructure | 9        | 3             | 3            | 3            |
+| Prisma Schema           | 3        | 0             | 1            | 2            |
+| **TỔNG**                | **100**  | **39**        | **35**       | **26**       |
 
 ---
 
 ## PHỤ LỤC: ERROR CODES REFERENCE
 
-| Code | Mô tả |
-|------|-------|
-| UNAUTHORIZED | Token không hợp lệ hoặc hết hạn |
-| FORBIDDEN | Không có quyền thực hiện hành động |
-| NOT_FOUND | Resource không tồn tại |
-| VALIDATION_ERROR | Dữ liệu không hợp lệ |
-| CAMPAIGN_NOT_ACTIVE | Chiến dịch không ở trạng thái hoạt động |
-| REGISTRATION_CLOSED | Đã hết hạn đăng ký |
-| MAX_PARTICIPANTS_REACHED | Đã đủ số lượng tham gia |
-| ALREADY_REGISTERED | Đã đăng ký sự kiện này |
-| FACULTY_MISMATCH | Sinh viên không thuộc khoa được chỉ định |
-| CONFLICT | Resource đã tồn tại |
+| Code                     | Mô tả                                    |
+| ------------------------ | ---------------------------------------- |
+| UNAUTHORIZED             | Token không hợp lệ hoặc hết hạn          |
+| FORBIDDEN                | Không có quyền thực hiện hành động       |
+| NOT_FOUND                | Resource không tồn tại                   |
+| VALIDATION_ERROR         | Dữ liệu không hợp lệ                     |
+| CAMPAIGN_NOT_ACTIVE      | Chiến dịch không ở trạng thái hoạt động  |
+| REGISTRATION_CLOSED      | Đã hết hạn đăng ký                       |
+| MAX_PARTICIPANTS_REACHED | Đã đủ số lượng tham gia                  |
+| ALREADY_REGISTERED       | Đã đăng ký sự kiện này                   |
+| FACULTY_MISMATCH         | Sinh viên không thuộc khoa được chỉ định |
+| CONFLICT                 | Resource đã tồn tại                      |
 
 ---
 
 ## PHỤ LỤC: PERMISSION MATRIX
 
-| Action | Student | CLB | LCD | DOANTRUONG |
-|--------|---------|-----|-----|------------|
-| Xem chiến dịch (cùng khoa/toàn trường) | ✓ | ✓ | ✓ | ✓ |
-| Tạo chiến dịch | ✗ | ✓ (toàn trường) | ✓ (khoa) | ✓ (toàn trường) |
-| Duyệt chiến dịch | ✗ | ✗ | ✗ | ✓ |
-| Đăng ký tham gia event | ✓ | ✓ | ✓ | ✓ |
-| Quyên góp tiền/vật | ✓ | ✓ | ✓ | ✓ |
-| Duyệt donation/participant | ✗ | ✓ (creator) | ✓ (creator) | ✓ (all) |
-| Quản lý CLB | ✗ | ✗ | ✗ | ✓ |
+| Action                                 | Student | CLB             | LCD         | DOANTRUONG      |
+| -------------------------------------- | ------- | --------------- | ----------- | --------------- |
+| Xem chiến dịch (cùng khoa/toàn trường) | ✓       | ✓               | ✓           | ✓               |
+| Tạo chiến dịch                         | ✗       | ✓ (toàn trường) | ✓ (khoa)    | ✓ (toàn trường) |
+| Duyệt chiến dịch                       | ✗       | ✗               | ✗           | ✓               |
+| Đăng ký tham gia event                 | ✓       | ✓               | ✓           | ✓               |
+| Quyên góp tiền/vật                     | ✓       | ✓               | ✓           | ✓               |
+| Duyệt donation/participant             | ✗       | ✓ (creator)     | ✓ (creator) | ✓ (all)         |
+| Quản lý CLB                            | ✗       | ✗               | ✗           | ✓               |
 
 ---
 
-*Document generated for BKVolunteers Backend Project*
+_Document generated for BKVolunteers Backend Project_

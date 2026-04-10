@@ -9,6 +9,7 @@
 ## Context
 
 Project cần triển khai lại các API phù hợp với database schema mới. Schema đã có các model:
+
 - **Faculty**: Danh mục khoa
 - **User**: Tài khoản quản lý (Admin, Đoàn trường, LCD, CLB) với role UserRole enum
 - **Student**: Sinh viên tham gia hoạt động tình nguyện với MSSV
@@ -16,6 +17,7 @@ Project cần triển khai lại các API phù hợp với database schema mới
 - **Auth models**: Account, RefreshToken, ResetToken, EmailVerificationToken
 
 Existing auth module có:
+
 - signup, login, logout, refresh, me, change-password endpoints
 - Validation với Zod
 - JWT access + refresh token flow
@@ -80,16 +82,16 @@ export type UserType = 'user' | 'student'
 
 export interface UserSignUpCredentials {
     username: string
-    email: string      // @sv1.dut.udn.vn domain
+    email: string // @sv1.dut.udn.vn domain
     password: string
     passwordConfirmed: string
-    facultyId?: number  // optional, LCD/CLB must have facultyId
-    role?: UserRole     // default: LCD
+    facultyId?: number // optional, LCD/CLB must have facultyId
+    role?: UserRole // default: LCD
 }
 
 export interface StudentSignUpCredentials {
     mssv: string
-    email: string       // mssv@sv1.dut.udn.vn (auto-generated)
+    email: string // mssv@sv1.dut.udn.vn (auto-generated)
     password: string
     passwordConfirmed: string
     fullName: string
@@ -114,19 +116,20 @@ export interface JwtPayload {
 
 #### Auth Endpoints
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| POST | `/auth/signup` | Register new User | Public |
-| POST | `/auth/students/signup` | Register new Student | Public |
-| POST | `/auth/login` | Login (User or Student) | Public |
-| POST | `/auth/logout` | Logout | Required |
-| POST | `/auth/refresh` | Refresh access token | Cookie |
-| GET | `/auth/me` | Get current user/student | Required |
-| PATCH | `/auth/change-password` | Change password | Required |
+| Method | Endpoint                | Description              | Auth     |
+| ------ | ----------------------- | ------------------------ | -------- |
+| POST   | `/auth/signup`          | Register new User        | Public   |
+| POST   | `/auth/students/signup` | Register new Student     | Public   |
+| POST   | `/auth/login`           | Login (User or Student)  | Public   |
+| POST   | `/auth/logout`          | Logout                   | Required |
+| POST   | `/auth/refresh`         | Refresh access token     | Cookie   |
+| GET    | `/auth/me`              | Get current user/student | Required |
+| PATCH  | `/auth/change-password` | Change password          | Required |
 
 #### Signup Flow
 
 **User Signup**:
+
 1. Validate email ends with `@sv1.dut.udn.vn`
 2. Check email not exists in User table
 3. Create User with role (default: LCD)
@@ -134,6 +137,7 @@ export interface JwtPayload {
 5. Send verification email
 
 **Student Signup**:
+
 1. Validate MSSV format
 2. Auto-generate email: `{mssv}@sv1.dut.udn.vn`
 3. Check MSSV not exists in Student table
@@ -146,42 +150,48 @@ export interface JwtPayload {
 
 **Hierarchical Permissions** (via `restrictTo` middleware):
 
-| Role | Scope | Permissions |
-|------|-------|-------------|
-| DOANTRUONG | Campus-wide | All faculties, all clubs, approve campaigns |
-| LCD | Faculty-level | Own faculty, clubs in faculty, manage students in faculty |
-| CLB | Club-level | Own club, campaigns for own club |
+| Role       | Scope         | Permissions                                               |
+| ---------- | ------------- | --------------------------------------------------------- |
+| DOANTRUONG | Campus-wide   | All faculties, all clubs, approve campaigns               |
+| LCD        | Faculty-level | Own faculty, clubs in faculty, manage students in faculty |
+| CLB        | Club-level    | Own club, campaigns for own club                          |
 
 **Implementation**:
+
 ```typescript
 // src/common/middleware/restrictTo.ts
 export const restrictTo = (...allowedRoles: UserRole[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    if (req.payload?.userType !== 'user') {
-      throw new ApiError(HttpStatus.FORBIDDEN, 'Access denied')
+    return (req: Request, res: Response, next: NextFunction) => {
+        if (req.payload?.userType !== 'user') {
+            throw new ApiError(HttpStatus.FORBIDDEN, 'Access denied')
+        }
+        if (!allowedRoles.includes(req.payload.role)) {
+            throw new ApiError(HttpStatus.FORBIDDEN, 'Insufficient permissions')
+        }
+        next()
     }
-    if (!allowedRoles.includes(req.payload.role)) {
-      throw new ApiError(HttpStatus.FORBIDDEN, 'Insufficient permissions')
-    }
-    next()
-  }
 }
 
 // Check faculty access for LCD/CLB
 export const restrictToFaculty = () => {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    const userFacultyId = req.user?.facultyId
-    const targetFacultyId = parseInt(req.params.facultyId || req.body.facultyId)
+    return async (req: Request, res: Response, next: NextFunction) => {
+        const userFacultyId = req.user?.facultyId
+        const targetFacultyId = parseInt(
+            req.params.facultyId || req.body.facultyId
+        )
 
-    if (req.payload?.role === 'DOANTRUONG') {
-      return next() // Campus-wide access
-    }
+        if (req.payload?.role === 'DOANTRUONG') {
+            return next() // Campus-wide access
+        }
 
-    if (userFacultyId !== targetFacultyId) {
-      throw new ApiError(HttpStatus.FORBIDDEN, 'Access denied for this faculty')
+        if (userFacultyId !== targetFacultyId) {
+            throw new ApiError(
+                HttpStatus.FORBIDDEN,
+                'Access denied for this faculty'
+            )
+        }
+        next()
     }
-    next()
-  }
 }
 ```
 
@@ -191,12 +201,12 @@ export const restrictToFaculty = () => {
 
 ### Faculty Endpoints
 
-| Method | Endpoint | Description | Auth | Role |
-|--------|----------|-------------|------|------|
-| GET | `/faculties` | List all faculties | Public | - |
-| GET | `/faculties/:id` | Get faculty by ID | Public | - |
-| POST | `/faculties` | Create faculty | Required | DOANTRUONG |
-| PATCH | `/faculties/:id` | Update faculty | Required | DOANTRUONG |
+| Method | Endpoint         | Description         | Auth     | Role       |
+| ------ | ---------------- | ------------------- | -------- | ---------- |
+| GET    | `/faculties`     | List all faculties  | Public   | -          |
+| GET    | `/faculties/:id` | Get faculty by ID   | Public   | -          |
+| POST   | `/faculties`     | Create faculty      | Required | DOANTRUONG |
+| PATCH  | `/faculties/:id` | Update faculty      | Required | DOANTRUONG |
 | DELETE | `/faculties/:id` | Soft delete faculty | Required | DOANTRUONG |
 
 ### Faculty Types
@@ -204,8 +214,8 @@ export const restrictToFaculty = () => {
 ```typescript
 // src/features/faculty/types.ts
 export interface CreateFacultyDto {
-    code: string    // e.g., "CNTT", "DT"
-    name: string    // e.g., "Công nghệ thông tin"
+    code: string // e.g., "CNTT", "DT"
+    name: string // e.g., "Công nghệ thông tin"
 }
 
 export interface UpdateFacultyDto {
@@ -220,13 +230,13 @@ export interface UpdateFacultyDto {
 
 ### User Endpoints
 
-| Method | Endpoint | Description | Auth | Role |
-|--------|----------|-------------|------|------|
-| GET | `/users` | List users (filtered by faculty) | Required | DOANTRUONG, LCD |
-| GET | `/users/:id` | Get user by ID | Required | - |
-| POST | `/users` | Create user (admin-created) | Required | DOANTRUONG, LCD |
-| PATCH | `/users/:id` | Update user | Required | - |
-| DELETE | `/users/:id` | Soft delete user | Required | DOANTRUONG |
+| Method | Endpoint     | Description                      | Auth     | Role            |
+| ------ | ------------ | -------------------------------- | -------- | --------------- |
+| GET    | `/users`     | List users (filtered by faculty) | Required | DOANTRUONG, LCD |
+| GET    | `/users/:id` | Get user by ID                   | Required | -               |
+| POST   | `/users`     | Create user (admin-created)      | Required | DOANTRUONG, LCD |
+| PATCH  | `/users/:id` | Update user                      | Required | -               |
+| DELETE | `/users/:id` | Soft delete user                 | Required | DOANTRUONG      |
 
 ### Permission Rules
 
@@ -243,7 +253,7 @@ export interface CreateUserDto {
     email: string
     password: string
     role: UserRole
-    facultyId?: number  // Required for LCD/CLB
+    facultyId?: number // Required for LCD/CLB
 }
 
 export interface UpdateUserDto {
@@ -260,13 +270,13 @@ export interface UpdateUserDto {
 
 ### Student Endpoints
 
-| Method | Endpoint | Description | Auth | Role |
-|--------|----------|-------------|------|------|
-| GET | `/students` | List students (filtered by faculty) | Required | DOANTRUONG, LCD |
-| GET | `/students/:id` | Get student by ID | Required | - |
-| GET | `/students/mssv/:mssv` | Get student by MSSV | Required | DOANTRUONG, LCD |
-| PATCH | `/students/:id` | Update student | Required | - |
-| DELETE | `/students/:id` | Soft delete student | Required | DOANTRUONG |
+| Method | Endpoint               | Description                         | Auth     | Role            |
+| ------ | ---------------------- | ----------------------------------- | -------- | --------------- |
+| GET    | `/students`            | List students (filtered by faculty) | Required | DOANTRUONG, LCD |
+| GET    | `/students/:id`        | Get student by ID                   | Required | -               |
+| GET    | `/students/mssv/:mssv` | Get student by MSSV                 | Required | DOANTRUONG, LCD |
+| PATCH  | `/students/:id`        | Update student                      | Required | -               |
+| DELETE | `/students/:id`        | Soft delete student                 | Required | DOANTRUONG      |
 
 ### Permission Rules
 
@@ -292,13 +302,13 @@ export interface UpdateStudentDto {
 
 ### Club Endpoints
 
-| Method | Endpoint | Description | Auth | Role |
-|--------|----------|-------------|------|------|
-| GET | `/clubs` | List clubs (filtered by faculty) | Public | - |
-| GET | `/clubs/:id` | Get club by ID | Public | - |
-| POST | `/clubs` | Create club | Required | DOANTRUONG, LCD |
-| PATCH | `/clubs/:id` | Update club | Required | LCD, CLB (own) |
-| DELETE | `/clubs/:id` | Soft delete club | Required | DOANTRUONG |
+| Method | Endpoint     | Description                      | Auth     | Role            |
+| ------ | ------------ | -------------------------------- | -------- | --------------- |
+| GET    | `/clubs`     | List clubs (filtered by faculty) | Public   | -               |
+| GET    | `/clubs/:id` | Get club by ID                   | Public   | -               |
+| POST   | `/clubs`     | Create club                      | Required | DOANTRUONG, LCD |
+| PATCH  | `/clubs/:id` | Update club                      | Required | LCD, CLB (own)  |
+| DELETE | `/clubs/:id` | Soft delete club                 | Required | DOANTRUONG      |
 
 ### Permission Rules
 
@@ -312,8 +322,8 @@ export interface UpdateStudentDto {
 // src/features/club/types.ts
 export interface CreateClubDto {
     name: string
-    facultyId?: number  // null = campus-level club
-    leaderId?: string   // assign leader later
+    facultyId?: number // null = campus-level club
+    leaderId?: string // assign leader later
 }
 
 export interface UpdateClubDto {
@@ -329,14 +339,14 @@ export interface UpdateClubDto {
 
 All errors use `ApiError` utility with appropriate HTTP status codes:
 
-| Status | Code | Scenario |
-|--------|------|----------|
-| 400 | BAD_REQUEST | Validation errors, missing required fields |
-| 401 | UNAUTHORIZED | Invalid credentials, token expired |
-| 403 | FORBIDDEN | Insufficient permissions |
-| 404 | NOT_FOUND | Resource not found |
-| 409 | CONFLICT | Duplicate email/MSSV/username |
-| 500 | INTERNAL_SERVER_ERROR | Unexpected errors |
+| Status | Code                  | Scenario                                   |
+| ------ | --------------------- | ------------------------------------------ |
+| 400    | BAD_REQUEST           | Validation errors, missing required fields |
+| 401    | UNAUTHORIZED          | Invalid credentials, token expired         |
+| 403    | FORBIDDEN             | Insufficient permissions                   |
+| 404    | NOT_FOUND             | Resource not found                         |
+| 409    | CONFLICT              | Duplicate email/MSSV/username              |
+| 500    | INTERNAL_SERVER_ERROR | Unexpected errors                          |
 
 ---
 
@@ -360,17 +370,17 @@ All errors use `ApiError` utility with appropriate HTTP status codes:
 
 ### Existing Files (Update)
 
-| File | Changes |
-|------|---------|
-| `src/features/auth/types.ts` | Add Student credentials, UserType |
+| File                                   | Changes                                        |
+| -------------------------------------- | ---------------------------------------------- |
+| `src/features/auth/types.ts`           | Add Student credentials, UserType              |
 | `src/features/auth/auth.validation.ts` | Add student signup schema, update email domain |
-| `src/features/auth/auth.repository.ts` | Add Student CRUD, update User creation |
-| `src/features/auth/auth.service.ts` | Add Student signup logic, unified JWT |
-| `src/features/auth/auth.controller.ts` | Add student signup endpoint, update login |
-| `src/features/auth/auth.route.ts` | Add student signup route |
-| `src/common/middleware/restrictTo.ts` | Add faculty-level restrictions |
-| `src/utils/generateTokens.util.ts` | Add userType to JWT payload |
-| `src/common/routes.ts` | Add new feature routes |
+| `src/features/auth/auth.repository.ts` | Add Student CRUD, update User creation         |
+| `src/features/auth/auth.service.ts`    | Add Student signup logic, unified JWT          |
+| `src/features/auth/auth.controller.ts` | Add student signup endpoint, update login      |
+| `src/features/auth/auth.route.ts`      | Add student signup route                       |
+| `src/common/middleware/restrictTo.ts`  | Add faculty-level restrictions                 |
+| `src/utils/generateTokens.util.ts`     | Add userType to JWT payload                    |
+| `src/common/routes.ts`                 | Add new feature routes                         |
 
 ### New Files (Create)
 
@@ -387,10 +397,10 @@ All errors use `ApiError` utility with appropriate HTTP status codes:
 2. **Lint**: `pnpm lint` - Check formatting
 3. **Tests**: `pnpm test` - Run existing and new tests
 4. **Manual Testing**:
-   - Student signup with MSSV → verify email sent
-   - User signup with @sv1.dut.udn.vn → verify email sent
-   - Login as User → check JWT has userType: 'user'
-   - Login as Student → check JWT has userType: 'student'
-   - LCD create club in own faculty → success
-   - LCD create club in other faculty → forbidden
-   - DOANTRUONG create campus-level club → uccess
+    - Student signup with MSSV → verify email sent
+    - User signup with @sv1.dut.udn.vn → verify email sent
+    - Login as User → check JWT has userType: 'user'
+    - Login as Student → check JWT has userType: 'student'
+    - LCD create club in own faculty → success
+    - LCD create club in other faculty → forbidden
+    - DOANTRUONG create campus-level club → uccess
