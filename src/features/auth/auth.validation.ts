@@ -3,8 +3,8 @@ import { RequestValidationSchema } from 'src/types/request'
 
 export const loginSchema: RequestValidationSchema = {
     body: z.object({
-        email: z.string().email('Email is not valid!').endsWith('dut.udn.vn'),
-        password: z.string().min(6).max(150),
+        mssv: z.string().min(9).max(40),
+        password: z.string().min(6).max(50),
     }),
 }
 
