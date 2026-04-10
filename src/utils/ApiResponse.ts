@@ -1,10 +1,23 @@
 import { Response } from 'express'
 import { HttpStatus } from 'src/common/constants/http-status'
 
+export interface ApiResponseSuccess<T> {
+    success: true
+    message: string
+    data: T
+}
+
+export interface ApiResponseError {
+    success: false
+    message: string
+    errors: any
+    stack?: string
+}
+
 export class ApiResponse {
-    static success(
+    static success<T>(
         res: Response,
-        data: any,
+        data: T,
         message = 'Success',
         statusCode = HttpStatus.OK
     ) {
@@ -12,7 +25,7 @@ export class ApiResponse {
             success: true,
             message,
             data,
-        })
+        } satisfies ApiResponseSuccess<T>)
     }
 
     static error(
@@ -27,6 +40,6 @@ export class ApiResponse {
             message,
             errors,
             ...(stack && { stack }),
-        })
+        } satisfies ApiResponseError)
     }
 }
