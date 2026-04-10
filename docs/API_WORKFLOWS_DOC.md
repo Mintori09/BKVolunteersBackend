@@ -49,14 +49,7 @@ The system uses a relational database (MySQL/MariaDB) with the following models:
 
 ### A. Authentication Feature (`src/features/auth`)
 
-#### 1. Signup (`POST /signup`)
-
-1. **Validation:** Checks for required fields (`firstName`, `lastName`, `username`, `email`, `password`, `passwordConfirmed`) and ensures passwords match.
-2. **Conflict Check:** Verifies if the email is already registered.
-3. **User Creation:** Hashes the password using Argon2 and saves the `User` record (including first and last names).
-4. **Email Verification Trigger:** Generates a `randomUUID` token, saves it in `EmailVerificationToken`, and sends a verification email.
-
-#### 2. Login (`POST /login`)
+#### 1. Login (`POST /login`)
 
 1. **Credential Check:** Validates email existence and verifies the Argon2 password hash.
 2. **Verification Check:** Blocks login if `emailVerified` is null.
@@ -66,13 +59,13 @@ The system uses a relational database (MySQL/MariaDB) with the following models:
 4. **Token Issuance:** Generates a new Access Token (JWT) and Refresh Token.
 5. **Persistence:** Saves the new `RefreshToken` to the DB and sets it as an `HttpOnly` cookie.
 
-#### 3. Logout (`POST /logout`)
+#### 2. Logout (`POST /logout`)
 
 1. **Token Cleanup:** Identifies the `RefreshToken` from the request cookie.
 2. **DB Removal:** Deletes the corresponding record from the `RefreshToken` table.
 3. **Cookie Removal:** Clears the refresh token cookie from the client.
 
-#### 4. Token Refresh (`POST /refresh`)
+#### 3. Token Refresh (`POST /refresh`)
 
 1. **Verification:** Validates the `RefreshToken` from the cookie against the database.
 2. **Rotation:** Deletes the used token and issues a brand new Access/Refresh token pair (Token Rotation pattern).

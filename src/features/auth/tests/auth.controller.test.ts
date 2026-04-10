@@ -1,15 +1,12 @@
 import { HttpStatus } from 'src/common/constants'
 import {
-    handleSignup,
     handleLogin,
     handleLogout,
     handleRefresh,
     handleChangePassword,
 } from 'src/features/auth/auth.controller'
-import { config } from 'src/config'
 import * as argon2 from 'argon2'
-import { Response, Request, NextFunction } from 'express'
-import { randomUUID } from 'node:crypto'
+import { NextFunction } from 'express'
 import * as authService from '../auth.service'
 import { ApiError } from 'src/utils/ApiError'
 
@@ -59,77 +56,6 @@ describe('Auth Controller', () => {
         }
         next = jest.fn()
         jest.clearAllMocks()
-    })
-
-    describe('handleSignup', () => {
-        it('should call next with ApiError if required fields are missing', async () => {
-            req.body = { firstName: 'John', lastName: 'Doe', username: 'test' }
-            await handleSignup(req, res, next)
-            expect(next).toHaveBeenCalledWith(expect.any(ApiError))
-            expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
-                HttpStatus.BAD_REQUEST
-            )
-        })
-
-        it('should call next with ApiError if passwords do not match', async () => {
-            req.body = {
-                firstName: 'John',
-                lastName: 'Doe',
-                username: 'test',
-                email: 'test@example.com',
-                password: 'password',
-                passwordConfirmed: 'different',
-            }
-            await handleSignup(req, res, next)
-            expect(next).toHaveBeenCalledWith(expect.any(ApiError))
-            expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
-                HttpStatus.BAD_REQUEST
-            )
-        })
-
-        it('should call next with ApiError if user already exists', async () => {
-            req.body = {
-                firstName: 'John',
-                lastName: 'Doe',
-                username: 'test',
-                email: 'test@example.com',
-                password: 'password',
-                passwordConfirmed: 'password',
-            }
-            ;(authService.createUser as jest.Mock).mockRejectedValue(
-                new ApiError(HttpStatus.CONFLICT, 'Email already exists')
-            )
-
-            await handleSignup(req, res, next)
-            expect(next).toHaveBeenCalledWith(expect.any(ApiError))
-            expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
-                HttpStatus.CONFLICT
-            )
-        })
-
-        it('should create a user and return 201', async () => {
-            req.body = {
-                firstName: 'John',
-                lastName: 'Doe',
-                username: 'test',
-                email: 'test@example.com',
-                password: 'password',
-                passwordConfirmed: 'password',
-            }
-            ;(authService.createUser as jest.Mock).mockResolvedValue({
-                id: '1',
-            })
-
-            await handleSignup(req, res, next)
-
-            expect(res.status).toHaveBeenCalledWith(HttpStatus.CREATED)
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: true,
-                    message: 'New user created',
-                })
-            )
-        })
     })
 
     describe('handleLogin', () => {
@@ -290,7 +216,7 @@ describe('Auth Controller', () => {
             expect(res.json).toHaveBeenCalledWith(
                 expect.objectContaining({
                     success: true,
-                    message: 'Password changed successfully',
+                    message: 'Đổi mật khẩu thành công',
                 })
             )
         })

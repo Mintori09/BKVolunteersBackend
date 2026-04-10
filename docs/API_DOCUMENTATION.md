@@ -59,28 +59,6 @@ For endpoints that support listing multiple items, the following query parameter
 
 ## 1. Auth Feature
 
-### Signup
-
-Creates a new user account.
-
-- **URL:** `/auth/signup`
-- **Method:** `POST`
-- **Request Body:**
-    ```json
-    {
-        "firstName": "Example",
-        "lastName": "User",
-        "username": "example_user",
-        "email": "user@example.com",
-        "password": "password123",
-        "passwordConfirmed": "password123"
-    }
-    ```
-- **Responses:**
-    - `201 Created`: User created successfully.
-    - `400 Bad Request`: Missing fields or passwords do not match.
-    - `409 Conflict`: User already exists.
-
 ### Login
 
 Authenticates a user and returns an access token.
