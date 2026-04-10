@@ -1,5 +1,11 @@
 import { HttpStatus } from 'src/common/constants'
-import { ChangePasswordData, UserLoginCredentials } from './types'
+import {
+    LoginInput,
+    LoginOutput,
+    ChangePasswordInput,
+    UserRole,
+    MeOutput,
+} from './types'
 import { TypedRequest } from 'src/types/request'
 import * as argon2 from 'argon2'
 import { Response, Request } from 'express'
@@ -14,7 +20,7 @@ import { ApiError } from 'src/utils/ApiError'
 import { ApiResponse } from 'src/utils/ApiResponse'
 
 export const handleLogin = catchAsync(
-    async (req: TypedRequest<UserLoginCredentials>, res: Response) => {
+    async (req: TypedRequest<LoginInput>, res: Response) => {
         const cookies = req.cookies
         const { username, password } = req.body
 
@@ -25,19 +31,12 @@ export const handleLogin = catchAsync(
             )
         }
 
-        const user = await authService.getUserbyUsernameOrMssv(mssv)
+        const user = await authService.getUserbyUsernameOrMssv(username)
 
         if (!user) {
             throw new ApiError(
                 HttpStatus.UNAUTHORIZED,
                 'Email hoặc mật khẩu không hợp lệ'
-            )
-        }
-
-        if (!user.emailVerified) {
-            throw new ApiError(
-                HttpStatus.UNAUTHORIZED,
-                'Email của bạn chưa được xác thực! Vui lòng xác nhận email'
             )
         }
 
@@ -50,15 +49,28 @@ export const handleLogin = catchAsync(
             )
         }
 
+        const userRole: UserRole = 'mssv' in user ? 'SINHVIEN' : user.role
+
         if (cookies?.[config.jwt.refresh_token.cookie_name]) {
             const refreshToken = cookies[config.jwt.refresh_token.cookie_name]
             const checkRefreshToken =
                 await authService.getRefreshTokenByToken(refreshToken)
 
-            if (!checkRefreshToken || checkRefreshToken.userId !== user.id) {
-                await authService.deleteAllUserRefreshTokens(user.id)
+            if (!checkRefreshToken) {
+                await authService.deleteAllUserRefreshTokens(user.id, userRole)
             } else {
-                await authService.deleteRefreshToken(refreshToken)
+                const tokenId =
+                    checkRefreshToken.userType === 'student'
+                        ? checkRefreshToken.studentId
+                        : checkRefreshToken.userId
+                if (tokenId !== user.id) {
+                    await authService.deleteAllUserRefreshTokens(
+                        user.id,
+                        userRole
+                    )
+                } else {
+                    await authService.deleteRefreshToken(refreshToken, userRole)
+                }
             }
 
             res.clearCookie(
@@ -69,7 +81,7 @@ export const handleLogin = catchAsync(
 
         const { accessToken, refreshToken } = await authService.createSession(
             user.id,
-            user.role
+            userRole
         )
 
         res.cookie(
@@ -78,7 +90,7 @@ export const handleLogin = catchAsync(
             refreshTokenCookieConfig
         )
 
-        return ApiResponse.success(res, { accessToken })
+        return ApiResponse.success<LoginOutput>(res, { accessToken })
     }
 )
 
@@ -134,7 +146,10 @@ export const handleRefresh = catchAsync(async (req: Request, res: Response) => {
                 refreshToken,
                 config.jwt.refresh_token.secret
             )
-            await authService.deleteAllUserRefreshTokens(payload.userId)
+            await authService.deleteAllUserRefreshTokens(
+                payload.userId,
+                payload.role
+            )
         } catch {
             // Ignore verify errors here, just forbidden
         }
@@ -149,11 +164,16 @@ export const handleRefresh = catchAsync(async (req: Request, res: Response) => {
             config.jwt.refresh_token.secret
         )
 
-        if (foundRefreshToken.userId !== payload.userId) {
+        const tokenUserId =
+            foundRefreshToken.userType === 'student'
+                ? foundRefreshToken.studentId
+                : foundRefreshToken.userId
+
+        if (tokenUserId !== payload.userId) {
             throw new ApiError(HttpStatus.FORBIDDEN, 'Không khớp người dùng')
         }
 
-        const user = await authService.getUserById(payload.userId)
+        const user = await authService.getUserById(payload.userId, payload.role)
 
         if (!user) {
             throw new ApiError(
@@ -163,7 +183,7 @@ export const handleRefresh = catchAsync(async (req: Request, res: Response) => {
         }
 
         const { accessToken, refreshToken: newRefreshToken } =
-            await authService.createSession(payload.userId, user.role)
+            await authService.createSession(payload.userId, payload.role)
 
         res.cookie(
             config.jwt.refresh_token.cookie_name,
@@ -171,7 +191,7 @@ export const handleRefresh = catchAsync(async (req: Request, res: Response) => {
             refreshTokenCookieConfig
         )
 
-        return ApiResponse.success(res, { accessToken })
+        return ApiResponse.success<LoginOutput>(res, { accessToken })
     } catch {
         throw new ApiError(HttpStatus.FORBIDDEN, 'Refresh token không hợp lệ')
     }
@@ -179,26 +199,31 @@ export const handleRefresh = catchAsync(async (req: Request, res: Response) => {
 
 export const getMe = catchAsync(async (req: Request, res: Response) => {
     const userId = req.payload?.userId
+    const role = req.payload?.role
 
     if (!userId) {
         throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chưa xác thực người dùng!')
     }
 
-    const user = await authService.getUserById(userId)
+    if (!role) {
+        throw new ApiError(HttpStatus.UNAUTHORIZED, 'Không có role!')
+    }
+
+    const user = await authService.getUserById(userId, role)
 
     if (!user) {
         throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy người dùng!')
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...userWithoutPassword } = user
 
-    return ApiResponse.success(res, userWithoutPassword)
+    return ApiResponse.success<MeOutput>(res, userWithoutPassword)
 })
 
 export const handleChangePassword = catchAsync(
-    async (req: TypedRequest<ChangePasswordData>, res: Response) => {
+    async (req: TypedRequest<ChangePasswordInput>, res: Response) => {
         const userId = req.payload?.userId
+        const role = req.payload?.role
 
         if (!userId) {
             throw new ApiError(
@@ -207,9 +232,14 @@ export const handleChangePassword = catchAsync(
             )
         }
 
+        if (!role) {
+            throw new ApiError(HttpStatus.UNAUTHORIZED, 'Không có role!')
+        }
+
         await authService.changePassword(
             userId,
-            req.body as unknown as ChangePasswordData
+            role,
+            req.body as ChangePasswordInput
         )
 
         return ApiResponse.success(res, null, 'Đổi mật khẩu thành công')
