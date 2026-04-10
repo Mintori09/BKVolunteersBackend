@@ -1,20 +1,18 @@
 import jwt from 'jsonwebtoken'
 import { config } from 'src/config'
-
-// @ts-expect-error
-const { sign } = jwt
+import { UserRole } from 'src/features/auth/types'
 
 export const createAccessToken = (
     userId: number | string,
-    role: string
+    role: UserRole
 ): string => {
-    return sign({ userId, role }, config.jwt.access_token.secret, {
-        expiresIn: config.jwt.access_token.expire as any,
-    })
+    return jwt.sign({ userId, role }, config.jwt.access_token.secret, {
+        expiresIn: config.jwt.access_token.expire,
+    } as jwt.SignOptions)
 }
 
 export const createRefreshToken = (userId: number | string): string => {
-    return sign({ userId }, config.jwt.refresh_token.secret, {
-        expiresIn: config.jwt.refresh_token.expire as any,
-    })
+    return jwt.sign({ userId }, config.jwt.refresh_token.secret, {
+        expiresIn: config.jwt.refresh_token.expire,
+    } as jwt.SignOptions)
 }
