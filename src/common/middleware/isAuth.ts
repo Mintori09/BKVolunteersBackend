@@ -1,14 +1,8 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import type { NextFunction, Request, Response } from 'express'
 import httpStatus from 'http-status'
 
-import jwt, { type JwtPayload } from 'jsonwebtoken'
+import jwt from 'jsonwebtoken'
 import { config } from 'src/config'
-
-// GitHub Issue for this problem: https://github.com/auth0/node-jsonwebtoken/issues/655
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
-const { verify } = jwt
 
 const isAuth = (req: Request, res: Response, next: NextFunction) => {
     // token looks like 'Bearer vnjaknvijdaknvikbnvreiudfnvriengviewjkdsbnvierj'
@@ -23,12 +17,12 @@ const isAuth = (req: Request, res: Response, next: NextFunction) => {
 
     if (!token) return res.sendStatus(httpStatus.UNAUTHORIZED)
 
-    verify(
+    jwt.verify(
         token,
         config.jwt.access_token.secret,
-        (err: unknown, payload: JwtPayload) => {
+        (err: unknown, payload: unknown) => {
             if (err) return res.sendStatus(httpStatus.FORBIDDEN) // invalid token
-            req.payload = payload
+            req.payload = payload as jwt.JwtPayload
 
             next()
         }
