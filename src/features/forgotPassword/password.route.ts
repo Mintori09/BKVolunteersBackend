@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import validate from 'src/common/middleware/validate'
 import * as forgotPasswordController from './forgotPassword.controller'
-import { forgotPasswordSchema } from './password.validation'
+import { forgotPasswordSchema, resetPasswordSchema } from './password.validation'
 
 const passwordRouter = Router()
 
@@ -77,7 +77,7 @@ passwordRouter.post(
  */
 passwordRouter.post(
     '/reset-password/:token',
-    validate(forgotPasswordSchema),
+    validate(resetPasswordSchema),
     forgotPasswordController.handleResetPassword
 )
 
