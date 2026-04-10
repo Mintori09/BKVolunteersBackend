@@ -1,6 +1,9 @@
 import { HttpStatus } from 'src/common/constants'
-import { ResetPasswordRequestBodyType } from './types'
-import { EmailRequestBody } from 'src/types/common'
+import {
+    ForgotPasswordInput,
+    ResetPasswordInput,
+    ResetPasswordParams,
+} from './types'
 import { TypedRequest } from 'src/types/request'
 import { Response } from 'express'
 import * as authService from 'src/features/auth/auth.service'
@@ -10,39 +13,50 @@ import { ApiError } from 'src/utils/ApiError'
 import { ApiResponse } from 'src/utils/ApiResponse'
 
 export const handleForgotPassword = catchAsync(
-    async (req: TypedRequest<EmailRequestBody>, res: Response) => {
+    async (
+        req: TypedRequest<ForgotPasswordInput, ResetPasswordParams>,
+        res: Response
+    ) => {
         const { email } = req.body
 
         if (!email) {
-            throw new ApiError(HttpStatus.BAD_REQUEST, 'Email is required!')
+            throw new ApiError(HttpStatus.BAD_REQUEST, 'Email là bắt buộc!')
         }
 
         const user = await authService.getUserByEmail(email)
 
-        if (!user || !user.emailVerified) {
+        if (!user) {
             throw new ApiError(
-                HttpStatus.UNAUTHORIZED,
-                'Your email is not verified! Please confirm your email!'
+                HttpStatus.NOT_FOUND,
+                'Email không tồn tại trong hệ thống!'
             )
         }
 
         await forgotPasswordService.createResetToken(user.id, email)
 
-        return ApiResponse.success(res, null, 'Password reset email sent!')
+        return ApiResponse.success(
+            res,
+            null,
+            'Email đặt lại mật khẩu đã được gửi!'
+        )
     }
 )
 
 export const handleResetPassword = catchAsync(
-    async (req: TypedRequest<ResetPasswordRequestBodyType>, res: Response) => {
+    async (
+        req: TypedRequest<ResetPasswordInput, ResetPasswordParams>,
+        res: Response
+    ) => {
         const { token } = req.params
         const { newPassword } = req.body
 
-        if (!token) throw new ApiError(HttpStatus.NOT_FOUND, 'Token not found')
+        if (!token)
+            throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy token')
 
         if (!newPassword) {
             throw new ApiError(
                 HttpStatus.BAD_REQUEST,
-                'New password is required!'
+                'Mật khẩu mới là bắt buộc!'
             )
         }
 
@@ -51,7 +65,10 @@ export const handleResetPassword = catchAsync(
         )
 
         if (!resetToken) {
-            throw new ApiError(HttpStatus.NOT_FOUND, 'Invalid or expired token')
+            throw new ApiError(
+                HttpStatus.NOT_FOUND,
+                'Token không hợp lệ hoặc đã hết hạn'
+            )
         }
 
         await forgotPasswordService.resetUserPassword(
@@ -59,6 +76,6 @@ export const handleResetPassword = catchAsync(
             newPassword
         )
 
-        return ApiResponse.success(res, null, 'Password reset successful!')
+        return ApiResponse.success(res, null, 'Đặt lại mật khẩu thành công!')
     }
 )
