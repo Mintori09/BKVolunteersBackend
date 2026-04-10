@@ -1,8 +1,14 @@
 import * as authService from '../auth.service'
 import * as authRepository from '../auth.repository'
 import * as argon2 from 'argon2'
+import * as jwt from 'jsonwebtoken'
 import { ApiError } from 'src/utils/ApiError'
 import { HttpStatus } from 'src/common/constants'
+import { UserRole } from '../types'
+import {
+    createAccessToken,
+    createRefreshToken,
+} from 'src/utils/generateTokens.util'
 
 jest.mock('src/config', () => ({
     prismaClient: {},
@@ -11,10 +17,10 @@ jest.mock('src/config', () => ({
         jwt: {
             refresh_token: {
                 cookie_name: 'refresh_token',
-                secret: 'secret',
+                secret: 'refresh-secret',
             },
             access_token: {
-                secret: 'secret',
+                secret: 'access-secret',
             },
         },
         email: {
@@ -32,31 +38,271 @@ jest.mock('src/config', () => ({
 }))
 
 jest.mock('../auth.repository')
+jest.mock('../utils', () => ({
+    isMssv: jest.fn((username: string) => /^1\d{8}$/.test(username)),
+}))
 jest.mock('argon2')
 jest.mock('node:crypto')
 jest.mock('src/utils/sendEmail.util')
 jest.mock('src/utils/generateTokens.util')
+jest.mock('jsonwebtoken')
 
 describe('Auth Service', () => {
+    beforeEach(() => {
+        jest.clearAllMocks()
+    })
+
+    describe('getUserbyUsernameOrMssv', () => {
+        it('should call getUserByMssv when username is MSSV format (9 digits starting with 1)', async () => {
+            const mssv = '123456789'
+            const expectedUser = { id: '1', mssv, password: 'hashed' }
+            ;(authRepository.getUserByMssv as jest.Mock).mockResolvedValue(
+                expectedUser
+            )
+
+            const result = await authService.getUserbyUsernameOrMssv(mssv)
+
+            expect(authRepository.getUserByMssv).toHaveBeenCalledWith(mssv)
+            expect(authRepository.getUserByUsername).not.toHaveBeenCalled()
+            expect(result).toEqual(expectedUser)
+        })
+
+        it('should call getUserByUsername when username is not MSSV format', async () => {
+            const username = 'testuser'
+            const expectedUser = { id: '1', username, password: 'hashed' }
+            ;(authRepository.getUserByUsername as jest.Mock).mockResolvedValue(
+                expectedUser
+            )
+
+            const result = await authService.getUserbyUsernameOrMssv(username)
+
+            expect(authRepository.getUserByUsername).toHaveBeenCalledWith(
+                username
+            )
+            expect(authRepository.getUserByMssv).not.toHaveBeenCalled()
+            expect(result).toEqual(expectedUser)
+        })
+
+        it('should return null when user not found by MSSV', async () => {
+            ;(authRepository.getUserByMssv as jest.Mock).mockResolvedValue(
+                null
+            )
+
+            const result =
+                await authService.getUserbyUsernameOrMssv('123456789')
+
+            expect(result).toBeNull()
+        })
+
+        it('should return null when user not found by username', async () => {
+            ;(authRepository.getUserByUsername as jest.Mock).mockResolvedValue(
+                null
+            )
+
+            const result = await authService.getUserbyUsernameOrMssv('nonexistent')
+
+            expect(result).toBeNull()
+        })
+    })
+
+    describe('getUserByEmail', () => {
+        it('should call repository getUserByEmail and return result', async () => {
+            const email = 'test@example.com'
+            const expectedUser = { id: '1', email }
+            ;(authRepository.getUserByEmail as jest.Mock).mockResolvedValue(
+                expectedUser
+            )
+
+            const result = await authService.getUserByEmail(email)
+
+            expect(authRepository.getUserByEmail).toHaveBeenCalledWith(email)
+            expect(result).toEqual(expectedUser)
+        })
+    })
+
+    describe('getUserById', () => {
+        it('should call repository getUserById with correct params', async () => {
+            const userId = 'user-1'
+            const role: UserRole = 'LCD'
+            const expectedUser = { id: userId, role }
+            ;(authRepository.getUserById as jest.Mock).mockResolvedValue(
+                expectedUser
+            )
+
+            const result = await authService.getUserById(userId, role)
+
+            expect(authRepository.getUserById).toHaveBeenCalledWith(userId, role)
+            expect(result).toEqual(expectedUser)
+        })
+    })
+
+    describe('getRefreshTokenByToken', () => {
+        it('should call repository getRefreshTokenByToken', async () => {
+            const token = 'refresh-token-123'
+            const expectedToken = { token, userId: '1' }
+            ;(
+                authRepository.getRefreshTokenByToken as jest.Mock
+            ).mockResolvedValue(expectedToken)
+
+            const result = await authService.getRefreshTokenByToken(token)
+
+            expect(authRepository.getRefreshTokenByToken).toHaveBeenCalledWith(
+                token
+            )
+            expect(result).toEqual(expectedToken)
+        })
+
+        it('should return null when token not found', async () => {
+            ;(
+                authRepository.getRefreshTokenByToken as jest.Mock
+            ).mockResolvedValue(null)
+
+            const result =
+                await authService.getRefreshTokenByToken('nonexistent-token')
+
+            expect(result).toBeNull()
+        })
+    })
+
+    describe('deleteRefreshToken', () => {
+        it('should call repository deleteRefreshToken without role', async () => {
+            const token = 'token-to-delete'
+            ;(authRepository.deleteRefreshToken as jest.Mock).mockResolvedValue(
+                undefined
+            )
+
+            await authService.deleteRefreshToken(token)
+
+            expect(authRepository.deleteRefreshToken).toHaveBeenCalledWith(
+                token,
+                undefined
+            )
+        })
+
+        it('should call repository deleteRefreshToken with role', async () => {
+            const token = 'token-to-delete'
+            const role: UserRole = 'LCD'
+            ;(authRepository.deleteRefreshToken as jest.Mock).mockResolvedValue(
+                undefined
+            )
+
+            await authService.deleteRefreshToken(token, role)
+
+            expect(authRepository.deleteRefreshToken).toHaveBeenCalledWith(
+                token,
+                role
+            )
+        })
+    })
+
+    describe('deleteAllUserRefreshTokens', () => {
+        it('should call repository deleteAllUserRefreshTokens', async () => {
+            const userId = 'user-1'
+            const role: UserRole = 'SINHVIEN'
+            ;(
+                authRepository.deleteAllUserRefreshTokens as jest.Mock
+            ).mockResolvedValue(undefined)
+
+            await authService.deleteAllUserRefreshTokens(userId, role)
+
+            expect(
+                authRepository.deleteAllUserRefreshTokens
+            ).toHaveBeenCalledWith(userId, role)
+        })
+    })
+
+    describe('createSession', () => {
+        it('should create access and refresh tokens and save to repository', async () => {
+            const userId = 'user-1'
+            const role: UserRole = 'LCD'
+            const accessToken = 'access-token-123'
+            const refreshToken = 'refresh-token-123'
+
+            ;(createAccessToken as jest.Mock).mockReturnValue(accessToken)
+            ;(createRefreshToken as jest.Mock).mockReturnValue(refreshToken)
+            ;(
+                authRepository.createRefreshToken as jest.Mock
+            ).mockResolvedValue(undefined)
+
+            const result = await authService.createSession(userId, role)
+
+            expect(createAccessToken).toHaveBeenCalledWith(userId, role)
+            expect(createRefreshToken).toHaveBeenCalledWith(userId)
+            expect(authRepository.createRefreshToken).toHaveBeenCalledWith(
+                userId,
+                refreshToken,
+                role
+            )
+            expect(result).toEqual({ accessToken, refreshToken })
+        })
+    })
+
+    describe('verifyToken', () => {
+        it('should resolve with payload when token is valid', async () => {
+            const token = 'valid-token'
+            const secret = 'secret'
+            const payload = { userId: '1', role: 'LCD' }
+
+            ;(jwt.verify as jest.Mock).mockImplementation(
+                (_token: string, _secret: string, callback: Function) => {
+                    callback(null, payload)
+                }
+            )
+
+            const result = await authService.verifyToken(token, secret)
+
+            expect(result).toEqual(payload)
+        })
+
+        it('should reject with ApiError when token is invalid/expired', async () => {
+            const token = 'invalid-token'
+            const secret = 'secret'
+            const error = new Error('jwt expired')
+
+            ;(jwt.verify as jest.Mock).mockImplementation(
+                (_token: string, _secret: string, callback: Function) => {
+                    callback(error, null)
+                }
+            )
+
+            await expect(authService.verifyToken(token, secret)).rejects.toThrow(
+                new ApiError(HttpStatus.FORBIDDEN, 'Token không hợp lệ')
+            )
+        })
+
+        it('should reject with ApiError when token verification fails', async () => {
+            const token = 'malformed-token'
+            const secret = 'secret'
+            const error = new Error('jwt malformed')
+
+            ;(jwt.verify as jest.Mock).mockImplementation(
+                (_token: string, _secret: string, callback: Function) => {
+                    callback(error, null)
+                }
+            )
+
+            await expect(authService.verifyToken(token, secret)).rejects.toThrow(
+                ApiError
+            )
+        })
+    })
+
     describe('changePassword', () => {
         const userId = 'user-1'
+        const role: UserRole = 'LCD'
         const changePasswordData = {
             oldPassword: 'old-password',
             newPassword: 'new-password',
             newPasswordConfirm: 'new-password',
         }
 
-        beforeEach(() => {
-            jest.clearAllMocks()
-        })
-
         it('should throw ApiError if user is not found', async () => {
             ;(authRepository.getUserById as jest.Mock).mockResolvedValue(null)
 
             await expect(
-                authService.changePassword(userId, changePasswordData)
+                authService.changePassword(userId, role, changePasswordData)
             ).rejects.toThrow(
-                new ApiError(HttpStatus.NOT_FOUND, 'User not found')
+                new ApiError(HttpStatus.NOT_FOUND, 'Tài khoản không tồn tại')
             )
         })
 
@@ -66,9 +312,9 @@ describe('Auth Service', () => {
             ;(argon2.verify as jest.Mock).mockResolvedValue(false)
 
             await expect(
-                authService.changePassword(userId, changePasswordData)
+                authService.changePassword(userId, role, changePasswordData)
             ).rejects.toThrow(
-                new ApiError(HttpStatus.UNAUTHORIZED, 'Invalid old password')
+                new ApiError(HttpStatus.UNAUTHORIZED, 'Sai mật khẩu cũ')
             )
         })
 
@@ -78,7 +324,7 @@ describe('Auth Service', () => {
             ;(argon2.verify as jest.Mock).mockResolvedValue(true)
             ;(argon2.hash as jest.Mock).mockResolvedValue('hashed-new-password')
 
-            await authService.changePassword(userId, changePasswordData)
+            await authService.changePassword(userId, role, changePasswordData)
 
             expect(argon2.verify).toHaveBeenCalledWith(
                 'hashed-old-password',
@@ -89,7 +335,8 @@ describe('Auth Service', () => {
             )
             expect(authRepository.updatePassword).toHaveBeenCalledWith(
                 userId,
-                'hashed-new-password'
+                'hashed-new-password',
+                role
             )
         })
     })
