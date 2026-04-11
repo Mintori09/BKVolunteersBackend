@@ -7,12 +7,12 @@
         "paths": {
             "src/*": ["src/*"]
         },
-        "rootDir": "./src",
+        "rootDir": "./",
         "outDir": "./dist",
         "strict": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true
     },
-    "include": ["src/**/*"]
+    "include": ["src/**/*", "prisma/**/*.ts"]
 }
