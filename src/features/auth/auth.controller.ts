@@ -215,7 +215,7 @@ export const getMe = catchAsync(async (req: Request, res: Response) => {
         throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy người dùng!')
     }
 
-    const { password, ...userWithoutPassword } = user
+    const { password: _password, ...userWithoutPassword } = user
 
     return ApiResponse.success<MeOutput>(res, userWithoutPassword)
 })
