@@ -1,9 +1,7 @@
-import { PrismaClient } from '@prisma/client'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as argon2 from 'argon2'
-
-const prisma = new PrismaClient()
+import { PrismaClient } from '@prisma/client'
 
 interface StudentJson {
     MSSV: string
@@ -52,10 +50,10 @@ async function hashPassword(password: string): Promise<string> {
     return await argon2.hash(password)
 }
 
-export async function seedStudents(): Promise<void> {
+export async function seedStudents(prisma: PrismaClient): Promise<void> {
     console.log('Seeding students...')
 
-    const jsonPath = path.join(__dirname, 'students.json')
+    const jsonPath = path.join(import.meta.dirname, 'students.json')
     const jsonData: StudentJson[] = JSON.parse(
         fs.readFileSync(jsonPath, 'utf-8')
     )
@@ -74,13 +72,13 @@ export async function seedStudents(): Promise<void> {
             create: {
                 id: crypto.randomUUID(),
                 mssv,
-                full_name: studentData['Tên'],
+                fullName: studentData['Tên'],
                 email,
                 password: hashedPassword,
-                faculty_id: facultyId,
-                class_name: studentData['Lớp học phần'],
+                facultyId: facultyId,
+                className: studentData['Lớp học phần'],
                 phone: null,
-                total_points: 0,
+                totalPoints: 0,
             },
         })
     }
