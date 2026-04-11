@@ -33,7 +33,6 @@ export interface UserMeOutput {
     email: string
     role: Exclude<UserRole, 'SINHVIEN'>
     facultyId: number | null
-    emailVerified: Date | null
     createdAt: Date
     updatedAt: Date
 }
@@ -43,7 +42,7 @@ export interface StudentMeOutput {
     mssv: string
     fullName: string
     email: string
-    facultyId: number
+    facultyId: string | null
     className: string | null
     phone: string | null
     totalPoints: number
