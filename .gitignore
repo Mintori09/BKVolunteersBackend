@@ -9,3 +9,4 @@ logs/
 .idea/
 generated/
 .aider*
+prisma/migrations
