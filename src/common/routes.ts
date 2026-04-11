@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { authRouter } from 'src/features/auth'
 import { passwordRouter } from 'src/features/forgotPassword'
+import { campaignRouter } from 'src/features/campaign'
 import { authLimiter } from 'src/common/middleware'
 import { config } from 'src/config'
 
@@ -15,6 +16,10 @@ const defaultRoutes = [
     {
         path: '/password',
         route: passwordRouter,
+    },
+    {
+        path: '/campaigns',
+        route: campaignRouter,
     },
 ]
 
