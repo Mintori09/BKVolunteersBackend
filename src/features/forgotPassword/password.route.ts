@@ -1,7 +1,10 @@
 import { Router } from 'express'
 import validate from 'src/common/middleware/validate'
 import * as forgotPasswordController from './forgotPassword.controller'
-import { forgotPasswordSchema, resetPasswordSchema } from './password.validation'
+import {
+    forgotPasswordSchema,
+    resetPasswordSchema,
+} from './password.validation'
 
 const passwordRouter = Router()
 
