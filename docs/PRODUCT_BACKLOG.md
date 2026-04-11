@@ -30,14 +30,12 @@
 
 | ID     | User Story                                                                                                                                | Priority | Est. | API Endpoint                     |
 | ------ | ----------------------------------------------------------------------------------------------------------------------------------------- | -------- | ---- | -------------------------------- |
-| US-001 | As a **Student**, I want to **đăng ký tài khoản bằng MSSV**, so that **tôi có thể tham gia hệ thống tình nguyện**.                        | HIGH     | M    | `POST /auth/student/register`    |
 | US-002 | As a **Student**, I want to **đăng nhập bằng MSSV và mật khẩu**, so that **tôi có thể truy cập tài khoản của mình**.                      | HIGH     | M    | `POST /auth/student/login`       |
 | US-003 | As a **User (CLB/LCD/Đoàn trường)**, I want to **đăng ký tài khoản với role cụ thể**, so that **tôi có thể thực hiện quyền hạn phù hợp**. | HIGH     | M    | `POST /auth/user/register`       |
 | US-004 | As a **User**, I want to **đăng nhập bằng username và mật khẩu**, so that **tôi có thể quản lý hoạt động**.                               | HIGH     | M    | `POST /auth/user/login`          |
 | US-005 | As a **User**, I want to **đăng xuất khỏi hệ thống**, so that **tài khoản được bảo vệ an toàn**.                                          | MED      | S    | `POST /auth/logout`              |
 | US-006 | As a **User**, I want to **xem thông tin tài khoản hiện tại**, so that **tôi biết thông tin cá nhân của mình**.                           | MED      | S    | `GET /auth/me`                   |
 | US-007 | As a **User**, I want to **khôi phục mật khẩu qua email**, so that **tôi có thể lấy lại quyền truy cập khi quên mật khẩu**.               | MED      | M    | `POST /password/forgot-password` |
-| US-008 | As a **User**, I want to **xác thực email sau khi đăng ký**, so that **tài khoản được kích hoạt**.                                        | MED      | M    | `GET /verify-email/:token`       |
 | US-009 | As a **User**, I want to **refresh token khi token hết hạn**, so that **tôi không cần đăng nhập lại**.                                    | LOW      | S    | `POST /auth/refresh`             |
 
 ### Epic E-02: Faculty Management
