@@ -10,3 +10,4 @@ logs/
 generated/
 .aider*
 prisma/migrations
+students.json
