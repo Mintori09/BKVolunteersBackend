@@ -182,7 +182,9 @@ describe('Auth Controller', () => {
                 authService.getUserbyUsernameOrMssv as jest.Mock
             ).mockResolvedValue(user)
             ;(argon2.verify as jest.Mock).mockResolvedValue(true)
-            ;(authService.getRefreshTokenByToken as jest.Mock).mockResolvedValue({
+            ;(
+                authService.getRefreshTokenByToken as jest.Mock
+            ).mockResolvedValue({
                 token: 'old-refresh-token',
                 userId: '1',
                 userType: 'user',
@@ -213,7 +215,9 @@ describe('Auth Controller', () => {
                 authService.getUserbyUsernameOrMssv as jest.Mock
             ).mockResolvedValue(user)
             ;(argon2.verify as jest.Mock).mockResolvedValue(true)
-            ;(authService.getRefreshTokenByToken as jest.Mock).mockResolvedValue({
+            ;(
+                authService.getRefreshTokenByToken as jest.Mock
+            ).mockResolvedValue({
                 token: 'old-refresh-token',
                 userId: '2',
                 userType: 'user',
@@ -225,9 +229,10 @@ describe('Auth Controller', () => {
 
             await handleLogin(req, res, next)
 
-            expect(
-                authService.deleteAllUserRefreshTokens
-            ).toHaveBeenCalledWith('1', 'LCD')
+            expect(authService.deleteAllUserRefreshTokens).toHaveBeenCalledWith(
+                '1',
+                'LCD'
+            )
         })
 
         it('should delete all user refresh tokens if existing token not found in DB', async () => {
@@ -242,9 +247,9 @@ describe('Auth Controller', () => {
                 authService.getUserbyUsernameOrMssv as jest.Mock
             ).mockResolvedValue(user)
             ;(argon2.verify as jest.Mock).mockResolvedValue(true)
-            ;(authService.getRefreshTokenByToken as jest.Mock).mockResolvedValue(
-                null
-            )
+            ;(
+                authService.getRefreshTokenByToken as jest.Mock
+            ).mockResolvedValue(null)
             ;(authService.createSession as jest.Mock).mockResolvedValue({
                 accessToken: 'access',
                 refreshToken: 'refresh',
@@ -252,9 +257,10 @@ describe('Auth Controller', () => {
 
             await handleLogin(req, res, next)
 
-            expect(
-                authService.deleteAllUserRefreshTokens
-            ).toHaveBeenCalledWith('1', 'LCD')
+            expect(authService.deleteAllUserRefreshTokens).toHaveBeenCalledWith(
+                '1',
+                'LCD'
+            )
         })
 
         it('should handle student refresh token correctly', async () => {
@@ -269,7 +275,9 @@ describe('Auth Controller', () => {
                 authService.getUserbyUsernameOrMssv as jest.Mock
             ).mockResolvedValue(student)
             ;(argon2.verify as jest.Mock).mockResolvedValue(true)
-            ;(authService.getRefreshTokenByToken as jest.Mock).mockResolvedValue({
+            ;(
+                authService.getRefreshTokenByToken as jest.Mock
+            ).mockResolvedValue({
                 token: 'old-refresh-token',
                 studentId: '1',
                 userType: 'student',

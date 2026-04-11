@@ -80,7 +80,9 @@ describe('Password Routes Integration', () => {
         })
 
         it('should return 200 and send reset email when email is valid', async () => {
-            ;(authService.getUserByEmail as jest.Mock).mockResolvedValue(mockUser)
+            ;(authService.getUserByEmail as jest.Mock).mockResolvedValue(
+                mockUser
+            )
             ;(
                 forgotPasswordService.createResetToken as jest.Mock
             ).mockResolvedValue('reset-token-uuid')
@@ -100,7 +102,8 @@ describe('Password Routes Integration', () => {
     })
 
     describe('POST /api/v1/password/reset-password/:token', () => {
-        const validJwtToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+        const validJwtToken =
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
 
         it('should return 404 when token is missing in params', async () => {
             const response = await request(app)
@@ -135,16 +138,18 @@ describe('Password Routes Integration', () => {
         })
 
         it('should return 404 when token is not found in DB or expired', async () => {
-            ;(forgotPasswordService.getResetToken as jest.Mock).mockResolvedValue(
-                null
-            )
+            ;(
+                forgotPasswordService.getResetToken as jest.Mock
+            ).mockResolvedValue(null)
 
             const response = await request(app)
                 .post(`/api/v1/password/reset-password/${validJwtToken}`)
                 .send({ newPassword: 'newpassword123' })
 
             expect(response.status).toBe(HttpStatus.NOT_FOUND)
-            expect(response.body.message).toContain('không hợp lệ hoặc đã hết hạn')
+            expect(response.body.message).toContain(
+                'không hợp lệ hoặc đã hết hạn'
+            )
         })
 
         it('should return 200 when password is reset successfully', async () => {
@@ -167,11 +172,12 @@ describe('Password Routes Integration', () => {
 
             expect(response.status).toBe(HttpStatus.OK)
             expect(response.body).toHaveProperty('success', true)
-            expect(response.body.message).toContain('Đặt lại mật khẩu thành công')
-            expect(forgotPasswordService.resetUserPassword).toHaveBeenCalledWith(
-                'user-123',
-                'newpassword123'
+            expect(response.body.message).toContain(
+                'Đặt lại mật khẩu thành công'
             )
+            expect(
+                forgotPasswordService.resetUserPassword
+            ).toHaveBeenCalledWith('user-123', 'newpassword123')
         })
 
         it('should call resetUserPassword with correct userId and newPassword', async () => {
@@ -192,10 +198,9 @@ describe('Password Routes Integration', () => {
                 .post(`/api/v1/password/reset-password/${validJwtToken}`)
                 .send({ newPassword: 'securePassword789' })
 
-            expect(forgotPasswordService.resetUserPassword).toHaveBeenCalledWith(
-                'user-456',
-                'securePassword789'
-            )
+            expect(
+                forgotPasswordService.resetUserPassword
+            ).toHaveBeenCalledWith('user-456', 'securePassword789')
         })
     })
 })

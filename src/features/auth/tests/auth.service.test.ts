@@ -84,9 +84,7 @@ describe('Auth Service', () => {
         })
 
         it('should return null when user not found by MSSV', async () => {
-            ;(authRepository.getUserByMssv as jest.Mock).mockResolvedValue(
-                null
-            )
+            ;(authRepository.getUserByMssv as jest.Mock).mockResolvedValue(null)
 
             const result =
                 await authService.getUserbyUsernameOrMssv('123456789')
@@ -99,7 +97,8 @@ describe('Auth Service', () => {
                 null
             )
 
-            const result = await authService.getUserbyUsernameOrMssv('nonexistent')
+            const result =
+                await authService.getUserbyUsernameOrMssv('nonexistent')
 
             expect(result).toBeNull()
         })
@@ -131,7 +130,10 @@ describe('Auth Service', () => {
 
             const result = await authService.getUserById(userId, role)
 
-            expect(authRepository.getUserById).toHaveBeenCalledWith(userId, role)
+            expect(authRepository.getUserById).toHaveBeenCalledWith(
+                userId,
+                role
+            )
             expect(result).toEqual(expectedUser)
         })
     })
@@ -220,9 +222,9 @@ describe('Auth Service', () => {
 
             ;(createAccessToken as jest.Mock).mockReturnValue(accessToken)
             ;(createRefreshToken as jest.Mock).mockReturnValue(refreshToken)
-            ;(
-                authRepository.createRefreshToken as jest.Mock
-            ).mockResolvedValue(undefined)
+            ;(authRepository.createRefreshToken as jest.Mock).mockResolvedValue(
+                undefined
+            )
 
             const result = await authService.createSession(userId, role)
 
@@ -244,7 +246,11 @@ describe('Auth Service', () => {
             const payload = { userId: '1', role: 'LCD' }
 
             ;(jwt.verify as jest.Mock).mockImplementation(
-                (_token: string, _secret: string, callback: Function) => {
+                (
+                    _token: string,
+                    _secret: string,
+                    callback: (err: Error | null, payload: unknown) => void
+                ) => {
                     callback(null, payload)
                 }
             )
@@ -260,12 +266,18 @@ describe('Auth Service', () => {
             const error = new Error('jwt expired')
 
             ;(jwt.verify as jest.Mock).mockImplementation(
-                (_token: string, _secret: string, callback: Function) => {
+                (
+                    _token: string,
+                    _secret: string,
+                    callback: (err: Error | null, payload: unknown) => void
+                ) => {
                     callback(error, null)
                 }
             )
 
-            await expect(authService.verifyToken(token, secret)).rejects.toThrow(
+            await expect(
+                authService.verifyToken(token, secret)
+            ).rejects.toThrow(
                 new ApiError(HttpStatus.FORBIDDEN, 'Token không hợp lệ')
             )
         })
@@ -276,14 +288,18 @@ describe('Auth Service', () => {
             const error = new Error('jwt malformed')
 
             ;(jwt.verify as jest.Mock).mockImplementation(
-                (_token: string, _secret: string, callback: Function) => {
+                (
+                    _token: string,
+                    _secret: string,
+                    callback: (err: Error | null, payload: unknown) => void
+                ) => {
                     callback(error, null)
                 }
             )
 
-            await expect(authService.verifyToken(token, secret)).rejects.toThrow(
-                ApiError
-            )
+            await expect(
+                authService.verifyToken(token, secret)
+            ).rejects.toThrow(ApiError)
         })
     })
 

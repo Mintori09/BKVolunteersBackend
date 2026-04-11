@@ -1,6 +1,5 @@
 import * as authRepository from '../auth.repository'
 import { prismaClient } from 'src/config'
-import { UserRole } from '../types'
 
 jest.mock('src/config', () => ({
     prismaClient: {
@@ -52,9 +51,8 @@ describe('Auth Repository', () => {
                 null
             )
 
-            const result = await authRepository.getUserByEmail(
-                'notfound@test.com'
-            )
+            const result =
+                await authRepository.getUserByEmail('notfound@test.com')
 
             expect(result).toBeNull()
         })
@@ -111,9 +109,9 @@ describe('Auth Repository', () => {
     describe('getUserByMssv', () => {
         it('should return student when found', async () => {
             const mockStudent = { id: '1', mssv: '12345678' }
-            ;(mockPrismaClient.student.findUnique as jest.Mock).mockResolvedValue(
-                mockStudent
-            )
+            ;(
+                mockPrismaClient.student.findUnique as jest.Mock
+            ).mockResolvedValue(mockStudent)
 
             const result = await authRepository.getUserByMssv('12345678')
 
@@ -124,9 +122,9 @@ describe('Auth Repository', () => {
         })
 
         it('should return null when student not found', async () => {
-            ;(mockPrismaClient.student.findUnique as jest.Mock).mockResolvedValue(
-                null
-            )
+            ;(
+                mockPrismaClient.student.findUnique as jest.Mock
+            ).mockResolvedValue(null)
 
             const result = await authRepository.getUserByMssv('00000000')
 
@@ -135,9 +133,9 @@ describe('Auth Repository', () => {
 
         it('should throw error when database query fails', async () => {
             const dbError = new Error('Database error')
-            ;(mockPrismaClient.student.findUnique as jest.Mock).mockRejectedValue(
-                dbError
-            )
+            ;(
+                mockPrismaClient.student.findUnique as jest.Mock
+            ).mockRejectedValue(dbError)
 
             await expect(
                 authRepository.getUserByMssv('12345678')
@@ -148,9 +146,9 @@ describe('Auth Repository', () => {
     describe('getUserById', () => {
         it('should return student when role is SINHVIEN', async () => {
             const mockStudent = { id: '1', mssv: '12345678' }
-            ;(mockPrismaClient.student.findUnique as jest.Mock).mockResolvedValue(
-                mockStudent
-            )
+            ;(
+                mockPrismaClient.student.findUnique as jest.Mock
+            ).mockResolvedValue(mockStudent)
 
             const result = await authRepository.getUserById('1', 'SINHVIEN')
 
@@ -176,9 +174,9 @@ describe('Auth Repository', () => {
 
         it('should throw error when database query fails for student', async () => {
             const dbError = new Error('Database error')
-            ;(mockPrismaClient.student.findUnique as jest.Mock).mockRejectedValue(
-                dbError
-            )
+            ;(
+                mockPrismaClient.student.findUnique as jest.Mock
+            ).mockRejectedValue(dbError)
 
             await expect(
                 authRepository.getUserById('1', 'SINHVIEN')
@@ -200,36 +198,34 @@ describe('Auth Repository', () => {
     describe('getRefreshTokenByToken', () => {
         it('should return user token with userType "user" when found', async () => {
             const mockToken = { id: '1', token: 'token123', userId: 'user1' }
-            ;(mockPrismaClient.refreshToken.findUnique as jest.Mock).mockResolvedValue(
-                mockToken
-            )
+            ;(
+                mockPrismaClient.refreshToken.findUnique as jest.Mock
+            ).mockResolvedValue(mockToken)
 
-            const result = await authRepository.getRefreshTokenByToken(
-                'token123'
-            )
+            const result =
+                await authRepository.getRefreshTokenByToken('token123')
 
-            expect(mockPrismaClient.refreshToken.findUnique).toHaveBeenCalledWith(
-                { where: { token: 'token123' } }
-            )
+            expect(
+                mockPrismaClient.refreshToken.findUnique
+            ).toHaveBeenCalledWith({ where: { token: 'token123' } })
             expect(result).toEqual({ ...mockToken, userType: 'user' })
         })
 
         it('should return student token with userType "student" when found', async () => {
-            ;(mockPrismaClient.refreshToken.findUnique as jest.Mock).mockResolvedValue(
-                null
-            )
+            ;(
+                mockPrismaClient.refreshToken.findUnique as jest.Mock
+            ).mockResolvedValue(null)
             const mockStudentToken = {
                 id: '2',
                 token: 'token456',
                 studentId: 'student1',
             }
-            ;(mockPrismaClient.studentRefreshToken.findUnique as jest.Mock).mockResolvedValue(
-                mockStudentToken
-            )
+            ;(
+                mockPrismaClient.studentRefreshToken.findUnique as jest.Mock
+            ).mockResolvedValue(mockStudentToken)
 
-            const result = await authRepository.getRefreshTokenByToken(
-                'token456'
-            )
+            const result =
+                await authRepository.getRefreshTokenByToken('token456')
 
             expect(
                 mockPrismaClient.studentRefreshToken.findUnique
@@ -238,25 +234,24 @@ describe('Auth Repository', () => {
         })
 
         it('should return null when token not found', async () => {
-            ;(mockPrismaClient.refreshToken.findUnique as jest.Mock).mockResolvedValue(
-                null
-            )
-            ;(mockPrismaClient.studentRefreshToken.findUnique as jest.Mock).mockResolvedValue(
-                null
-            )
+            ;(
+                mockPrismaClient.refreshToken.findUnique as jest.Mock
+            ).mockResolvedValue(null)
+            ;(
+                mockPrismaClient.studentRefreshToken.findUnique as jest.Mock
+            ).mockResolvedValue(null)
 
-            const result = await authRepository.getRefreshTokenByToken(
-                'notfound'
-            )
+            const result =
+                await authRepository.getRefreshTokenByToken('notfound')
 
             expect(result).toBeNull()
         })
 
         it('should throw error when database query fails for user token', async () => {
             const dbError = new Error('Database error')
-            ;(mockPrismaClient.refreshToken.findUnique as jest.Mock).mockRejectedValue(
-                dbError
-            )
+            ;(
+                mockPrismaClient.refreshToken.findUnique as jest.Mock
+            ).mockRejectedValue(dbError)
 
             await expect(
                 authRepository.getRefreshTokenByToken('token123')
@@ -264,13 +259,13 @@ describe('Auth Repository', () => {
         })
 
         it('should throw error when database query fails for student token', async () => {
-            ;(mockPrismaClient.refreshToken.findUnique as jest.Mock).mockResolvedValue(
-                null
-            )
+            ;(
+                mockPrismaClient.refreshToken.findUnique as jest.Mock
+            ).mockResolvedValue(null)
             const dbError = new Error('Database error')
-            ;(mockPrismaClient.studentRefreshToken.findUnique as jest.Mock).mockRejectedValue(
-                dbError
-            )
+            ;(
+                mockPrismaClient.studentRefreshToken.findUnique as jest.Mock
+            ).mockRejectedValue(dbError)
 
             await expect(
                 authRepository.getRefreshTokenByToken('token123')
@@ -314,9 +309,9 @@ describe('Auth Repository', () => {
 
         it('should throw error when delete fails for studentRefreshToken', async () => {
             const dbError = new Error('Database error')
-            ;(mockPrismaClient.studentRefreshToken.deleteMany as jest.Mock).mockRejectedValue(
-                dbError
-            )
+            ;(
+                mockPrismaClient.studentRefreshToken.deleteMany as jest.Mock
+            ).mockRejectedValue(dbError)
 
             await expect(
                 authRepository.deleteRefreshToken('token123', 'SINHVIEN')
@@ -325,9 +320,9 @@ describe('Auth Repository', () => {
 
         it('should throw error when delete fails for refreshToken', async () => {
             const dbError = new Error('Database error')
-            ;(mockPrismaClient.refreshToken.deleteMany as jest.Mock).mockRejectedValue(
-                dbError
-            )
+            ;(
+                mockPrismaClient.refreshToken.deleteMany as jest.Mock
+            ).mockRejectedValue(dbError)
 
             await expect(
                 authRepository.deleteRefreshToken('token123', 'CLB')
@@ -336,9 +331,9 @@ describe('Auth Repository', () => {
 
         it('should throw error when delete fails for both tables', async () => {
             const dbError = new Error('Database error')
-            ;(mockPrismaClient.refreshToken.deleteMany as jest.Mock).mockRejectedValue(
-                dbError
-            )
+            ;(
+                mockPrismaClient.refreshToken.deleteMany as jest.Mock
+            ).mockRejectedValue(dbError)
 
             await expect(
                 authRepository.deleteRefreshToken('token123')
@@ -348,9 +343,9 @@ describe('Auth Repository', () => {
 
     describe('deleteAllUserRefreshTokens', () => {
         it('should delete from studentRefreshToken when role is SINHVIEN', async () => {
-            ;(mockPrismaClient.studentRefreshToken.deleteMany as jest.Mock).mockResolvedValue(
-                { count: 1 }
-            )
+            ;(
+                mockPrismaClient.studentRefreshToken.deleteMany as jest.Mock
+            ).mockResolvedValue({ count: 1 })
 
             await authRepository.deleteAllUserRefreshTokens(
                 'student1',
@@ -363,9 +358,9 @@ describe('Auth Repository', () => {
         })
 
         it('should delete from refreshToken when role is not SINHVIEN', async () => {
-            ;(mockPrismaClient.refreshToken.deleteMany as jest.Mock).mockResolvedValue(
-                { count: 1 }
-            )
+            ;(
+                mockPrismaClient.refreshToken.deleteMany as jest.Mock
+            ).mockResolvedValue({ count: 1 })
 
             await authRepository.deleteAllUserRefreshTokens('user1', 'CLB')
 
@@ -376,20 +371,23 @@ describe('Auth Repository', () => {
 
         it('should throw error when delete fails for studentRefreshToken', async () => {
             const dbError = new Error('Database error')
-            ;(mockPrismaClient.studentRefreshToken.deleteMany as jest.Mock).mockRejectedValue(
-                dbError
-            )
+            ;(
+                mockPrismaClient.studentRefreshToken.deleteMany as jest.Mock
+            ).mockRejectedValue(dbError)
 
             await expect(
-                authRepository.deleteAllUserRefreshTokens('student1', 'SINHVIEN')
+                authRepository.deleteAllUserRefreshTokens(
+                    'student1',
+                    'SINHVIEN'
+                )
             ).rejects.toThrow('Database error')
         })
 
         it('should throw error when delete fails for refreshToken', async () => {
             const dbError = new Error('Database error')
-            ;(mockPrismaClient.refreshToken.deleteMany as jest.Mock).mockRejectedValue(
-                dbError
-            )
+            ;(
+                mockPrismaClient.refreshToken.deleteMany as jest.Mock
+            ).mockRejectedValue(dbError)
 
             await expect(
                 authRepository.deleteAllUserRefreshTokens('user1', 'CLB')
@@ -399,10 +397,14 @@ describe('Auth Repository', () => {
 
     describe('createRefreshToken', () => {
         it('should create in studentRefreshToken when role is SINHVIEN', async () => {
-            const mockToken = { id: '1', token: 'token123', studentId: 'student1' }
-            ;(mockPrismaClient.studentRefreshToken.create as jest.Mock).mockResolvedValue(
-                mockToken
-            )
+            const mockToken = {
+                id: '1',
+                token: 'token123',
+                studentId: 'student1',
+            }
+            ;(
+                mockPrismaClient.studentRefreshToken.create as jest.Mock
+            ).mockResolvedValue(mockToken)
 
             const result = await authRepository.createRefreshToken(
                 'student1',
@@ -420,9 +422,9 @@ describe('Auth Repository', () => {
 
         it('should create in refreshToken when role is not SINHVIEN', async () => {
             const mockToken = { id: '1', token: 'token123', userId: 'user1' }
-            ;(mockPrismaClient.refreshToken.create as jest.Mock).mockResolvedValue(
-                mockToken
-            )
+            ;(
+                mockPrismaClient.refreshToken.create as jest.Mock
+            ).mockResolvedValue(mockToken)
 
             const result = await authRepository.createRefreshToken(
                 'user1',
@@ -438,20 +440,24 @@ describe('Auth Repository', () => {
 
         it('should throw error when create fails for studentRefreshToken', async () => {
             const dbError = new Error('Database error')
-            ;(mockPrismaClient.studentRefreshToken.create as jest.Mock).mockRejectedValue(
-                dbError
-            )
+            ;(
+                mockPrismaClient.studentRefreshToken.create as jest.Mock
+            ).mockRejectedValue(dbError)
 
             await expect(
-                authRepository.createRefreshToken('student1', 'token123', 'SINHVIEN')
+                authRepository.createRefreshToken(
+                    'student1',
+                    'token123',
+                    'SINHVIEN'
+                )
             ).rejects.toThrow('Database error')
         })
 
         it('should throw error when create fails for refreshToken', async () => {
             const dbError = new Error('Database error')
-            ;(mockPrismaClient.refreshToken.create as jest.Mock).mockRejectedValue(
-                dbError
-            )
+            ;(
+                mockPrismaClient.refreshToken.create as jest.Mock
+            ).mockRejectedValue(dbError)
 
             await expect(
                 authRepository.createRefreshToken('user1', 'token123', 'CLB')
@@ -520,7 +526,11 @@ describe('Auth Repository', () => {
             )
 
             await expect(
-                authRepository.updatePassword('user1', 'newHashedPassword', 'CLB')
+                authRepository.updatePassword(
+                    'user1',
+                    'newHashedPassword',
+                    'CLB'
+                )
             ).rejects.toThrow('Database error')
         })
     })

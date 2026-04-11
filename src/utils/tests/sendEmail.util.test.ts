@@ -36,7 +36,10 @@ describe('sendEmail.util', () => {
             const token = 'reset-token-123'
 
             mockSendMail.mockImplementation(
-                (_options: unknown, callback: (error: null, info: { response: string }) => void) => {
+                (
+                    _options: unknown,
+                    callback: (error: null, info: { response: string }) => void
+                ) => {
                     callback(null, { response: '250 OK' })
                 }
             )
@@ -59,7 +62,10 @@ describe('sendEmail.util', () => {
             const error = new Error('SMTP connection failed')
 
             mockSendMail.mockImplementation(
-                (_options: unknown, callback: (error: Error, info: null) => void) => {
+                (
+                    _options: unknown,
+                    callback: (error: Error, info: null) => void
+                ) => {
                     callback(error, null)
                 }
             )
@@ -74,14 +80,19 @@ describe('sendEmail.util', () => {
             const token = 'reset-token-123'
 
             mockSendMail.mockImplementation(
-                (_options: unknown, callback: (error: null, info: { response: string }) => void) => {
+                (
+                    _options: unknown,
+                    callback: (error: null, info: { response: string }) => void
+                ) => {
                     callback(null, { response: '250 OK' })
                 }
             )
 
             sendResetEmail(email, token)
 
-            expect(mockLoggerInfo).toHaveBeenCalledWith('Reset password email sent: 250 OK')
+            expect(mockLoggerInfo).toHaveBeenCalledWith(
+                'Reset password email sent: 250 OK'
+            )
         })
     })
 
@@ -91,7 +102,10 @@ describe('sendEmail.util', () => {
             const token = 'verify-token-456'
 
             mockSendMail.mockImplementation(
-                (_options: unknown, callback: (error: null, info: { response: string }) => void) => {
+                (
+                    _options: unknown,
+                    callback: (error: null, info: { response: string }) => void
+                ) => {
                     callback(null, { response: '250 OK' })
                 }
             )
@@ -114,7 +128,10 @@ describe('sendEmail.util', () => {
             const error = new Error('SMTP authentication failed')
 
             mockSendMail.mockImplementation(
-                (_options: unknown, callback: (error: Error, info: null) => void) => {
+                (
+                    _options: unknown,
+                    callback: (error: Error, info: null) => void
+                ) => {
                     callback(error, null)
                 }
             )
@@ -129,14 +146,19 @@ describe('sendEmail.util', () => {
             const token = 'verify-token-456'
 
             mockSendMail.mockImplementation(
-                (_options: unknown, callback: (error: null, info: { response: string }) => void) => {
+                (
+                    _options: unknown,
+                    callback: (error: null, info: { response: string }) => void
+                ) => {
                     callback(null, { response: '250 OK' })
                 }
             )
 
             sendVerifyEmail(email, token)
 
-            expect(mockLoggerInfo).toHaveBeenCalledWith('Verify email sent: 250 OK')
+            expect(mockLoggerInfo).toHaveBeenCalledWith(
+                'Verify email sent: 250 OK'
+            )
         })
 
         it('should handle undefined email address', () => {
@@ -144,7 +166,10 @@ describe('sendEmail.util', () => {
             const token = 'verify-token-789'
 
             mockSendMail.mockImplementation(
-                (_options: unknown, callback: (error: null, info: { response: string }) => void) => {
+                (
+                    _options: unknown,
+                    callback: (error: null, info: { response: string }) => void
+                ) => {
                     callback(null, { response: '250 OK' })
                 }
             )

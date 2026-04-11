@@ -5,9 +5,8 @@ import {
 } from 'src/features/forgotPassword/forgotPassword.controller'
 import { prismaClient } from 'src/config'
 import * as argon2 from 'argon2'
-import { Response, NextFunction } from 'express'
+import { NextFunction } from 'express'
 import { randomUUID } from 'node:crypto'
-import { sendResetEmail } from 'src/utils/sendEmail.util'
 
 // Mock dependencies
 jest.mock('src/config', () => ({

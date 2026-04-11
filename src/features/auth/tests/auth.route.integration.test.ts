@@ -8,7 +8,11 @@ jest.mock('../auth.service')
 jest.mock('argon2')
 jest.mock('jsonwebtoken', () => ({
     verify: jest.fn(
-        (token: string, secret: string, callback: (err: null, payload: unknown) => void) => {
+        (
+            token: string,
+            secret: string,
+            callback: (err: null, payload: unknown) => void
+        ) => {
             if (token === 'valid-token') {
                 callback(null, { userId: 'user-123', role: 'LCD' })
             } else {
@@ -95,9 +99,9 @@ describe('Auth Routes Integration', () => {
         })
 
         it('should return 401 when user does not exist', async () => {
-            ;(authService.getUserbyUsernameOrMssv as jest.Mock).mockResolvedValue(
-                null
-            )
+            ;(
+                authService.getUserbyUsernameOrMssv as jest.Mock
+            ).mockResolvedValue(null)
 
             const response = await request(app)
                 .post('/api/v1/auth/login')
@@ -109,9 +113,9 @@ describe('Auth Routes Integration', () => {
         })
 
         it('should return 401 when password is invalid', async () => {
-            ;(authService.getUserbyUsernameOrMssv as jest.Mock).mockResolvedValue(
-                mockUser
-            )
+            ;(
+                authService.getUserbyUsernameOrMssv as jest.Mock
+            ).mockResolvedValue(mockUser)
             ;(argon2.verify as jest.Mock).mockResolvedValue(false)
 
             const response = await request(app)
@@ -123,17 +127,17 @@ describe('Auth Routes Integration', () => {
         })
 
         it('should return 200 with accessToken when credentials are valid', async () => {
-            ;(authService.getUserbyUsernameOrMssv as jest.Mock).mockResolvedValue(
-                mockUser
-            )
+            ;(
+                authService.getUserbyUsernameOrMssv as jest.Mock
+            ).mockResolvedValue(mockUser)
             ;(argon2.verify as jest.Mock).mockResolvedValue(true)
             ;(authService.createSession as jest.Mock).mockResolvedValue({
                 accessToken: 'mock-access-token',
                 refreshToken: 'mock-refresh-token',
             })
-            ;(authService.getRefreshTokenByToken as jest.Mock).mockResolvedValue(
-                null
-            )
+            ;(
+                authService.getRefreshTokenByToken as jest.Mock
+            ).mockResolvedValue(null)
 
             const response = await request(app)
                 .post('/api/v1/auth/login')
@@ -147,17 +151,17 @@ describe('Auth Routes Integration', () => {
         })
 
         it('should login student with SINHVIEN role when using MSSV', async () => {
-            ;(authService.getUserbyUsernameOrMssv as jest.Mock).mockResolvedValue(
-                mockStudent
-            )
+            ;(
+                authService.getUserbyUsernameOrMssv as jest.Mock
+            ).mockResolvedValue(mockStudent)
             ;(argon2.verify as jest.Mock).mockResolvedValue(true)
             ;(authService.createSession as jest.Mock).mockResolvedValue({
                 accessToken: 'mock-access-token',
                 refreshToken: 'mock-refresh-token',
             })
-            ;(authService.getRefreshTokenByToken as jest.Mock).mockResolvedValue(
-                null
-            )
+            ;(
+                authService.getRefreshTokenByToken as jest.Mock
+            ).mockResolvedValue(null)
 
             const response = await request(app)
                 .post('/api/v1/auth/login')
@@ -171,17 +175,20 @@ describe('Auth Routes Integration', () => {
         })
 
         it('should clear existing refresh token cookie on login', async () => {
-            ;(authService.getUserbyUsernameOrMssv as jest.Mock).mockResolvedValue(
-                mockUser
-            )
+            ;(
+                authService.getUserbyUsernameOrMssv as jest.Mock
+            ).mockResolvedValue(mockUser)
             ;(argon2.verify as jest.Mock).mockResolvedValue(true)
             ;(authService.createSession as jest.Mock).mockResolvedValue({
                 accessToken: 'mock-access-token',
                 refreshToken: 'mock-refresh-token',
             })
-            ;(authService.getRefreshTokenByToken as jest.Mock).mockResolvedValue(
-                { token: 'old-refresh-token', userId: 'user-123' }
-            )
+            ;(
+                authService.getRefreshTokenByToken as jest.Mock
+            ).mockResolvedValue({
+                token: 'old-refresh-token',
+                userId: 'user-123',
+            })
             ;(authService.deleteRefreshToken as jest.Mock).mockResolvedValue(
                 undefined
             )
@@ -203,9 +210,9 @@ describe('Auth Routes Integration', () => {
         })
 
         it('should return 204 and clear cookie when refresh token not found in DB', async () => {
-            ;(authService.getRefreshTokenByToken as jest.Mock).mockResolvedValue(
-                null
-            )
+            ;(
+                authService.getRefreshTokenByToken as jest.Mock
+            ).mockResolvedValue(null)
 
             const response = await request(app)
                 .post('/api/v1/auth/logout')
@@ -216,9 +223,9 @@ describe('Auth Routes Integration', () => {
         })
 
         it('should return 204 and delete token from DB when valid', async () => {
-            ;(authService.getRefreshTokenByToken as jest.Mock).mockResolvedValue(
-                { token: 'valid-token', userId: 'user-123' }
-            )
+            ;(
+                authService.getRefreshTokenByToken as jest.Mock
+            ).mockResolvedValue({ token: 'valid-token', userId: 'user-123' })
             ;(authService.deleteRefreshToken as jest.Mock).mockResolvedValue(
                 undefined
             )
@@ -240,13 +247,15 @@ describe('Auth Routes Integration', () => {
             const response = await request(app).post('/api/v1/auth/refresh')
 
             expect(response.status).toBe(HttpStatus.UNAUTHORIZED)
-            expect(response.body.message).toContain('Không tìm thấy refresh token')
+            expect(response.body.message).toContain(
+                'Không tìm thấy refresh token'
+            )
         })
 
         it('should return 403 when token is not found in DB', async () => {
-            ;(authService.getRefreshTokenByToken as jest.Mock).mockResolvedValue(
-                null
-            )
+            ;(
+                authService.getRefreshTokenByToken as jest.Mock
+            ).mockResolvedValue(null)
             ;(authService.verifyToken as jest.Mock).mockResolvedValue({
                 userId: 'user-123',
                 role: 'LCD',
@@ -261,7 +270,9 @@ describe('Auth Routes Integration', () => {
         })
 
         it('should return 403 when token userId does not match payload', async () => {
-            ;(authService.getRefreshTokenByToken as jest.Mock).mockResolvedValue({
+            ;(
+                authService.getRefreshTokenByToken as jest.Mock
+            ).mockResolvedValue({
                 token: 'token',
                 userId: 'user-123',
                 userType: 'user',
@@ -283,7 +294,9 @@ describe('Auth Routes Integration', () => {
 
         it('should return 200 with new tokens when refresh token is valid', async () => {
             const payload = { userId: 'user-123', role: 'LCD' }
-            ;(authService.getRefreshTokenByToken as jest.Mock).mockResolvedValue({
+            ;(
+                authService.getRefreshTokenByToken as jest.Mock
+            ).mockResolvedValue({
                 token: 'valid-token',
                 userId: 'user-123',
                 userType: 'user',
