@@ -53,7 +53,7 @@ enum ParticipantStatus {
 /// Danh mục khoa
 model Faculty {
   id        Int       @id @default(autoincrement())
-  code      String    @unique @db.VarChar(20)
+code      String    @unique @db.Char(3)
   name      String    @db.VarChar(255)
   users     User[]
   students  Student[]
@@ -97,7 +97,7 @@ model Student {
   fullName    String    @map("full_name") @db.VarChar(255)
   email       String    @unique @db.VarChar(255)
   password    String    @db.VarChar(255)
-  facultyId   Int       @map("faculty_id")
+facultyId String?  @map("faculty_id") @db.Char(3)
   className   String?   @map("class_name") @db.VarChar(50)
   phone       String?   @db.VarChar(15)
   totalPoints Int       @default(0) @map("total_points")
@@ -105,7 +105,7 @@ model Student {
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
 
-  faculty       Faculty              @relation(fields: [facultyId], references: [id])
+faculty     Faculty? @relation(fields: [facultyId], references: [code], onDelete: SetNull)
   titles        StudentTitle[]
   donations     Donation[]
   participants  Participant[]
