@@ -97,12 +97,28 @@ export type StatusTransition = {
 }
 
 export const STATUS_TRANSITIONS: StatusTransition[] = [
-    { from: 'DRAFT', to: 'PENDING', allowedRoles: ['CLB', 'LCD', 'DOANTRUONG'] },
+    {
+        from: 'DRAFT',
+        to: 'PENDING',
+        allowedRoles: ['CLB', 'LCD', 'DOANTRUONG'],
+    },
     { from: 'PENDING', to: 'ACTIVE', allowedRoles: ['DOANTRUONG'] },
     { from: 'PENDING', to: 'REJECTED', allowedRoles: ['DOANTRUONG'] },
-    { from: 'REJECTED', to: 'PENDING', allowedRoles: ['CLB', 'LCD', 'DOANTRUONG'] },
-    { from: 'ACTIVE', to: 'COMPLETED', allowedRoles: ['CLB', 'LCD', 'DOANTRUONG'] },
-    { from: 'ACTIVE', to: 'CANCELLED', allowedRoles: ['CLB', 'LCD', 'DOANTRUONG'] },
+    {
+        from: 'REJECTED',
+        to: 'PENDING',
+        allowedRoles: ['CLB', 'LCD', 'DOANTRUONG'],
+    },
+    {
+        from: 'ACTIVE',
+        to: 'COMPLETED',
+        allowedRoles: ['CLB', 'LCD', 'DOANTRUONG'],
+    },
+    {
+        from: 'ACTIVE',
+        to: 'CANCELLED',
+        allowedRoles: ['CLB', 'LCD', 'DOANTRUONG'],
+    },
 ]
 
 export const CAMPAIGN_STATUS_VALUES = [
