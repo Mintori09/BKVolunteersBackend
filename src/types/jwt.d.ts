@@ -5,5 +5,5 @@ declare module 'jsonwebtoken' {
         userId: string
         role: UserRole
     }
-    export interface Jwt {}
+    export interface Jwt extends Record<string, unknown> {}
 }
