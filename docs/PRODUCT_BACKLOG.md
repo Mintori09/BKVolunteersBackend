@@ -162,60 +162,6 @@
 
 ## 3. ACCEPTANCE CRITERIA (GHERKIN) - PRIORITY HIGH
 
-### US-001: Đăng ký tài khoản Student
-
-```gherkin
-Feature: Student Registration
-
-Scenario: Đăng ký thành công với thông tin hợp lệ
-    Given tôi là người chưa có tài khoản
-    When tôi gửi POST /auth/student/register với:
-        | mssv        | "20110001"        |
-        | fullName    | "Nguyễn Văn A"    |
-        | email       | "a@student.edu"   |
-        | password    | "Password123!"    |
-        | facultyId   | 1                 |
-        | className   | "DHKTPM17A"       |
-        | phone       | "0909123456"      |
-    Then response status là 201
-    And response chứa thông tin student với mssv "20110001"
-    And email xác thực được gửi đến "a@student.edu"
-
-Scenario Outline: Đăng ký thất bại với dữ liệu không hợp lệ
-    Given tôi là người chưa có tài khoản
-    When tôi gửi POST /auth/student/register với:
-        | mssv        | <mssv>        |
-        | fullName    | <fullName>    |
-        | email       | <email>       |
-        | password    | <password>    |
-        | facultyId   | <facultyId>   |
-    Then response status là 400
-    And response error code là "VALIDATION_ERROR"
-    And response message chứa "<errorField>"
-
-    Examples:
-        | mssv        | fullName        | email            | password     | facultyId | errorField   |
-        | ""          | "Nguyễn Văn A"  | "a@student.edu"  | "Pass123!"   | 1         | mssv         |
-        | "20110001"  | ""              | "a@student.edu"  | "Pass123!"   | 1         | fullName     |
-        | "20110001"  | "Nguyễn Văn A"  | "invalid-email"  | "Pass123!"   | 1         | email        |
-        | "20110001"  | "Nguyễn Văn A"  | "a@student.edu"  | "123"        | 1         | password     |
-        | "20110001"  | "Nguyễn Văn A"  | "a@student.edu"  | "Pass123!"   | ""        | facultyId    |
-
-Scenario: Đăng ký thất bại với MSSV đã tồn tại
-    Given tồn tại student với mssv "20110001"
-    When tôi gửi POST /auth/student/register với mssv "20110001"
-    Then response status là 409
-    And response error code là "CONFLICT"
-    And response message là "MSSV đã được đăng ký"
-
-Scenario: Đăng ký thất bại với email đã tồn tại
-    Given tồn tại student với email "a@student.edu"
-    When tôi gửi POST /auth/student/register với email "a@student.edu"
-    Then response status là 409
-    And response error code là "CONFLICT"
-    And response message là "Email đã được đăng ký"
-```
-
 ### US-002: Đăng nhập Student
 
 ```gherkin
