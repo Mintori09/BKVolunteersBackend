@@ -1,7 +1,7 @@
 import type { Sanitized, SanitizeOptions } from 'src/types/common'
 import xss from 'xss'
 
-export const sanitize = <T extends unknown>(
+export const sanitize = <T>(
     data: T,
     options?: SanitizeOptions
 ): Sanitized<T> => {

@@ -1,5 +1,3 @@
-import { HttpStatus } from 'src/common/constants/http-status'
-
 export class ApiError extends Error {
     public readonly statusCode: number
     public readonly isOperational: boolean

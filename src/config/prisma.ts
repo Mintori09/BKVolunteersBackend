@@ -3,7 +3,6 @@ import config from './config'
 import { PrismaMariaDb } from '@prisma/adapter-mariadb'
 
 declare global {
-    // eslint-disable-next-line no-var
     var prisma: PrismaClient | undefined
 }
 
