@@ -5,7 +5,7 @@ dotenv.config()
 
 const envSchema = z.object({
     NODE_ENV: z
-        .literal(['development', 'test', 'production'])
+        .enum(['development', 'test', 'production'])
         .default('development'),
     PORT: z.string().default('4000'),
     SERVER_URL: z.string().optional(),
@@ -35,6 +35,10 @@ const envSchema = z.object({
     SMTP_USERNAME: z.string().default('test_user'),
     SMTP_PASSWORD: z.string().default('test_password'),
     EMAIL_FROM: z.email('EMAIL NOT VALID!').default('test@example.com'),
+    CLOUDINARY_CLOUD_NAME: z.string().default(''),
+    CLOUDINARY_API_KEY: z.string().default(''),
+    CLOUDINARY_API_SECRET: z.string().default(''),
+    CLOUDINARY_BASE_FOLDER: z.string().default('bk-volunteers'),
 })
 
 const parsedEnv = envSchema.safeParse(process.env)
@@ -83,6 +87,17 @@ const config = {
             },
         },
         from: env.EMAIL_FROM,
+    },
+    cloudinary: {
+        cloud_name: env.CLOUDINARY_CLOUD_NAME,
+        api_key: env.CLOUDINARY_API_KEY,
+        api_secret: env.CLOUDINARY_API_SECRET,
+        base_folder: env.CLOUDINARY_BASE_FOLDER,
+        is_configured: Boolean(
+            env.CLOUDINARY_CLOUD_NAME &&
+                env.CLOUDINARY_API_KEY &&
+                env.CLOUDINARY_API_SECRET
+        ),
     },
     database_url: env.DATABASE_URL,
 } as const

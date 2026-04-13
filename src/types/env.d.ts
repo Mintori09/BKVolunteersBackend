@@ -16,5 +16,9 @@ declare namespace NodeJS {
         readonly SMTP_USERNAME: string
         readonly SMTP_PASSWORD: string
         readonly EMAIL_FROM: string
+        readonly CLOUDINARY_CLOUD_NAME: string
+        readonly CLOUDINARY_API_KEY: string
+        readonly CLOUDINARY_API_SECRET: string
+        readonly CLOUDINARY_BASE_FOLDER: string
     }
 }

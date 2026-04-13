@@ -9,9 +9,9 @@ const validate = (schema: RequestValidationSchema) => {
 
     return (req: Request, res: Response, next: NextFunction) => {
         const result = combinedSchema.safeParse({
-            body: req.body,
-            query: req.query,
-            params: req.params,
+            body: req.body ?? {},
+            query: req.query ?? {},
+            params: req.params ?? {},
         })
 
         if (result.success) {
