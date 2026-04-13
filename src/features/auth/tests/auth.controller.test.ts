@@ -1,19 +1,14 @@
+import * as argon2 from 'argon2'
+import { NextFunction } from 'express'
 import { HttpStatus } from 'src/common/constants'
 import {
-    handleSignup,
     handleLogin,
-    handleLogout,
+    handleManagerLogin,
     handleRefresh,
-    handleChangePassword,
 } from 'src/features/auth/auth.controller'
-import { config } from 'src/config'
-import * as argon2 from 'argon2'
-import { Response, Request, NextFunction } from 'express'
-import { randomUUID } from 'node:crypto'
 import * as authService from '../auth.service'
 import { ApiError } from 'src/utils/ApiError'
 
-// Mock dependencies
 jest.mock('src/config', () => ({
     prismaClient: {},
     config: {
@@ -32,8 +27,10 @@ jest.mock('src/config', () => ({
     clearRefreshTokenCookieConfig: {},
 }))
 
-jest.mock('argon2')
-jest.mock('node:crypto')
+jest.mock('argon2', () => ({
+    hash: jest.fn(),
+    verify: jest.fn(),
+}))
 jest.mock('src/utils/sendEmail.util')
 jest.mock('src/utils/generateTokens.util')
 jest.mock('jsonwebtoken')
@@ -49,248 +46,359 @@ describe('Auth Controller', () => {
             body: {},
             cookies: {},
             params: {},
+            query: {},
         }
         res = {
             status: jest.fn().mockReturnThis(),
+            type: jest.fn().mockReturnThis(),
             json: jest.fn().mockReturnThis(),
+            send: jest.fn().mockReturnThis(),
             sendStatus: jest.fn().mockReturnThis(),
             cookie: jest.fn().mockReturnThis(),
             clearCookie: jest.fn().mockReturnThis(),
+            redirect: jest.fn().mockReturnThis(),
         }
         next = jest.fn()
         jest.clearAllMocks()
     })
 
-    describe('handleSignup', () => {
-        it('should call next with ApiError if required fields are missing', async () => {
-            req.body = { firstName: 'John', lastName: 'Doe', username: 'test' }
-            await handleSignup(req, res, next)
+    describe('handleLogin', () => {
+        it('should call next with ApiError if username does not exist', async () => {
+            req.body = { username: 'unknown', password: 'password' }
+            ;(authService.getUserByUsername as jest.Mock).mockResolvedValue(null)
+            ;(
+                authService.getManagerByIdentifier as jest.Mock
+            ).mockResolvedValue(null)
+            ;(authService.getStudentByMssv as jest.Mock).mockResolvedValue(null)
+
+            await handleLogin(req, res, next)
+
             expect(next).toHaveBeenCalledWith(expect.any(ApiError))
             expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
-                HttpStatus.BAD_REQUEST
+                HttpStatus.UNAUTHORIZED
             )
         })
 
-        it('should call next with ApiError if passwords do not match', async () => {
-            req.body = {
-                firstName: 'John',
-                lastName: 'Doe',
-                username: 'test',
-                email: 'test@example.com',
-                password: 'password',
-                passwordConfirmed: 'different',
-            }
-            await handleSignup(req, res, next)
-            expect(next).toHaveBeenCalledWith(expect.any(ApiError))
-            expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
-                HttpStatus.BAD_REQUEST
-            )
-        })
+        it('should login a manager account from the shared regular login endpoint', async () => {
+            req.body = { username: 'lcd_cntt', password: 'QL@123456' }
 
-        it('should call next with ApiError if user already exists', async () => {
-            req.body = {
-                firstName: 'John',
-                lastName: 'Doe',
-                username: 'test',
-                email: 'test@example.com',
-                password: 'password',
-                passwordConfirmed: 'password',
-            }
-            ;(authService.createUser as jest.Mock).mockRejectedValue(
-                new ApiError(HttpStatus.CONFLICT, 'Email already exists')
+            ;(authService.getUserByUsername as jest.Mock).mockResolvedValue(null)
+            ;(
+                authService.getManagerByIdentifier as jest.Mock
+            ).mockResolvedValue({
+                id: 'manager-1',
+                username: 'lcd_cntt',
+                roleType: 'LCD_MANAGER',
+                facultyId: 102,
+                faculty: {
+                    id: 102,
+                    code: '102',
+                    name: 'Khoa Cong nghe thong tin',
+                },
+                clubId: null,
+                club: null,
+                status: 'ACTIVE',
+            })
+            ;(authService.ensureManagerActive as jest.Mock).mockReturnValue(true)
+            ;(authService.ensureManagerContext as jest.Mock).mockReturnValue({
+                dashboardType: 'faculty',
+                scopeName: 'Khoa Cong nghe thong tin',
+            })
+            ;(authService.verifyManagerPassword as jest.Mock).mockResolvedValue(
+                true
             )
-
-            await handleSignup(req, res, next)
-            expect(next).toHaveBeenCalledWith(expect.any(ApiError))
-            expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
-                HttpStatus.CONFLICT
-            )
-        })
-
-        it('should create a user and return 201', async () => {
-            req.body = {
-                firstName: 'John',
-                lastName: 'Doe',
-                username: 'test',
-                email: 'test@example.com',
-                password: 'password',
-                passwordConfirmed: 'password',
-            }
-            ;(authService.createUser as jest.Mock).mockResolvedValue({
-                id: '1',
+            ;(authService.createManagerSession as jest.Mock).mockResolvedValue({
+                accessToken: 'manager-access',
+                refreshToken: 'manager-refresh',
+            })
+            ;(authService.buildSessionUser as jest.Mock).mockResolvedValue({
+                id: 'manager-1',
+                role: 'ADMIN',
+                accountType: 'manager',
+                roleType: 'LCD_MANAGER',
             })
 
-            await handleSignup(req, res, next)
+            await handleLogin(req, res, next)
 
-            expect(res.status).toHaveBeenCalledWith(HttpStatus.CREATED)
+            expect(authService.getStudentByMssv).not.toHaveBeenCalled()
+            expect(res.cookie).toHaveBeenCalled()
             expect(res.json).toHaveBeenCalledWith(
                 expect.objectContaining({
                     success: true,
-                    message: 'New user created',
+                    data: {
+                        accessToken: 'manager-access',
+                        user: expect.objectContaining({
+                            accountType: 'manager',
+                            roleType: 'LCD_MANAGER',
+                        }),
+                    },
                 })
             )
         })
-    })
 
-    describe('handleLogin', () => {
-        it('should call next with ApiError if user does not exist', async () => {
-            req.body = { email: 'test@example.com', password: 'password' }
-            ;(authService.getUserByEmail as jest.Mock).mockResolvedValue(null)
-
-            await handleLogin(req, res, next)
-            expect(next).toHaveBeenCalledWith(expect.any(ApiError))
-            expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
-                HttpStatus.UNAUTHORIZED
-            )
-        })
-
-        it('should call next with ApiError if password is invalid', async () => {
-            req.body = { email: 'test@example.com', password: 'password' }
+        it('should login a manager account and return access token with session user', async () => {
+            req.body = { username: 'lcd_club', password: 'password' }
             const user = {
                 id: '1',
                 password: 'hashed',
                 emailVerified: new Date(),
                 role: 'USER',
             }
-            ;(authService.getUserByEmail as jest.Mock).mockResolvedValue(user)
-            ;(argon2.verify as jest.Mock).mockResolvedValue(false)
 
-            await handleLogin(req, res, next)
-            expect(next).toHaveBeenCalledWith(expect.any(ApiError))
-            expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
-                HttpStatus.UNAUTHORIZED
-            )
-        })
-
-        it('should login and return tokens if credentials are valid', async () => {
-            req.body = { email: 'test@example.com', password: 'password' }
-            const user = {
-                id: '1',
-                password: 'hashed',
-                emailVerified: new Date(),
-                role: 'USER',
-            }
-            ;(authService.getUserByEmail as jest.Mock).mockResolvedValue(user)
+            ;(authService.getUserByUsername as jest.Mock).mockResolvedValue(user)
             ;(argon2.verify as jest.Mock).mockResolvedValue(true)
             ;(authService.createSession as jest.Mock).mockResolvedValue({
                 accessToken: 'access',
                 refreshToken: 'refresh',
             })
+            ;(authService.buildSessionUser as jest.Mock).mockResolvedValue({
+                id: '1',
+                username: 'lcd_club',
+                role: 'USER',
+            })
 
             await handleLogin(req, res, next)
 
+            expect(res.cookie).toHaveBeenCalled()
             expect(res.json).toHaveBeenCalledWith(
                 expect.objectContaining({
                     success: true,
-                    data: { accessToken: 'access' },
+                    data: {
+                        accessToken: 'access',
+                        user: expect.objectContaining({
+                            id: '1',
+                            role: 'USER',
+                        }),
+                    },
                 })
             )
+        })
+
+        it('should login a student account using MSSV for both username and password', async () => {
+            req.body = { username: '102220001', password: '102220001' }
+            const student = {
+                id: 'student-1',
+                mssv: '102220001',
+                status: 'ACTIVE',
+            }
+
+            ;(authService.getUserByUsername as jest.Mock).mockResolvedValue(null)
+            ;(
+                authService.getManagerByIdentifier as jest.Mock
+            ).mockResolvedValue(null)
+            ;(authService.getStudentByMssv as jest.Mock).mockResolvedValue(
+                student
+            )
+            ;(authService.ensureStudentActive as jest.Mock).mockReturnValue(
+                student
+            )
+            ;(authService.verifyStudentPassword as jest.Mock).mockReturnValue(
+                true
+            )
+            ;(authService.createStudentSession as jest.Mock).mockResolvedValue({
+                accessToken: 'student-access',
+                refreshToken: 'student-refresh',
+            })
+            ;(authService.buildSessionUser as jest.Mock).mockResolvedValue({
+                id: 'student-1',
+                username: '102220001',
+                role: 'STUDENT',
+            })
+
+            await handleLogin(req, res, next)
+
             expect(res.cookie).toHaveBeenCalled()
+            expect(res.json).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    success: true,
+                    data: {
+                        accessToken: 'student-access',
+                        user: expect.objectContaining({
+                            role: 'STUDENT',
+                        }),
+                    },
+                })
+            )
         })
     })
 
-    describe('handleLogout', () => {
-        it('should return 204 if no refresh token in cookies', async () => {
-            await handleLogout(req, res, next)
-            expect(res.sendStatus).toHaveBeenCalledWith(HttpStatus.NO_CONTENT)
-        })
+    describe('handleManagerLogin', () => {
+        it('should login a manager account with identifier and return scoped session user', async () => {
+            req.body = { identifier: 'lcd_cntt', password: 'QL@123456' }
+            const manager = {
+                id: 'manager-1',
+                username: 'lcd_cntt',
+                passwordHash: 'hashed',
+                roleType: 'LCD_MANAGER',
+                facultyId: 102,
+                faculty: {
+                    id: 102,
+                    code: '102',
+                    name: 'Khoa Cong nghe thong tin',
+                },
+                clubId: null,
+                club: null,
+                status: 'ACTIVE',
+            }
 
-        it('should clear cookie and return 204 if token exists', async () => {
-            req.cookies = { refresh_token: 'token' }
             ;(
-                authService.getRefreshTokenByToken as jest.Mock
-            ).mockResolvedValue({ token: 'token' })
+                authService.getManagerByIdentifier as jest.Mock
+            ).mockResolvedValue(manager)
+            ;(authService.ensureManagerActive as jest.Mock).mockReturnValue(
+                manager
+            )
+            ;(authService.ensureManagerContext as jest.Mock).mockReturnValue({
+                dashboardType: 'faculty',
+                scopeName: 'Khoa Cong nghe thong tin',
+            })
+            ;(authService.verifyManagerPassword as jest.Mock).mockResolvedValue(
+                true
+            )
+            ;(authService.createManagerSession as jest.Mock).mockResolvedValue({
+                accessToken: 'manager-access',
+                refreshToken: 'manager-refresh',
+            })
+            ;(authService.buildSessionUser as jest.Mock).mockResolvedValue({
+                id: 'manager-1',
+                username: 'lcd_cntt',
+                role: 'ADMIN',
+                accountType: 'manager',
+                roleType: 'LCD_MANAGER',
+            })
 
-            await handleLogout(req, res, next)
+            await handleManagerLogin(req, res, next)
 
-            expect(res.clearCookie).toHaveBeenCalled()
-            expect(res.sendStatus).toHaveBeenCalledWith(HttpStatus.NO_CONTENT)
+            expect(res.cookie).toHaveBeenCalled()
+            expect(res.json).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    success: true,
+                    data: {
+                        accessToken: 'manager-access',
+                        user: expect.objectContaining({
+                            accountType: 'manager',
+                            roleType: 'LCD_MANAGER',
+                        }),
+                    },
+                })
+            )
         })
     })
 
     describe('handleRefresh', () => {
-        it('should call next with ApiError if no refresh token', async () => {
-            await handleRefresh(req, res, next)
-            expect(next).toHaveBeenCalledWith(expect.any(ApiError))
-            expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
-                HttpStatus.UNAUTHORIZED
-            )
-        })
+        it('should create a new student session when student refresh token is valid', async () => {
+            req.cookies = { refresh_token: 'student-token' }
+            const payload = {
+                userId: 'student-1',
+                role: 'STUDENT',
+                subjectType: 'student',
+            }
 
-        it('should call next with ApiError if token is not found in DB', async () => {
-            req.cookies = { refresh_token: 'token' }
+            ;(authService.getRefreshTokenByToken as jest.Mock).mockResolvedValue(
+                null
+            )
             ;(
-                authService.getRefreshTokenByToken as jest.Mock
-            ).mockResolvedValue(null)
-            ;(authService.verifyToken as jest.Mock).mockResolvedValue({
-                userId: '1',
+                authService.getStudentRefreshTokenByToken as jest.Mock
+            ).mockResolvedValue({
+                token: 'student-token',
+                studentId: 'student-1',
             })
-
-            await handleRefresh(req, res, next)
-            expect(next).toHaveBeenCalledWith(expect.any(ApiError))
-            expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
-                HttpStatus.FORBIDDEN
-            )
-        })
-
-        it('should create new session if refresh token is valid', async () => {
-            req.cookies = { refresh_token: 'token' }
-            const payload = { userId: '1' }
-            const user = { id: '1', role: 'USER' }
-
-            ;(
-                authService.getRefreshTokenByToken as jest.Mock
-            ).mockResolvedValue({ token: 'token', userId: '1' })
             ;(authService.verifyToken as jest.Mock).mockResolvedValue(payload)
-            ;(authService.getUserById as jest.Mock).mockResolvedValue(user)
-            ;(authService.createSession as jest.Mock).mockResolvedValue({
-                accessToken: 'new_access',
-                refreshToken: 'new_refresh',
+            ;(authService.getStudentById as jest.Mock).mockResolvedValue({
+                id: 'student-1',
+                status: 'ACTIVE',
+            })
+            ;(authService.ensureStudentActive as jest.Mock).mockReturnValue(
+                true
+            )
+            ;(authService.createStudentSession as jest.Mock).mockResolvedValue({
+                accessToken: 'student-access',
+                refreshToken: 'student-refresh',
+            })
+            ;(authService.buildSessionUser as jest.Mock).mockResolvedValue({
+                id: 'student-1',
+                role: 'STUDENT',
             })
 
             await handleRefresh(req, res, next)
 
+            expect(res.cookie).toHaveBeenCalled()
             expect(res.json).toHaveBeenCalledWith(
                 expect.objectContaining({
                     success: true,
-                    data: { accessToken: 'new_access' },
+                    data: {
+                        accessToken: 'student-access',
+                        user: expect.objectContaining({
+                            role: 'STUDENT',
+                        }),
+                    },
                 })
             )
-            expect(res.cookie).toHaveBeenCalled()
-        })
-    })
-
-    describe('handleChangePassword', () => {
-        it('should call next with ApiError if not authorized (no payload)', async () => {
-            req.payload = null
-            await handleChangePassword(req, res, next)
-            expect(next).toHaveBeenCalledWith(expect.any(ApiError))
-            expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
-                HttpStatus.UNAUTHORIZED
-            )
         })
 
-        it('should call changePassword and return 200 on success', async () => {
-            req.payload = { userId: '1' }
-            req.body = {
-                oldPassword: 'old_password',
-                newPassword: 'new_password',
-                newPasswordConfirm: 'new_password',
+        it('should refresh a manager session without using the student refresh flow', async () => {
+            req.cookies = { refresh_token: 'manager-token' }
+            const payload = {
+                userId: 'manager-1',
+                role: 'ADMIN',
+                subjectType: 'manager',
+                roleType: 'LCD_MANAGER',
+                facultyId: 102,
+                clubId: null,
             }
-            ;(authService.changePassword as jest.Mock).mockResolvedValue(
-                undefined
-            )
 
-            await handleChangePassword(req, res, next)
-
-            expect(authService.changePassword).toHaveBeenCalledWith(
-                '1',
-                req.body
+            ;(authService.getRefreshTokenByToken as jest.Mock).mockResolvedValue(
+                null
             )
+            ;(
+                authService.getStudentRefreshTokenByToken as jest.Mock
+            ).mockResolvedValue(null)
+            ;(authService.verifyToken as jest.Mock).mockResolvedValue(payload)
+            ;(authService.getManagerById as jest.Mock).mockResolvedValue({
+                id: 'manager-1',
+                username: 'lcd_cntt',
+                roleType: 'LCD_MANAGER',
+                facultyId: 102,
+                faculty: {
+                    id: 102,
+                    code: '102',
+                    name: 'Khoa Cong nghe thong tin',
+                },
+                clubId: null,
+                club: null,
+                status: 'ACTIVE',
+            })
+            ;(authService.ensureManagerActive as jest.Mock).mockReturnValue(
+                true
+            )
+            ;(authService.ensureManagerContext as jest.Mock).mockReturnValue({
+                dashboardType: 'faculty',
+                scopeName: 'Khoa Cong nghe thong tin',
+            })
+            ;(authService.createManagerSession as jest.Mock).mockResolvedValue({
+                accessToken: 'manager-access',
+                refreshToken: 'manager-refresh',
+            })
+            ;(authService.buildSessionUser as jest.Mock).mockResolvedValue({
+                id: 'manager-1',
+                role: 'ADMIN',
+                accountType: 'manager',
+                roleType: 'LCD_MANAGER',
+            })
+
+            await handleRefresh(req, res, next)
+
+            expect(authService.getStudentById).not.toHaveBeenCalled()
+            expect(res.cookie).toHaveBeenCalled()
             expect(res.json).toHaveBeenCalledWith(
                 expect.objectContaining({
                     success: true,
-                    message: 'Password changed successfully',
+                    data: {
+                        accessToken: 'manager-access',
+                        user: expect.objectContaining({
+                            accountType: 'manager',
+                            roleType: 'LCD_MANAGER',
+                        }),
+                    },
                 })
             )
         })

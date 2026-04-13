@@ -3,12 +3,27 @@ import * as z from 'zod'
 
 dotenv.config()
 
+const emptyStringToUndefined = (value: unknown) => {
+    if (typeof value !== 'string') {
+        return value
+    }
+
+    const trimmedValue = value.trim()
+    return trimmedValue === '' ? undefined : trimmedValue
+}
+
+const optionalString = z.preprocess(
+    emptyStringToUndefined,
+    z.string().optional()
+)
+
 const envSchema = z.object({
     NODE_ENV: z
         .enum(['development', 'test', 'production'])
         .default('development'),
     PORT: z.string().default('4000'),
-    SERVER_URL: z.string().optional(),
+    SERVER_URL: optionalString,
+    FRONTEND_URL: z.string().default('http://localhost:3000'),
     CORS_ORIGIN: z.string().default('*'),
     ACCESS_TOKEN_SECRET: z
         .string()
@@ -19,7 +34,6 @@ const envSchema = z.object({
         .string()
         .min(8, 'ACCESS_TOKEN_SECRET require min 8 chars')
         .default('test_refresh_token_secret'),
-
     REFRESH_TOKEN_EXPIRE: z.string().default('1d'),
     REFRESH_TOKEN_COOKIE_NAME: z.string().default('min'),
     MYSQL_DATABASE: z.string().default('test_db'),
@@ -62,6 +76,10 @@ const config = {
     server: {
         port: env.PORT,
         url: env.SERVER_URL ? env.SERVER_URL : `http://localhost:${env.PORT}`,
+    },
+    frontend: {
+        url: env.FRONTEND_URL,
+        login_url: new URL('/auth/login', env.FRONTEND_URL).toString(),
     },
     cors: {
         cors_origin: env.CORS_ORIGIN,

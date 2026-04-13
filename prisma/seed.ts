@@ -257,6 +257,7 @@ async function uploadImage(publicId: string, title: string, subtitle: string, la
 async function clearData() {
   await prisma.notificationStudent.deleteMany();
   await prisma.notificationManager.deleteMany();
+  await prisma.studentRefreshToken.deleteMany();
   await prisma.certificate.deleteMany();
   await prisma.checkin.deleteMany();
   await prisma.registration.deleteMany();

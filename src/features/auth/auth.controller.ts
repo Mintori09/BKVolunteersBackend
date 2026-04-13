@@ -1,21 +1,97 @@
-import { HttpStatus } from 'src/common/constants'
-import {
-    ChangePasswordData,
-    UserLoginCredentials,
-    UserSignUpCredentials,
-} from './types'
-import { TypedRequest } from 'src/types/request'
+import { Request, Response } from 'express'
 import * as argon2 from 'argon2'
-import { Response, Request } from 'express'
+import { HttpStatus } from 'src/common/constants'
 import {
     clearRefreshTokenCookieConfig,
     config,
     refreshTokenCookieConfig,
 } from 'src/config'
-import * as authService from './auth.service'
-import { catchAsync } from 'src/utils/catchAsync'
+import { TypedRequest } from 'src/types/request'
 import { ApiError } from 'src/utils/ApiError'
 import { ApiResponse } from 'src/utils/ApiResponse'
+import { catchAsync } from 'src/utils/catchAsync'
+import * as authService from './auth.service'
+import {
+    AuthSubjectType,
+    ChangePasswordData,
+    ManagerLoginCredentials,
+    UserLoginCredentials,
+    UserSignUpCredentials,
+} from './types'
+
+type ManagerAccountRecord = NonNullable<
+    Awaited<ReturnType<typeof authService.getManagerByIdentifier>>
+>
+
+const getAuthSubjectType = (
+    payload?: Partial<{ role: string; subjectType: string }>
+): AuthSubjectType => {
+    if (payload?.subjectType === 'student' || payload?.role === 'STUDENT') {
+        return 'student'
+    }
+
+    if (payload?.subjectType === 'manager') {
+        return 'manager'
+    }
+
+    return 'user'
+}
+
+const clearExistingRefreshCookie = async (
+    req: Pick<Request, 'cookies'>,
+    res: Response
+) => {
+    const refreshToken = req.cookies?.[config.jwt.refresh_token.cookie_name]
+
+    if (!refreshToken) {
+        return
+    }
+
+    const foundUserRefreshToken =
+        await authService.getRefreshTokenByToken(refreshToken)
+    const foundStudentRefreshToken = foundUserRefreshToken
+        ? null
+        : await authService.getStudentRefreshTokenByToken(refreshToken)
+
+    if (foundUserRefreshToken) {
+        await authService.deleteRefreshToken(refreshToken)
+    }
+
+    if (foundStudentRefreshToken) {
+        await authService.deleteStudentRefreshToken(refreshToken)
+    }
+
+    res.clearCookie(
+        config.jwt.refresh_token.cookie_name,
+        clearRefreshTokenCookieConfig
+    )
+}
+
+const completeManagerLogin = async (
+    manager: ManagerAccountRecord,
+    req: Pick<Request, 'cookies'>,
+    res: Response
+) => {
+    await clearExistingRefreshCookie(req, res)
+
+    const { accessToken, refreshToken } =
+        await authService.createManagerSession(manager)
+    const sessionUser = await authService.buildSessionUser({
+        userId: manager.id,
+        subjectType: 'manager',
+    })
+
+    res.cookie(
+        config.jwt.refresh_token.cookie_name,
+        refreshToken,
+        refreshTokenCookieConfig
+    )
+
+    return ApiResponse.success(res, {
+        accessToken,
+        user: sessionUser,
+    })
+}
 
 export const handleSignup = catchAsync(
     async (req: TypedRequest<UserSignUpCredentials>, res: Response) => {
@@ -62,62 +138,90 @@ export const handleSignup = catchAsync(
 
 export const handleLogin = catchAsync(
     async (req: TypedRequest<UserLoginCredentials>, res: Response) => {
-        const cookies = req.cookies
-        const { email, password } = req.body
+        const { username, password } = req.body
 
-        if (!email || !password) {
+        if (!username || !password) {
             throw new ApiError(
                 HttpStatus.BAD_REQUEST,
-                'Email and password are required!'
+                'Username and password are required!'
             )
         }
 
-        const user = await authService.getUserByEmail(email)
+        const normalizedUsername = username.trim()
+        const user = await authService.getUserByUsername(normalizedUsername)
 
-        if (!user) {
-            throw new ApiError(
-                HttpStatus.UNAUTHORIZED,
-                'Invalid email or password'
-            )
-        }
-
-        if (!user.emailVerified) {
-            throw new ApiError(
-                HttpStatus.UNAUTHORIZED,
-                'Your email is not verified! Please confirm your email'
-            )
-        }
-
-        const isPasswordValid = await argon2.verify(user.password, password)
-
-        if (!isPasswordValid) {
-            throw new ApiError(
-                HttpStatus.UNAUTHORIZED,
-                'Invalid email or password'
-            )
-        }
-
-        if (cookies?.[config.jwt.refresh_token.cookie_name]) {
-            const refreshToken = cookies[config.jwt.refresh_token.cookie_name]
-            const checkRefreshToken =
-                await authService.getRefreshTokenByToken(refreshToken)
-
-            if (!checkRefreshToken || checkRefreshToken.userId !== user.id) {
-                await authService.deleteAllUserRefreshTokens(user.id)
-            } else {
-                await authService.deleteRefreshToken(refreshToken)
+        if (user) {
+            if (!user.emailVerified) {
+                throw new ApiError(
+                    HttpStatus.UNAUTHORIZED,
+                    'Your email is not verified! Please confirm your email'
+                )
             }
 
-            res.clearCookie(
+            const isPasswordValid = await argon2.verify(user.password, password)
+
+            if (!isPasswordValid) {
+                throw new ApiError(
+                    HttpStatus.UNAUTHORIZED,
+                    'Invalid username or password'
+                )
+            }
+
+            await clearExistingRefreshCookie(req, res)
+
+            const { accessToken, refreshToken } = await authService.createSession(
+                user.id,
+                user.role
+            )
+            const sessionUser = await authService.buildSessionUser({
+                userId: user.id,
+                subjectType: 'user',
+            })
+
+            res.cookie(
                 config.jwt.refresh_token.cookie_name,
-                clearRefreshTokenCookieConfig
+                refreshToken,
+                refreshTokenCookieConfig
+            )
+
+            return ApiResponse.success(res, {
+                accessToken,
+                user: sessionUser,
+            })
+        }
+
+        const manager =
+            await authService.getManagerByIdentifier(normalizedUsername)
+
+        if (manager) {
+            authService.ensureManagerActive(manager)
+            authService.ensureManagerContext(manager)
+            await authService.verifyManagerPassword(manager, password)
+
+            return completeManagerLogin(manager, req, res)
+        }
+
+        const student = await authService.getStudentByMssv(normalizedUsername)
+
+        if (!student) {
+            throw new ApiError(
+                HttpStatus.UNAUTHORIZED,
+                'Invalid username or password'
             )
         }
 
-        const { accessToken, refreshToken } = await authService.createSession(
-            user.id,
-            user.role
+        authService.ensureStudentActive(student)
+        authService.verifyStudentPassword(student, password)
+
+        await clearExistingRefreshCookie(req, res)
+
+        const { accessToken, refreshToken } = await authService.createStudentSession(
+            student.id
         )
+        const sessionUser = await authService.buildSessionUser({
+            userId: student.id,
+            subjectType: 'student',
+        })
 
         res.cookie(
             config.jwt.refresh_token.cookie_name,
@@ -125,29 +229,68 @@ export const handleLogin = catchAsync(
             refreshTokenCookieConfig
         )
 
-        return ApiResponse.success(res, { accessToken })
+        return ApiResponse.success(res, {
+            accessToken,
+            user: sessionUser,
+        })
+    }
+)
+
+export const handleManagerLogin = catchAsync(
+    async (req: TypedRequest<ManagerLoginCredentials>, res: Response) => {
+        const { identifier, password } = req.body
+
+        if (!identifier || !password) {
+            throw new ApiError(
+                HttpStatus.BAD_REQUEST,
+                'Identifier and password are required!'
+            )
+        }
+
+        const normalizedIdentifier = identifier.trim()
+        const manager = await authService.getManagerByIdentifier(
+            normalizedIdentifier
+        )
+
+        if (!manager) {
+            throw new ApiError(
+                HttpStatus.UNAUTHORIZED,
+                'Invalid manager credentials',
+                true,
+                {
+                    code: 'ERR_INVALID_MANAGER_CREDENTIALS',
+                }
+            )
+        }
+
+        authService.ensureManagerActive(manager)
+        authService.ensureManagerContext(manager)
+        await authService.verifyManagerPassword(manager, password)
+
+        return completeManagerLogin(manager, req, res)
     }
 )
 
 export const handleLogout = catchAsync(async (req: Request, res: Response) => {
-    const cookies = req.cookies
+    const refreshToken = req.cookies?.[config.jwt.refresh_token.cookie_name]
 
-    if (!cookies[config.jwt.refresh_token.cookie_name]) {
+    if (!refreshToken) {
         return res.sendStatus(HttpStatus.NO_CONTENT)
     }
 
-    const refreshToken = cookies[config.jwt.refresh_token.cookie_name]
-    const foundRft = await authService.getRefreshTokenByToken(refreshToken)
+    const foundUserRefreshToken =
+        await authService.getRefreshTokenByToken(refreshToken)
+    const foundStudentRefreshToken = foundUserRefreshToken
+        ? null
+        : await authService.getStudentRefreshTokenByToken(refreshToken)
 
-    if (!foundRft) {
-        res.clearCookie(
-            config.jwt.refresh_token.cookie_name,
-            clearRefreshTokenCookieConfig
-        )
-        return res.sendStatus(HttpStatus.NO_CONTENT)
+    if (foundUserRefreshToken) {
+        await authService.deleteRefreshToken(refreshToken)
     }
 
-    await authService.deleteRefreshToken(refreshToken)
+    if (foundStudentRefreshToken) {
+        await authService.deleteStudentRefreshToken(refreshToken)
+    }
 
     res.clearCookie(
         config.jwt.refresh_token.cookie_name,
@@ -161,8 +304,9 @@ export const handleRefresh = catchAsync(async (req: Request, res: Response) => {
     const refreshToken: string | undefined =
         req.cookies[config.jwt.refresh_token.cookie_name]
 
-    if (!refreshToken)
+    if (!refreshToken) {
         throw new ApiError(HttpStatus.UNAUTHORIZED, 'Refresh token not found')
+    }
 
     res.clearCookie(
         config.jwt.refresh_token.cookie_name,
@@ -171,29 +315,139 @@ export const handleRefresh = catchAsync(async (req: Request, res: Response) => {
 
     const foundRefreshToken =
         await authService.getRefreshTokenByToken(refreshToken)
+    const foundStudentRefreshToken = foundRefreshToken
+        ? null
+        : await authService.getStudentRefreshTokenByToken(refreshToken)
 
-    if (!foundRefreshToken) {
+    if (!foundRefreshToken && !foundStudentRefreshToken) {
         try {
             const payload = await authService.verifyToken(
                 refreshToken,
                 config.jwt.refresh_token.secret
             )
-            await authService.deleteAllUserRefreshTokens(payload.userId)
-        } catch (err) {
-            // Ignore verify errors here, just forbidden
+            const subjectType = getAuthSubjectType(payload)
+
+            if (subjectType === 'manager') {
+                const manager = await authService.getManagerById(payload.userId)
+
+                if (!manager) {
+                    throw new ApiError(
+                        HttpStatus.FORBIDDEN,
+                        'Manager not found'
+                    )
+                }
+
+                authService.ensureManagerActive(manager)
+                authService.ensureManagerContext(manager)
+
+                const { accessToken, refreshToken: newRefreshToken } =
+                    await authService.createManagerSession(manager)
+                const sessionUser = await authService.buildSessionUser({
+                    userId: manager.id,
+                    subjectType: 'manager',
+                })
+
+                res.cookie(
+                    config.jwt.refresh_token.cookie_name,
+                    newRefreshToken,
+                    refreshTokenCookieConfig
+                )
+
+                return ApiResponse.success(res, {
+                    accessToken,
+                    user: sessionUser,
+                })
+            }
+
+            if (subjectType === 'student') {
+                await authService.deleteAllStudentRefreshTokens(payload.userId)
+            } else {
+                await authService.deleteAllUserRefreshTokens(payload.userId)
+            }
+        } catch (_error) {
+            // Ignore verification errors here and return a forbidden response below.
         }
+
         throw new ApiError(HttpStatus.FORBIDDEN, 'Invalid refresh token')
     }
 
-    await authService.deleteRefreshToken(refreshToken)
+    if (foundRefreshToken) {
+        await authService.deleteRefreshToken(refreshToken)
+    }
+
+    if (foundStudentRefreshToken) {
+        await authService.deleteStudentRefreshToken(refreshToken)
+    }
 
     try {
         const payload = await authService.verifyToken(
             refreshToken,
             config.jwt.refresh_token.secret
         )
+        const subjectType = getAuthSubjectType(payload)
 
-        if (foundRefreshToken.userId !== payload.userId) {
+        if (subjectType === 'student') {
+            if (foundStudentRefreshToken?.studentId !== payload.userId) {
+                throw new ApiError(HttpStatus.FORBIDDEN, 'User mismatch')
+            }
+
+            const student = await authService.getStudentById(payload.userId)
+
+            if (!student) {
+                throw new ApiError(HttpStatus.FORBIDDEN, 'Student not found')
+            }
+
+            authService.ensureStudentActive(student)
+
+            const { accessToken, refreshToken: newRefreshToken } =
+                await authService.createStudentSession(student.id)
+            const sessionUser = await authService.buildSessionUser({
+                userId: student.id,
+                subjectType: 'student',
+            })
+
+            res.cookie(
+                config.jwt.refresh_token.cookie_name,
+                newRefreshToken,
+                refreshTokenCookieConfig
+            )
+
+            return ApiResponse.success(res, {
+                accessToken,
+                user: sessionUser,
+            })
+        }
+
+        if (subjectType === 'manager') {
+            const manager = await authService.getManagerById(payload.userId)
+
+            if (!manager) {
+                throw new ApiError(HttpStatus.FORBIDDEN, 'Manager not found')
+            }
+
+            authService.ensureManagerActive(manager)
+            authService.ensureManagerContext(manager)
+
+            const { accessToken, refreshToken: newRefreshToken } =
+                await authService.createManagerSession(manager)
+            const sessionUser = await authService.buildSessionUser({
+                userId: manager.id,
+                subjectType: 'manager',
+            })
+
+            res.cookie(
+                config.jwt.refresh_token.cookie_name,
+                newRefreshToken,
+                refreshTokenCookieConfig
+            )
+
+            return ApiResponse.success(res, {
+                accessToken,
+                user: sessionUser,
+            })
+        }
+
+        if (foundRefreshToken?.userId !== payload.userId) {
             throw new ApiError(HttpStatus.FORBIDDEN, 'User mismatch')
         }
 
@@ -205,6 +459,10 @@ export const handleRefresh = catchAsync(async (req: Request, res: Response) => {
 
         const { accessToken, refreshToken: newRefreshToken } =
             await authService.createSession(payload.userId, user.role)
+        const sessionUser = await authService.buildSessionUser({
+            userId: payload.userId,
+            subjectType: 'user',
+        })
 
         res.cookie(
             config.jwt.refresh_token.cookie_name,
@@ -212,8 +470,11 @@ export const handleRefresh = catchAsync(async (req: Request, res: Response) => {
             refreshTokenCookieConfig
         )
 
-        return ApiResponse.success(res, { accessToken })
-    } catch (err) {
+        return ApiResponse.success(res, {
+            accessToken,
+            user: sessionUser,
+        })
+    } catch (_error) {
         throw new ApiError(HttpStatus.FORBIDDEN, 'Invalid refresh token')
     }
 })
@@ -225,23 +486,40 @@ export const getMe = catchAsync(async (req: Request, res: Response) => {
         throw new ApiError(HttpStatus.UNAUTHORIZED, 'Unauthorized')
     }
 
-    const user = await authService.getUserById(userId)
+    const subjectType = getAuthSubjectType(req.payload)
+    const sessionUser = await authService.buildSessionUser({
+        userId,
+        subjectType,
+    })
 
-    if (!user) {
+    if (!sessionUser) {
         throw new ApiError(HttpStatus.NOT_FOUND, 'User not found')
     }
 
-    const { password, ...userWithoutPassword } = user
-
-    return ApiResponse.success(res, userWithoutPassword)
+    return ApiResponse.success(res, sessionUser)
 })
 
 export const handleChangePassword = catchAsync(
     async (req: TypedRequest<ChangePasswordData>, res: Response) => {
         const userId = req.payload?.userId
+        const subjectType = getAuthSubjectType(req.payload)
 
         if (!userId) {
             throw new ApiError(HttpStatus.UNAUTHORIZED, 'Unauthorized')
+        }
+
+        if (subjectType === 'student') {
+            throw new ApiError(
+                HttpStatus.FORBIDDEN,
+                'Student accounts cannot change password from this endpoint'
+            )
+        }
+
+        if (subjectType === 'manager') {
+            throw new ApiError(
+                HttpStatus.FORBIDDEN,
+                'Manager accounts cannot change password from this endpoint'
+            )
         }
 
         await authService.changePassword(
