@@ -7,9 +7,9 @@ declare global {
     var prisma: PrismaClient | undefined
 }
 
-const adapter = new PrismaMariaDb(process.env.DATABASE_URL as string)
+const adapter = new PrismaMariaDb(config.database_url)
 
-const prismaClient: PrismaClient = new PrismaClient({ adapter })
+const prismaClient = globalThis.prisma ?? new PrismaClient({ adapter })
 
 if (config.node_env !== 'production') globalThis.prisma = prismaClient
 
