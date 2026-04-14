@@ -2,6 +2,8 @@ import { Router } from 'express'
 import { authRouter } from 'src/features/auth'
 import { passwordRouter } from 'src/features/forgotPassword'
 import { campaignRouter } from 'src/features/campaign'
+import moneyDonationRouter, { phaseDonationsRouter } from 'src/features/money-donation/money-donation.route'
+import donationRouter from 'src/features/donation/donation.route'
 import { authLimiter } from 'src/common/middleware'
 import { config } from 'src/config'
 
@@ -20,6 +22,18 @@ const defaultRoutes = [
     {
         path: '/campaigns',
         route: campaignRouter,
+    },
+    {
+        path: '/campaigns/:campaignId/money-phases',
+        route: moneyDonationRouter,
+    },
+    {
+        path: '/money-phases',
+        route: phaseDonationsRouter,
+    },
+    {
+        path: '/donations',
+        route: donationRouter,
     },
 ]
 
