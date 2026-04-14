@@ -172,15 +172,19 @@ model Campaign {
 
 /// Chiến dịch quyên góp tiền
 model MoneyDonationCampaign {
-  id            Int       @id @default(autoincrement())
-  campaignId    String    @unique @map("campaign_id")
-  targetAmount  Decimal   @default(0) @map("target_amount") @db.Decimal(15, 0)
-  currentAmount Decimal   @default(0) @map("current_amount") @db.Decimal(15, 0)
-  qrImageUrl    String?   @map("qr_image_url")
-  startDate     DateTime? @map("start_date")
-  endDate       DateTime? @map("end_date")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  id              Int       @id @default(autoincrement())
+  campaignId      String    @unique @map("campaign_id")
+  targetAmount    Decimal   @default(0) @map("target_amount") @db.Decimal(15, 0)
+  currentAmount   Decimal   @default(0) @map("current_amount") @db.Decimal(15, 0)
+  qrImageUrl      String?   @map("qr_image_url")
+  bankAccountNo   String?   @map("bank_account_no") @db.VarChar(20)
+  bankAccountName String?   @map("bank_account_name") @db.VarChar(100)
+  bankCode        String?   @map("bank_code") @db.VarChar(10)
+  startDate       DateTime? @map("start_date")
+  endDate         DateTime? @map("end_date")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
 
   campaign  Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   donations Donation[]
@@ -272,8 +276,10 @@ model Donation {
   moneyPhaseId    Int?           @map("money_phase_id")
   itemPhaseId     Int?           @map("item_phase_id")
   amount          Decimal        @default(0) @db.Decimal(15, 0)
+  verifiedAmount  Decimal?       @map("verified_amount") @db.Decimal(15, 0)
   itemDescription String?        @map("item_description") @db.Text
   proofImageUrl   String?        @map("proof_image_url")
+  rejectionReason String?        @map("rejection_reason") @db.Text
   status          DonationStatus @default(PENDING)
   createdAt       DateTime       @default(now()) @map("created_at")
   updatedAt       DateTime       @updatedAt @map("updated_at")
