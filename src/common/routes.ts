@@ -1,6 +1,8 @@
 import { Router } from 'express'
 import { authRouter } from 'src/features/auth'
 import { passwordRouter } from 'src/features/forgotPassword'
+import { studentRouter } from 'src/features/student'
+import { titleRouter } from 'src/features/title'
 import { authLimiter } from 'src/common/middleware'
 import { config } from 'src/config'
 
@@ -15,6 +17,14 @@ const defaultRoutes = [
     {
         path: '/password',
         route: passwordRouter,
+    },
+    {
+        path: '/students',
+        route: studentRouter,
+    },
+    {
+        path: '/titles',
+        route: titleRouter,
     },
 ]
 
