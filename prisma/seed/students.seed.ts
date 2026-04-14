@@ -75,7 +75,7 @@ export async function seedStudents(prisma: PrismaClient): Promise<void> {
                 fullName: studentData['Tên'],
                 email,
                 password: hashedPassword,
-                facultyId: facultyId,
+                facultyId: facultyCode,
                 className: studentData['Lớp học phần'],
                 phone: null,
                 totalPoints: 0,
