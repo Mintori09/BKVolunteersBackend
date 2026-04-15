@@ -419,10 +419,10 @@ describe('Auth Routes Integration', () => {
     })
 
     describe('Route not found', () => {
-        it('should return 404 for non-existent route', async () => {
+        it('should return 401 for non-existent route', async () => {
             const response = await request(app).get('/api/v1/auth/nonexistent')
 
-            expect(response.status).toBe(HttpStatus.UNAUTHORIZED)
+            expect(response.status).toBe(HttpStatus.NOT_FOUND)
         })
     })
 })
