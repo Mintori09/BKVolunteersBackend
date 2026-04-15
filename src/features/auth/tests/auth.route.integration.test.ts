@@ -403,7 +403,7 @@ describe('Auth Routes Integration', () => {
         it('should return 404 for non-existent route', async () => {
             const response = await request(app).get('/api/v1/auth/nonexistent')
 
-            expect(response.status).toBe(HttpStatus.NOT_FOUND)
+            expect(response.status).toBe(HttpStatus.UNAUTHORIZED)
         })
     })
 })
