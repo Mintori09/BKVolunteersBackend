@@ -1,9 +1,7 @@
 import * as campaignPermission from '../campaign.permission'
 import { Campaign, CampaignScope, CampaignStatus } from '@prisma/client'
 
-const createMockCampaign = (
-    overrides: Partial<Campaign> = {}
-): Campaign => ({
+const createMockCampaign = (overrides: Partial<Campaign> = {}): Campaign => ({
     id: 'campaign-1',
     title: 'Test Campaign',
     description: 'Test Description',
@@ -88,13 +86,19 @@ describe('Campaign Permission', () => {
     describe('isCampaignCreator', () => {
         it('should return true when user is creator', () => {
             const campaign = createMockCampaign({ creatorId: 'user-1' })
-            const result = campaignPermission.isCampaignCreator(campaign, 'user-1')
+            const result = campaignPermission.isCampaignCreator(
+                campaign,
+                'user-1'
+            )
             expect(result).toBe(true)
         })
 
         it('should return false when user is not creator', () => {
             const campaign = createMockCampaign({ creatorId: 'user-1' })
-            const result = campaignPermission.isCampaignCreator(campaign, 'user-2')
+            const result = campaignPermission.isCampaignCreator(
+                campaign,
+                'user-2'
+            )
             expect(result).toBe(false)
         })
     })

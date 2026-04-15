@@ -160,7 +160,9 @@ describe('Campaign Status', () => {
         })
 
         it('should return false for non-ACTIVE status', () => {
-            expect(campaignStatus.isCampaignCancellable('COMPLETED')).toBe(false)
+            expect(campaignStatus.isCampaignCancellable('COMPLETED')).toBe(
+                false
+            )
         })
     })
 })

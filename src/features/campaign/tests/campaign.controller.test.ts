@@ -1,12 +1,18 @@
-import { Response, Request } from 'express'
+import { Response, Request, NextFunction } from 'express'
 import { HttpStatus } from 'src/common/constants'
 import * as campaignController from '../campaign.controller'
 import * as campaignService from '../campaign.service'
 import { UserRole } from '../types'
-import { CampaignStatus } from '@prisma/client'
-import { ApiResponse } from 'src/utils/ApiResponse'
 
 jest.mock('../campaign.service')
+jest.mock('src/utils/ApiResponse', () => ({
+    ApiResponse: {
+        // @ts-ignore - mock allows flexible arguments
+        success: jest.fn((...args: any[]) => {}),
+        // @ts-ignore - mock allows flexible arguments
+        error: jest.fn((...args: any[]) => {}),
+    },
+}))
 
 const mockResponse = () => {
     const res: any = {}
@@ -15,9 +21,17 @@ const mockResponse = () => {
     return res
 }
 
+const mockFn = jest.fn((...args: any[]) => {})
+const MockApiResponse = {
+    success: mockFn,
+    error: mockFn,
+}
+
 describe('Campaign Controller', () => {
     let req: any
     let res: any
+    let next: any
+    let ApiResponse: any
 
     beforeEach(() => {
         req = {
@@ -27,7 +41,9 @@ describe('Campaign Controller', () => {
             payload: undefined,
         }
         res = mockResponse()
+        next = jest.fn()
         jest.clearAllMocks()
+        ApiResponse = require('src/utils/ApiResponse').ApiResponse
     })
 
     describe('createCampaign', () => {
@@ -35,14 +51,12 @@ describe('Campaign Controller', () => {
             req.body = { title: 'Test Campaign', description: 'Description' }
             req.payload = undefined
 
-            await campaignController.createCampaign(req, res)
+            await campaignController.createCampaign(req, res, next)
 
-            expect(res.status).toHaveBeenCalledWith(HttpStatus.UNAUTHORIZED)
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: false,
-                    message: 'Chưa xác thực người dùng',
-                })
+            expect(ApiResponse.error).toHaveBeenCalledWith(
+                res,
+                'Chưa xác thực người dùng',
+                HttpStatus.UNAUTHORIZED
             )
         })
 
@@ -50,23 +64,25 @@ describe('Campaign Controller', () => {
             req.body = { title: 'Test Campaign', description: 'Description' }
             req.payload = { role: 'LCD' as UserRole }
 
-            await campaignController.createCampaign(req, res)
+            await campaignController.createCampaign(req, res, next)
 
-            expect(res.status).toHaveBeenCalledWith(HttpStatus.UNAUTHORIZED)
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: false,
-                    message: 'Chưa xác thực người dùng',
-                })
+            expect(ApiResponse.error).toHaveBeenCalledWith(
+                res,
+                'Chưa xác thực người dùng',
+                HttpStatus.UNAUTHORIZED
             )
         })
 
         it('should create campaign successfully for authenticated user', async () => {
-            req.body = { title: 'Test Campaign', description: 'Description', scope: 'TRUONG' }
+            req.body = {
+                title: 'Test Campaign',
+                description: 'Description',
+                scope: 'TRUONG',
+            }
             req.payload = {
                 userId: 'user-1',
                 role: 'LCD' as UserRole,
-                facultyId: 'faculty-1',
+                facultyId: '102',
             }
             const mockCampaign = {
                 id: 'campaign-1',
@@ -74,28 +90,32 @@ describe('Campaign Controller', () => {
                 description: 'Description',
                 status: 'DRAFT',
             }
-            ;(campaignService.createCampaign as jest.Mock).mockResolvedValue(mockCampaign)
+            ;(campaignService.createCampaign as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
-            await campaignController.createCampaign(req, res)
+            await campaignController.createCampaign(req, res, next)
 
             expect(campaignService.createCampaign).toHaveBeenCalledWith(
                 req.body,
                 'user-1',
                 'LCD',
-                'faculty-1'
+                '102'
             )
-            expect(res.status).toHaveBeenCalledWith(HttpStatus.CREATED)
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: true,
-                    data: mockCampaign,
-                    message: 'Tạo chiến dịch thành công',
-                })
+            expect(ApiResponse.success).toHaveBeenCalledWith(
+                res,
+                mockCampaign,
+                'Tạo chiến dịch thành công',
+                HttpStatus.CREATED
             )
         })
 
         it('should create campaign with DOANTRUONG role', async () => {
-            req.body = { title: 'Test Campaign', description: 'Description', scope: 'TRUONG' }
+            req.body = {
+                title: 'Test Campaign',
+                description: 'Description',
+                scope: 'TRUONG',
+            }
             req.payload = {
                 userId: 'user-1',
                 role: 'DOANTRUONG' as UserRole,
@@ -106,9 +126,11 @@ describe('Campaign Controller', () => {
                 title: 'Test Campaign',
                 status: 'DRAFT',
             }
-            ;(campaignService.createCampaign as jest.Mock).mockResolvedValue(mockCampaign)
+            ;(campaignService.createCampaign as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
-            await campaignController.createCampaign(req, res)
+            await campaignController.createCampaign(req, res, next)
 
             expect(campaignService.createCampaign).toHaveBeenCalledWith(
                 req.body,
@@ -127,32 +149,30 @@ describe('Campaign Controller', () => {
                 title: 'Test Campaign',
                 description: 'Description',
             }
-            ;(campaignService.getCampaignById as jest.Mock).mockResolvedValue(mockCampaign)
+            ;(campaignService.getCampaignById as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
-            await campaignController.getCampaign(req, res)
+            await campaignController.getCampaign(req, res, next)
 
-            expect(campaignService.getCampaignById).toHaveBeenCalledWith('campaign-1')
-            expect(res.status).toHaveBeenCalledWith(HttpStatus.OK)
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: true,
-                    data: mockCampaign,
-                })
+            expect(campaignService.getCampaignById).toHaveBeenCalledWith(
+                'campaign-1'
+            )
+            expect(ApiResponse.success).toHaveBeenCalledWith(
+                res,
+                mockCampaign
             )
         })
 
         it('should return null for non-existent campaign', async () => {
             req.params = { id: 'non-existent' }
-            ;(campaignService.getCampaignById as jest.Mock).mockResolvedValue(null)
-
-            await campaignController.getCampaign(req, res)
-
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: true,
-                    data: null,
-                })
+            ;(campaignService.getCampaignById as jest.Mock).mockResolvedValue(
+                null
             )
+
+            await campaignController.getCampaign(req, res, next)
+
+            expect(ApiResponse.success).toHaveBeenCalledWith(res, null)
         })
     })
 
@@ -162,28 +182,31 @@ describe('Campaign Controller', () => {
             req.body = { title: 'Updated Title' }
             req.payload = undefined
 
-            await campaignController.updateCampaign(req, res)
+            await campaignController.updateCampaign(req, res, next)
 
-            expect(res.status).toHaveBeenCalledWith(HttpStatus.UNAUTHORIZED)
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: false,
-                    message: 'Chưa xác thực người dùng',
-                })
+            expect(ApiResponse.error).toHaveBeenCalledWith(
+                res,
+                'Chưa xác thực người dùng',
+                HttpStatus.UNAUTHORIZED
             )
         })
 
         it('should update campaign successfully', async () => {
             req.params = { id: 'campaign-1' }
-            req.body = { title: 'Updated Title', description: 'Updated Description' }
+            req.body = {
+                title: 'Updated Title',
+                description: 'Updated Description',
+            }
             req.payload = { userId: 'user-1', role: 'LCD' as UserRole }
             const mockCampaign = {
                 id: 'campaign-1',
                 title: 'Updated Title',
             }
-            ;(campaignService.updateCampaign as jest.Mock).mockResolvedValue(mockCampaign)
+            ;(campaignService.updateCampaign as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
-            await campaignController.updateCampaign(req, res)
+            await campaignController.updateCampaign(req, res, next)
 
             expect(campaignService.updateCampaign).toHaveBeenCalledWith(
                 'campaign-1',
@@ -191,12 +214,10 @@ describe('Campaign Controller', () => {
                 'user-1',
                 'LCD'
             )
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: true,
-                    data: mockCampaign,
-                    message: 'Cập nhật chiến dịch thành công',
-                })
+            expect(ApiResponse.success).toHaveBeenCalledWith(
+                res,
+                mockCampaign,
+                'Cập nhật chiến dịch thành công'
             )
         })
     })
@@ -206,31 +227,33 @@ describe('Campaign Controller', () => {
             req.params = { id: 'campaign-1' }
             req.payload = undefined
 
-            await campaignController.deleteCampaign(req, res)
+            await campaignController.deleteCampaign(req, res, next)
 
-            expect(res.status).toHaveBeenCalledWith(HttpStatus.UNAUTHORIZED)
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: false,
-                    message: 'Chưa xác thực người dùng',
-                })
+            expect(ApiResponse.error).toHaveBeenCalledWith(
+                res,
+                'Chưa xác thực người dùng',
+                HttpStatus.UNAUTHORIZED
             )
         })
 
         it('should delete campaign successfully', async () => {
             req.params = { id: 'campaign-1' }
             req.payload = { userId: 'user-1', role: 'LCD' as UserRole }
-            ;(campaignService.deleteCampaign as jest.Mock).mockResolvedValue(undefined)
+            ;(campaignService.deleteCampaign as jest.Mock).mockResolvedValue(
+                undefined
+            )
 
-            await campaignController.deleteCampaign(req, res)
+            await campaignController.deleteCampaign(req, res, next)
 
-            expect(campaignService.deleteCampaign).toHaveBeenCalledWith('campaign-1', 'user-1', 'LCD')
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: true,
-                    data: null,
-                    message: 'Xóa chiến dịch thành công',
-                })
+            expect(campaignService.deleteCampaign).toHaveBeenCalledWith(
+                'campaign-1',
+                'user-1',
+                'LCD'
+            )
+            expect(ApiResponse.success).toHaveBeenCalledWith(
+                res,
+                null,
+                'Xóa chiến dịch thành công'
             )
         })
     })
@@ -240,14 +263,12 @@ describe('Campaign Controller', () => {
             req.params = { id: 'campaign-1' }
             req.payload = undefined
 
-            await campaignController.submitCampaign(req, res)
+            await campaignController.submitCampaign(req, res, next)
 
-            expect(res.status).toHaveBeenCalledWith(HttpStatus.UNAUTHORIZED)
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: false,
-                    message: 'Chưa xác thực người dùng',
-                })
+            expect(ApiResponse.error).toHaveBeenCalledWith(
+                res,
+                'Chưa xác thực người dùng',
+                HttpStatus.UNAUTHORIZED
             )
         })
 
@@ -256,19 +277,23 @@ describe('Campaign Controller', () => {
             req.payload = { userId: 'user-1', role: 'LCD' as UserRole }
             const mockCampaign = {
                 id: 'campaign-1',
-                status: 'PENDING' as CampaignStatus,
+                status: 'PENDING',
             }
-            ;(campaignService.submitCampaign as jest.Mock).mockResolvedValue(mockCampaign)
+            ;(campaignService.submitCampaign as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
-            await campaignController.submitCampaign(req, res)
+            await campaignController.submitCampaign(req, res, next)
 
-            expect(campaignService.submitCampaign).toHaveBeenCalledWith('campaign-1', 'user-1', 'LCD')
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: true,
-                    data: mockCampaign,
-                    message: 'Gửi phê duyệt chiến dịch thành công',
-                })
+            expect(campaignService.submitCampaign).toHaveBeenCalledWith(
+                'campaign-1',
+                'user-1',
+                'LCD'
+            )
+            expect(ApiResponse.success).toHaveBeenCalledWith(
+                res,
+                mockCampaign,
+                'Gửi phê duyệt chiến dịch thành công'
             )
         })
     })
@@ -279,14 +304,12 @@ describe('Campaign Controller', () => {
             req.body = { comment: 'Approved!' }
             req.payload = undefined
 
-            await campaignController.approveCampaign(req, res)
+            await campaignController.approveCampaign(req, res, next)
 
-            expect(res.status).toHaveBeenCalledWith(HttpStatus.UNAUTHORIZED)
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: false,
-                    message: 'Chưa xác thực người dùng',
-                })
+            expect(ApiResponse.error).toHaveBeenCalledWith(
+                res,
+                'Chưa xác thực người dùng',
+                HttpStatus.UNAUTHORIZED
             )
         })
 
@@ -296,11 +319,13 @@ describe('Campaign Controller', () => {
             req.payload = { userId: 'user-1', role: 'DOANTRUONG' as UserRole }
             const mockCampaign = {
                 id: 'campaign-1',
-                status: 'ACTIVE' as CampaignStatus,
+                status: 'ACTIVE',
             }
-            ;(campaignService.approveCampaign as jest.Mock).mockResolvedValue(mockCampaign)
+            ;(campaignService.approveCampaign as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
-            await campaignController.approveCampaign(req, res)
+            await campaignController.approveCampaign(req, res, next)
 
             expect(campaignService.approveCampaign).toHaveBeenCalledWith(
                 'campaign-1',
@@ -308,12 +333,10 @@ describe('Campaign Controller', () => {
                 'DOANTRUONG',
                 undefined
             )
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: true,
-                    data: mockCampaign,
-                    message: 'Phê duyệt chiến dịch thành công',
-                })
+            expect(ApiResponse.success).toHaveBeenCalledWith(
+                res,
+                mockCampaign,
+                'Phê duyệt chiến dịch thành công'
             )
         })
 
@@ -323,11 +346,13 @@ describe('Campaign Controller', () => {
             req.payload = { userId: 'user-1', role: 'DOANTRUONG' as UserRole }
             const mockCampaign = {
                 id: 'campaign-1',
-                status: 'ACTIVE' as CampaignStatus,
+                status: 'ACTIVE',
             }
-            ;(campaignService.approveCampaign as jest.Mock).mockResolvedValue(mockCampaign)
+            ;(campaignService.approveCampaign as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
-            await campaignController.approveCampaign(req, res)
+            await campaignController.approveCampaign(req, res, next)
 
             expect(campaignService.approveCampaign).toHaveBeenCalledWith(
                 'campaign-1',
@@ -344,14 +369,12 @@ describe('Campaign Controller', () => {
             req.body = { comment: 'Rejected!' }
             req.payload = undefined
 
-            await campaignController.rejectCampaign(req, res)
+            await campaignController.rejectCampaign(req, res, next)
 
-            expect(res.status).toHaveBeenCalledWith(HttpStatus.UNAUTHORIZED)
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: false,
-                    message: 'Chưa xác thực người dùng',
-                })
+            expect(ApiResponse.error).toHaveBeenCalledWith(
+                res,
+                'Chưa xác thực người dùng',
+                HttpStatus.UNAUTHORIZED
             )
         })
 
@@ -361,11 +384,13 @@ describe('Campaign Controller', () => {
             req.payload = { userId: 'user-1', role: 'DOANTRUONG' as UserRole }
             const mockCampaign = {
                 id: 'campaign-1',
-                status: 'REJECTED' as CampaignStatus,
+                status: 'REJECTED',
             }
-            ;(campaignService.rejectCampaign as jest.Mock).mockResolvedValue(mockCampaign)
+            ;(campaignService.rejectCampaign as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
-            await campaignController.rejectCampaign(req, res)
+            await campaignController.rejectCampaign(req, res, next)
 
             expect(campaignService.rejectCampaign).toHaveBeenCalledWith(
                 'campaign-1',
@@ -373,12 +398,10 @@ describe('Campaign Controller', () => {
                 'DOANTRUONG',
                 'Not approved'
             )
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: true,
-                    data: mockCampaign,
-                    message: 'Từ chối chiến dịch thành công',
-                })
+            expect(ApiResponse.success).toHaveBeenCalledWith(
+                res,
+                mockCampaign,
+                'Từ chối chiến dịch thành công'
             )
         })
     })
@@ -389,28 +412,28 @@ describe('Campaign Controller', () => {
             req.body = { eventPhotos: ['photo1.jpg'] }
             req.payload = undefined
 
-            await campaignController.completeCampaign(req, res)
+            await campaignController.completeCampaign(req, res, next)
 
-            expect(res.status).toHaveBeenCalledWith(HttpStatus.UNAUTHORIZED)
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: false,
-                    message: 'Chưa xác thực người dùng',
-                })
+            expect(ApiResponse.error).toHaveBeenCalledWith(
+                res,
+                'Chưa xác thực người dùng',
+                HttpStatus.UNAUTHORIZED
             )
         })
 
         it('should complete campaign without event photos', async () => {
             req.params = { id: 'campaign-1' }
             req.body = {}
-            req.payload = { userId: 'user-1', role: 'LCD' as UserRole }
+            req.payload = { userId: 'user-1', role: 'LCD' as UserRole, facultyId: '102' }
             const mockCampaign = {
                 id: 'campaign-1',
-                status: 'COMPLETED' as CampaignStatus,
+                status: 'COMPLETED',
             }
-            ;(campaignService.completeCampaign as jest.Mock).mockResolvedValue(mockCampaign)
+            ;(campaignService.completeCampaign as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
-            await campaignController.completeCampaign(req, res)
+            await campaignController.completeCampaign(req, res, next)
 
             expect(campaignService.completeCampaign).toHaveBeenCalledWith(
                 'campaign-1',
@@ -418,26 +441,26 @@ describe('Campaign Controller', () => {
                 'LCD',
                 undefined
             )
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: true,
-                    data: mockCampaign,
-                    message: 'Đánh dấu hoàn thành chiến dịch thành công',
-                })
+            expect(ApiResponse.success).toHaveBeenCalledWith(
+                res,
+                mockCampaign,
+                'Đánh dấu hoàn thành chiến dịch thành công'
             )
         })
 
         it('should complete campaign with event photos', async () => {
             req.params = { id: 'campaign-1' }
             req.body = { eventPhotos: ['photo1.jpg', 'photo2.jpg'] }
-            req.payload = { userId: 'user-1', role: 'LCD' as UserRole }
+            req.payload = { userId: 'user-1', role: 'LCD' as UserRole, facultyId: '102' }
             const mockCampaign = {
                 id: 'campaign-1',
-                status: 'COMPLETED' as CampaignStatus,
+                status: 'COMPLETED',
             }
-            ;(campaignService.completeCampaign as jest.Mock).mockResolvedValue(mockCampaign)
+            ;(campaignService.completeCampaign as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
-            await campaignController.completeCampaign(req, res)
+            await campaignController.completeCampaign(req, res, next)
 
             expect(campaignService.completeCampaign).toHaveBeenCalledWith(
                 'campaign-1',
@@ -453,14 +476,12 @@ describe('Campaign Controller', () => {
             req.params = { id: 'campaign-1' }
             req.payload = undefined
 
-            await campaignController.cancelCampaign(req, res)
+            await campaignController.cancelCampaign(req, res, next)
 
-            expect(res.status).toHaveBeenCalledWith(HttpStatus.UNAUTHORIZED)
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: false,
-                    message: 'Chưa xác thực người dùng',
-                })
+            expect(ApiResponse.error).toHaveBeenCalledWith(
+                res,
+                'Chưa xác thực người dùng',
+                HttpStatus.UNAUTHORIZED
             )
         })
 
@@ -469,19 +490,23 @@ describe('Campaign Controller', () => {
             req.payload = { userId: 'user-1', role: 'LCD' as UserRole }
             const mockCampaign = {
                 id: 'campaign-1',
-                status: 'CANCELLED' as CampaignStatus,
+                status: 'CANCELLED',
             }
-            ;(campaignService.cancelCampaign as jest.Mock).mockResolvedValue(mockCampaign)
+            ;(campaignService.cancelCampaign as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
-            await campaignController.cancelCampaign(req, res)
+            await campaignController.cancelCampaign(req, res, next)
 
-            expect(campaignService.cancelCampaign).toHaveBeenCalledWith('campaign-1', 'user-1', 'LCD')
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: true,
-                    data: mockCampaign,
-                    message: 'Hủy chiến dịch thành công',
-                })
+            expect(campaignService.cancelCampaign).toHaveBeenCalledWith(
+                'campaign-1',
+                'user-1',
+                'LCD'
+            )
+            expect(ApiResponse.success).toHaveBeenCalledWith(
+                res,
+                mockCampaign,
+                'Hủy chiến dịch thành công'
             )
         })
     })
@@ -492,14 +517,12 @@ describe('Campaign Controller', () => {
             req.body = { planFileUrl: 'https://example.com/plan.pdf' }
             req.payload = undefined
 
-            await campaignController.uploadPlanFile(req, res)
+            await campaignController.uploadPlanFile(req, res, next)
 
-            expect(res.status).toHaveBeenCalledWith(HttpStatus.UNAUTHORIZED)
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: false,
-                    message: 'Chưa xác thực người dùng',
-                })
+            expect(ApiResponse.error).toHaveBeenCalledWith(
+                res,
+                'Chưa xác thực người dùng',
+                HttpStatus.UNAUTHORIZED
             )
         })
 
@@ -511,9 +534,11 @@ describe('Campaign Controller', () => {
                 id: 'campaign-1',
                 planFileUrl: 'https://example.com/plan.pdf',
             }
-            ;(campaignService.uploadPlanFile as jest.Mock).mockResolvedValue(mockCampaign)
+            ;(campaignService.uploadPlanFile as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
-            await campaignController.uploadPlanFile(req, res)
+            await campaignController.uploadPlanFile(req, res, next)
 
             expect(campaignService.uploadPlanFile).toHaveBeenCalledWith(
                 'campaign-1',
@@ -521,12 +546,10 @@ describe('Campaign Controller', () => {
                 'user-1',
                 'LCD'
             )
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: true,
-                    data: mockCampaign,
-                    message: 'Upload file kế hoạch thành công',
-                })
+            expect(ApiResponse.success).toHaveBeenCalledWith(
+                res,
+                mockCampaign,
+                'Upload file kế hoạch thành công'
             )
         })
     })
@@ -537,14 +560,12 @@ describe('Campaign Controller', () => {
             req.body = { budgetFileUrl: 'https://example.com/budget.xlsx' }
             req.payload = undefined
 
-            await campaignController.uploadBudgetFile(req, res)
+            await campaignController.uploadBudgetFile(req, res, next)
 
-            expect(res.status).toHaveBeenCalledWith(HttpStatus.UNAUTHORIZED)
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: false,
-                    message: 'Chưa xác thực người dùng',
-                })
+            expect(ApiResponse.error).toHaveBeenCalledWith(
+                res,
+                'Chưa xác thực người dùng',
+                HttpStatus.UNAUTHORIZED
             )
         })
 
@@ -556,9 +577,11 @@ describe('Campaign Controller', () => {
                 id: 'campaign-1',
                 budgetFileUrl: 'https://example.com/budget.xlsx',
             }
-            ;(campaignService.uploadBudgetFile as jest.Mock).mockResolvedValue(mockCampaign)
+            ;(campaignService.uploadBudgetFile as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
-            await campaignController.uploadBudgetFile(req, res)
+            await campaignController.uploadBudgetFile(req, res, next)
 
             expect(campaignService.uploadBudgetFile).toHaveBeenCalledWith(
                 'campaign-1',
@@ -566,12 +589,10 @@ describe('Campaign Controller', () => {
                 'user-1',
                 'LCD'
             )
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: true,
-                    data: mockCampaign,
-                    message: 'Upload file dự trù ngân sách thành công',
-                })
+            expect(ApiResponse.success).toHaveBeenCalledWith(
+                res,
+                mockCampaign,
+                'Upload file dự trù ngân sách thành công'
             )
         })
     })
@@ -586,9 +607,11 @@ describe('Campaign Controller', () => {
                 ],
                 meta: { total: 2, page: 1, limit: 10, totalPages: 1 },
             }
-            ;(campaignService.getCampaigns as jest.Mock).mockResolvedValue(mockResult)
+            ;(campaignService.getCampaigns as jest.Mock).mockResolvedValue(
+                mockResult
+            )
 
-            await campaignController.getCampaigns(req, res)
+            await campaignController.getCampaigns(req, res, next)
 
             expect(campaignService.getCampaigns).toHaveBeenCalledWith({
                 status: undefined,
@@ -598,19 +621,14 @@ describe('Campaign Controller', () => {
                 page: undefined,
                 limit: undefined,
             })
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: true,
-                    data: mockResult,
-                })
-            )
+            expect(ApiResponse.success).toHaveBeenCalledWith(res, mockResult)
         })
 
         it('should return campaigns with filters', async () => {
             req.query = {
                 status: 'ACTIVE',
                 scope: 'TRUONG',
-                facultyId: 'faculty-1',
+                facultyId: '1',
                 creatorId: 'user-1',
                 page: '2',
                 limit: '5',
@@ -619,14 +637,16 @@ describe('Campaign Controller', () => {
                 campaigns: [{ id: 'campaign-1', title: 'Campaign 1' }],
                 meta: { total: 1, page: 2, limit: 5, totalPages: 1 },
             }
-            ;(campaignService.getCampaigns as jest.Mock).mockResolvedValue(mockResult)
+            ;(campaignService.getCampaigns as jest.Mock).mockResolvedValue(
+                mockResult
+            )
 
-            await campaignController.getCampaigns(req, res)
+            await campaignController.getCampaigns(req, res, next)
 
             expect(campaignService.getCampaigns).toHaveBeenCalledWith({
                 status: 'ACTIVE',
                 scope: 'TRUONG',
-                facultyId: 'faculty-1',
+                facultyId: 1,
                 creatorId: 'user-1',
                 page: 2,
                 limit: 5,
@@ -639,43 +659,37 @@ describe('Campaign Controller', () => {
                 campaigns: [],
                 meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
             }
-            ;(campaignService.getCampaigns as jest.Mock).mockResolvedValue(mockResult)
-
-            await campaignController.getCampaigns(req, res)
-
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: true,
-                    data: mockResult,
-                })
+            ;(campaignService.getCampaigns as jest.Mock).mockResolvedValue(
+                mockResult
             )
+
+            await campaignController.getCampaigns(req, res, next)
+
+            expect(ApiResponse.success).toHaveBeenCalledWith(res, mockResult)
         })
     })
 
     describe('getAvailableCampaigns', () => {
         it('should return available campaigns for LCD role', async () => {
             req.query = { page: '1', limit: '10' }
-            req.payload = { role: 'LCD' as UserRole, facultyId: 'faculty-1' }
+            req.payload = { role: 'LCD' as UserRole, facultyId: '102' }
             const mockResult = {
                 campaigns: [{ id: 'campaign-1', title: 'Campaign 1' }],
                 meta: { total: 1, page: 1, limit: 10, totalPages: 1 },
             }
-            ;(campaignService.getAvailableCampaigns as jest.Mock).mockResolvedValue(mockResult)
+            ;(
+                campaignService.getAvailableCampaigns as jest.Mock
+            ).mockResolvedValue(mockResult)
 
-            await campaignController.getAvailableCampaigns(req, res)
+            await campaignController.getAvailableCampaigns(req, res, next)
 
             expect(campaignService.getAvailableCampaigns).toHaveBeenCalledWith(
                 'LCD',
-                'faculty-1',
+                '102',
                 1,
                 10
             )
-            expect(res.json).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    success: true,
-                    data: mockResult,
-                })
-            )
+            expect(ApiResponse.success).toHaveBeenCalledWith(res, mockResult)
         })
 
         it('should return available campaigns for DOANTRUONG role', async () => {
@@ -685,9 +699,11 @@ describe('Campaign Controller', () => {
                 campaigns: [{ id: 'campaign-1', title: 'Campaign 1' }],
                 meta: { total: 1, page: 2, limit: 5, totalPages: 1 },
             }
-            ;(campaignService.getAvailableCampaigns as jest.Mock).mockResolvedValue(mockResult)
+            ;(
+                campaignService.getAvailableCampaigns as jest.Mock
+            ).mockResolvedValue(mockResult)
 
-            await campaignController.getAvailableCampaigns(req, res)
+            await campaignController.getAvailableCampaigns(req, res, next)
 
             expect(campaignService.getAvailableCampaigns).toHaveBeenCalledWith(
                 'DOANTRUONG',
@@ -699,18 +715,20 @@ describe('Campaign Controller', () => {
 
         it('should use default pagination if not provided', async () => {
             req.query = {}
-            req.payload = { role: 'LCD' as UserRole, facultyId: 'faculty-1' }
+            req.payload = { role: 'LCD' as UserRole, facultyId: '102' }
             const mockResult = {
                 campaigns: [],
                 meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
             }
-            ;(campaignService.getAvailableCampaigns as jest.Mock).mockResolvedValue(mockResult)
+            ;(
+                campaignService.getAvailableCampaigns as jest.Mock
+            ).mockResolvedValue(mockResult)
 
-            await campaignController.getAvailableCampaigns(req, res)
+            await campaignController.getAvailableCampaigns(req, res, next)
 
             expect(campaignService.getAvailableCampaigns).toHaveBeenCalledWith(
                 'LCD',
-                'faculty-1',
+                '102',
                 1,
                 10
             )
@@ -723,9 +741,11 @@ describe('Campaign Controller', () => {
                 campaigns: [],
                 meta: { total: 0, page: 1, limit: 10, totalPages: 0 },
             }
-            ;(campaignService.getAvailableCampaigns as jest.Mock).mockResolvedValue(mockResult)
+            ;(
+                campaignService.getAvailableCampaigns as jest.Mock
+            ).mockResolvedValue(mockResult)
 
-            await campaignController.getAvailableCampaigns(req, res)
+            await campaignController.getAvailableCampaigns(req, res, next)
 
             expect(campaignService.getAvailableCampaigns).toHaveBeenCalledWith(
                 undefined,

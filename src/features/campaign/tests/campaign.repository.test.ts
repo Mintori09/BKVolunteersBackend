@@ -48,7 +48,9 @@ describe('Campaign Repository', () => {
                 creatorId: 'user-1',
             }
             const mockCampaign = createMockCampaign(input)
-            ;(mockPrismaClient.campaign.create as jest.Mock).mockResolvedValue(mockCampaign)
+            ;(mockPrismaClient.campaign.create as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
             const result = await campaignRepository.createCampaign(input)
 
@@ -82,7 +84,9 @@ describe('Campaign Repository', () => {
                 creatorId: 'user-1',
             }
             const mockCampaign = createMockCampaign(input)
-            ;(mockPrismaClient.campaign.create as jest.Mock).mockResolvedValue(mockCampaign)
+            ;(mockPrismaClient.campaign.create as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
             const result = await campaignRepository.createCampaign(input)
 
@@ -96,9 +100,13 @@ describe('Campaign Repository', () => {
                 creatorId: 'user-1',
             }
             const dbError = new Error('Database error')
-            ;(mockPrismaClient.campaign.create as jest.Mock).mockRejectedValue(dbError)
+            ;(mockPrismaClient.campaign.create as jest.Mock).mockRejectedValue(
+                dbError
+            )
 
-            await expect(campaignRepository.createCampaign(input)).rejects.toThrow('Database error')
+            await expect(
+                campaignRepository.createCampaign(input)
+            ).rejects.toThrow('Database error')
         })
     })
 
@@ -106,15 +114,24 @@ describe('Campaign Repository', () => {
         it('should return campaign with all relations', async () => {
             const mockCampaign = {
                 ...createMockCampaign(),
-                creator: { id: 'user-1', username: 'test', email: 'test@test.com', role: 'CLB', facultyId: 'faculty-1' },
+                creator: {
+                    id: 'user-1',
+                    username: 'test',
+                    email: 'test@test.com',
+                    role: 'CLB',
+                    facultyId: 'faculty-1',
+                },
                 approver: null,
                 moneyPhase: [],
                 itemPhase: [],
                 eventPhase: [],
             }
-            ;(mockPrismaClient.campaign.findUnique as jest.Mock).mockResolvedValue(mockCampaign)
+            ;(
+                mockPrismaClient.campaign.findUnique as jest.Mock
+            ).mockResolvedValue(mockCampaign)
 
-            const result = await campaignRepository.findCampaignById('campaign-1')
+            const result =
+                await campaignRepository.findCampaignById('campaign-1')
 
             expect(mockPrismaClient.campaign.findUnique).toHaveBeenCalledWith({
                 where: { id: 'campaign-1' },
@@ -144,18 +161,25 @@ describe('Campaign Repository', () => {
         })
 
         it('should return null for non-existent campaign', async () => {
-            ;(mockPrismaClient.campaign.findUnique as jest.Mock).mockResolvedValue(null)
+            ;(
+                mockPrismaClient.campaign.findUnique as jest.Mock
+            ).mockResolvedValue(null)
 
-            const result = await campaignRepository.findCampaignById('non-existent')
+            const result =
+                await campaignRepository.findCampaignById('non-existent')
 
             expect(result).toBeNull()
         })
 
         it('should throw error when database fails', async () => {
             const dbError = new Error('Database error')
-            ;(mockPrismaClient.campaign.findUnique as jest.Mock).mockRejectedValue(dbError)
+            ;(
+                mockPrismaClient.campaign.findUnique as jest.Mock
+            ).mockRejectedValue(dbError)
 
-            await expect(campaignRepository.findCampaignById('campaign-1')).rejects.toThrow('Database error')
+            await expect(
+                campaignRepository.findCampaignById('campaign-1')
+            ).rejects.toThrow('Database error')
         })
     })
 
@@ -165,12 +189,17 @@ describe('Campaign Repository', () => {
                 title: 'Updated Title',
                 description: 'Updated Description',
             })
-            ;(mockPrismaClient.campaign.update as jest.Mock).mockResolvedValue(mockCampaign)
+            ;(mockPrismaClient.campaign.update as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
-            const result = await campaignRepository.updateCampaign('campaign-1', {
-                title: 'Updated Title',
-                description: 'Updated Description',
-            })
+            const result = await campaignRepository.updateCampaign(
+                'campaign-1',
+                {
+                    title: 'Updated Title',
+                    description: 'Updated Description',
+                }
+            )
 
             expect(mockPrismaClient.campaign.update).toHaveBeenCalledWith({
                 where: { id: 'campaign-1' },
@@ -193,12 +222,19 @@ describe('Campaign Repository', () => {
         })
 
         it('should update only title', async () => {
-            const mockCampaign = createMockCampaign({ title: 'Only Title Updated' })
-            ;(mockPrismaClient.campaign.update as jest.Mock).mockResolvedValue(mockCampaign)
-
-            const result = await campaignRepository.updateCampaign('campaign-1', {
+            const mockCampaign = createMockCampaign({
                 title: 'Only Title Updated',
             })
+            ;(mockPrismaClient.campaign.update as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
+
+            const result = await campaignRepository.updateCampaign(
+                'campaign-1',
+                {
+                    title: 'Only Title Updated',
+                }
+            )
 
             expect(mockPrismaClient.campaign.update).toHaveBeenCalledWith({
                 where: { id: 'campaign-1' },
@@ -212,10 +248,14 @@ describe('Campaign Repository', () => {
 
         it('should throw error when campaign not found', async () => {
             const prismaError = new Error('Record not found')
-            ;(mockPrismaClient.campaign.update as jest.Mock).mockRejectedValue(prismaError)
+            ;(mockPrismaClient.campaign.update as jest.Mock).mockRejectedValue(
+                prismaError
+            )
 
             await expect(
-                campaignRepository.updateCampaign('non-existent', { title: 'Updated' })
+                campaignRepository.updateCampaign('non-existent', {
+                    title: 'Updated',
+                })
             ).rejects.toThrow('Record not found')
         })
     })
@@ -223,7 +263,9 @@ describe('Campaign Repository', () => {
     describe('deleteCampaign', () => {
         it('should delete campaign by id', async () => {
             const mockCampaign = createMockCampaign()
-            ;(mockPrismaClient.campaign.delete as jest.Mock).mockResolvedValue(mockCampaign)
+            ;(mockPrismaClient.campaign.delete as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
             const result = await campaignRepository.deleteCampaign('campaign-1')
 
@@ -235,18 +277,29 @@ describe('Campaign Repository', () => {
 
         it('should throw error when campaign not found', async () => {
             const prismaError = new Error('Record not found')
-            ;(mockPrismaClient.campaign.delete as jest.Mock).mockRejectedValue(prismaError)
+            ;(mockPrismaClient.campaign.delete as jest.Mock).mockRejectedValue(
+                prismaError
+            )
 
-            await expect(campaignRepository.deleteCampaign('non-existent')).rejects.toThrow('Record not found')
+            await expect(
+                campaignRepository.deleteCampaign('non-existent')
+            ).rejects.toThrow('Record not found')
         })
     })
 
     describe('updateCampaignStatus', () => {
         it('should update status to PENDING without approver', async () => {
-            const mockCampaign = createMockCampaign({ status: 'PENDING' as CampaignStatus })
-            ;(mockPrismaClient.campaign.update as jest.Mock).mockResolvedValue(mockCampaign)
+            const mockCampaign = createMockCampaign({
+                status: 'PENDING' as CampaignStatus,
+            })
+            ;(mockPrismaClient.campaign.update as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
-            const result = await campaignRepository.updateCampaignStatus('campaign-1', 'PENDING')
+            const result = await campaignRepository.updateCampaignStatus(
+                'campaign-1',
+                'PENDING'
+            )
 
             expect(mockPrismaClient.campaign.update).toHaveBeenCalledWith({
                 where: { id: 'campaign-1' },
@@ -269,12 +322,18 @@ describe('Campaign Repository', () => {
                 approverId: 'approver-1',
                 adminComment: 'Approved!',
             })
-            ;(mockPrismaClient.campaign.update as jest.Mock).mockResolvedValue(mockCampaign)
+            ;(mockPrismaClient.campaign.update as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
-            const result = await campaignRepository.updateCampaignStatus('campaign-1', 'ACTIVE', {
-                approverId: 'approver-1',
-                adminComment: 'Approved!',
-            })
+            const result = await campaignRepository.updateCampaignStatus(
+                'campaign-1',
+                'ACTIVE',
+                {
+                    approverId: 'approver-1',
+                    adminComment: 'Approved!',
+                }
+            )
 
             expect(mockPrismaClient.campaign.update).toHaveBeenCalledWith({
                 where: { id: 'campaign-1' },
@@ -293,30 +352,50 @@ describe('Campaign Repository', () => {
                 status: 'REJECTED' as CampaignStatus,
                 adminComment: 'Not good enough',
             })
-            ;(mockPrismaClient.campaign.update as jest.Mock).mockResolvedValue(mockCampaign)
+            ;(mockPrismaClient.campaign.update as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
-            const result = await campaignRepository.updateCampaignStatus('campaign-1', 'REJECTED', {
-                approverId: 'approver-1',
-                adminComment: 'Not good enough',
-            })
+            const result = await campaignRepository.updateCampaignStatus(
+                'campaign-1',
+                'REJECTED',
+                {
+                    approverId: 'approver-1',
+                    adminComment: 'Not good enough',
+                }
+            )
 
             expect(result.status).toBe('REJECTED')
         })
 
         it('should update status to COMPLETED', async () => {
-            const mockCampaign = createMockCampaign({ status: 'COMPLETED' as CampaignStatus })
-            ;(mockPrismaClient.campaign.update as jest.Mock).mockResolvedValue(mockCampaign)
+            const mockCampaign = createMockCampaign({
+                status: 'COMPLETED' as CampaignStatus,
+            })
+            ;(mockPrismaClient.campaign.update as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
-            const result = await campaignRepository.updateCampaignStatus('campaign-1', 'COMPLETED')
+            const result = await campaignRepository.updateCampaignStatus(
+                'campaign-1',
+                'COMPLETED'
+            )
 
             expect(result.status).toBe('COMPLETED')
         })
 
         it('should update status to CANCELLED', async () => {
-            const mockCampaign = createMockCampaign({ status: 'CANCELLED' as CampaignStatus })
-            ;(mockPrismaClient.campaign.update as jest.Mock).mockResolvedValue(mockCampaign)
+            const mockCampaign = createMockCampaign({
+                status: 'CANCELLED' as CampaignStatus,
+            })
+            ;(mockPrismaClient.campaign.update as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
-            const result = await campaignRepository.updateCampaignStatus('campaign-1', 'CANCELLED')
+            const result = await campaignRepository.updateCampaignStatus(
+                'campaign-1',
+                'CANCELLED'
+            )
 
             expect(result.status).toBe('CANCELLED')
         })
@@ -327,7 +406,9 @@ describe('Campaign Repository', () => {
             const mockCampaign = createMockCampaign({
                 planFileUrl: 'https://example.com/plan.pdf',
             })
-            ;(mockPrismaClient.campaign.update as jest.Mock).mockResolvedValue(mockCampaign)
+            ;(mockPrismaClient.campaign.update as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
             const result = await campaignRepository.updatePlanFileUrl(
                 'campaign-1',
@@ -347,7 +428,9 @@ describe('Campaign Repository', () => {
             const mockCampaign = createMockCampaign({
                 budgetFileUrl: 'https://example.com/budget.xlsx',
             })
-            ;(mockPrismaClient.campaign.update as jest.Mock).mockResolvedValue(mockCampaign)
+            ;(mockPrismaClient.campaign.update as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
             const result = await campaignRepository.updateBudgetFileUrl(
                 'campaign-1',
@@ -364,8 +447,13 @@ describe('Campaign Repository', () => {
 
     describe('findCampaignsWithFilter', () => {
         it('should return campaigns with default pagination', async () => {
-            const mockCampaigns = [createMockCampaign(), createMockCampaign({ id: 'campaign-2' })]
-            ;(mockPrismaClient.campaign.findMany as jest.Mock).mockResolvedValue(mockCampaigns)
+            const mockCampaigns = [
+                createMockCampaign(),
+                createMockCampaign({ id: 'campaign-2' }),
+            ]
+            ;(
+                mockPrismaClient.campaign.findMany as jest.Mock
+            ).mockResolvedValue(mockCampaigns)
             ;(mockPrismaClient.campaign.count as jest.Mock).mockResolvedValue(2)
 
             const result = await campaignRepository.findCampaignsWithFilter({})
@@ -396,11 +484,17 @@ describe('Campaign Repository', () => {
         })
 
         it('should filter by status', async () => {
-            const mockCampaigns = [createMockCampaign({ status: 'ACTIVE' as CampaignStatus })]
-            ;(mockPrismaClient.campaign.findMany as jest.Mock).mockResolvedValue(mockCampaigns)
+            const mockCampaigns = [
+                createMockCampaign({ status: 'ACTIVE' as CampaignStatus }),
+            ]
+            ;(
+                mockPrismaClient.campaign.findMany as jest.Mock
+            ).mockResolvedValue(mockCampaigns)
             ;(mockPrismaClient.campaign.count as jest.Mock).mockResolvedValue(1)
 
-            await campaignRepository.findCampaignsWithFilter({ status: 'ACTIVE' })
+            await campaignRepository.findCampaignsWithFilter({
+                status: 'ACTIVE',
+            })
 
             expect(mockPrismaClient.campaign.findMany).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -412,7 +506,9 @@ describe('Campaign Repository', () => {
         })
 
         it('should filter by scope', async () => {
-            ;(mockPrismaClient.campaign.findMany as jest.Mock).mockResolvedValue([])
+            ;(
+                mockPrismaClient.campaign.findMany as jest.Mock
+            ).mockResolvedValue([])
             ;(mockPrismaClient.campaign.count as jest.Mock).mockResolvedValue(0)
 
             await campaignRepository.findCampaignsWithFilter({ scope: 'KHOA' })
@@ -427,10 +523,14 @@ describe('Campaign Repository', () => {
         })
 
         it('should filter by creatorId', async () => {
-            ;(mockPrismaClient.campaign.findMany as jest.Mock).mockResolvedValue([])
+            ;(
+                mockPrismaClient.campaign.findMany as jest.Mock
+            ).mockResolvedValue([])
             ;(mockPrismaClient.campaign.count as jest.Mock).mockResolvedValue(0)
 
-            await campaignRepository.findCampaignsWithFilter({ creatorId: 'user-1' })
+            await campaignRepository.findCampaignsWithFilter({
+                creatorId: 'user-1',
+            })
 
             expect(mockPrismaClient.campaign.findMany).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -442,7 +542,9 @@ describe('Campaign Repository', () => {
         })
 
         it('should apply multiple filters', async () => {
-            ;(mockPrismaClient.campaign.findMany as jest.Mock).mockResolvedValue([])
+            ;(
+                mockPrismaClient.campaign.findMany as jest.Mock
+            ).mockResolvedValue([])
             ;(mockPrismaClient.campaign.count as jest.Mock).mockResolvedValue(0)
 
             await campaignRepository.findCampaignsWithFilter({
@@ -464,8 +566,12 @@ describe('Campaign Repository', () => {
         })
 
         it('should handle custom pagination', async () => {
-            ;(mockPrismaClient.campaign.findMany as jest.Mock).mockResolvedValue([])
-            ;(mockPrismaClient.campaign.count as jest.Mock).mockResolvedValue(25)
+            ;(
+                mockPrismaClient.campaign.findMany as jest.Mock
+            ).mockResolvedValue([])
+            ;(mockPrismaClient.campaign.count as jest.Mock).mockResolvedValue(
+                25
+            )
 
             const result = await campaignRepository.findCampaignsWithFilter({
                 page: 2,
@@ -487,7 +593,9 @@ describe('Campaign Repository', () => {
         })
 
         it('should return empty array when no campaigns found', async () => {
-            ;(mockPrismaClient.campaign.findMany as jest.Mock).mockResolvedValue([])
+            ;(
+                mockPrismaClient.campaign.findMany as jest.Mock
+            ).mockResolvedValue([])
             ;(mockPrismaClient.campaign.count as jest.Mock).mockResolvedValue(0)
 
             const result = await campaignRepository.findCampaignsWithFilter({})
@@ -499,11 +607,20 @@ describe('Campaign Repository', () => {
 
     describe('findAvailableCampaigns', () => {
         it('should return active campaigns for DOANTRUONG', async () => {
-            const mockCampaigns = [createMockCampaign({ status: 'ACTIVE' as CampaignStatus })]
-            ;(mockPrismaClient.campaign.findMany as jest.Mock).mockResolvedValue(mockCampaigns)
+            const mockCampaigns = [
+                createMockCampaign({ status: 'ACTIVE' as CampaignStatus }),
+            ]
+            ;(
+                mockPrismaClient.campaign.findMany as jest.Mock
+            ).mockResolvedValue(mockCampaigns)
             ;(mockPrismaClient.campaign.count as jest.Mock).mockResolvedValue(1)
 
-            const result = await campaignRepository.findAvailableCampaigns('DOANTRUONG', null, 1, 10)
+            const result = await campaignRepository.findAvailableCampaigns(
+                'DOANTRUONG',
+                null,
+                1,
+                10
+            )
 
             expect(mockPrismaClient.campaign.findMany).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -517,21 +634,27 @@ describe('Campaign Repository', () => {
         })
 
         it('should return campaigns with OR condition for non-DOANTRUONG users', async () => {
-            const mockCampaigns = [createMockCampaign({ status: 'ACTIVE' as CampaignStatus })]
-            ;(mockPrismaClient.campaign.findMany as jest.Mock).mockResolvedValue(mockCampaigns)
+            const mockCampaigns = [
+                createMockCampaign({ status: 'ACTIVE' as CampaignStatus }),
+            ]
+            ;(
+                mockPrismaClient.campaign.findMany as jest.Mock
+            ).mockResolvedValue(mockCampaigns)
             ;(mockPrismaClient.campaign.count as jest.Mock).mockResolvedValue(1)
 
-            await campaignRepository.findAvailableCampaigns('LCD', 'faculty-1', 1, 10)
+            await campaignRepository.findAvailableCampaigns(
+                'LCD',
+                '102',
+                1,
+                10
+            )
 
             expect(mockPrismaClient.campaign.findMany).toHaveBeenCalledWith(
                 expect.objectContaining({
                     where: {
                         status: 'ACTIVE',
                         deletedAt: null,
-                        OR: [
-                            { scope: 'TRUONG' },
-                            { scope: 'KHOA' },
-                        ],
+                        OR: [{ scope: 'TRUONG' }, { scope: 'KHOA' }],
                     },
                 })
             )
@@ -546,10 +669,17 @@ describe('Campaign Repository', () => {
                     eventPhase: [],
                 }),
             ]
-            ;(mockPrismaClient.campaign.findMany as jest.Mock).mockResolvedValue(mockCampaigns)
+            ;(
+                mockPrismaClient.campaign.findMany as jest.Mock
+            ).mockResolvedValue(mockCampaigns)
             ;(mockPrismaClient.campaign.count as jest.Mock).mockResolvedValue(1)
 
-            const result = await campaignRepository.findAvailableCampaigns('CLB', 'faculty-1', 1, 10)
+            const result = await campaignRepository.findAvailableCampaigns(
+                'CLB',
+                '102',
+                1,
+                10
+            )
 
             expect(mockPrismaClient.campaign.findMany).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -563,10 +693,19 @@ describe('Campaign Repository', () => {
         })
 
         it('should handle custom pagination', async () => {
-            ;(mockPrismaClient.campaign.findMany as jest.Mock).mockResolvedValue([])
-            ;(mockPrismaClient.campaign.count as jest.Mock).mockResolvedValue(15)
+            ;(
+                mockPrismaClient.campaign.findMany as jest.Mock
+            ).mockResolvedValue([])
+            ;(mockPrismaClient.campaign.count as jest.Mock).mockResolvedValue(
+                15
+            )
 
-            const result = await campaignRepository.findAvailableCampaigns('LCD', 'faculty-1', 2, 5)
+            const result = await campaignRepository.findAvailableCampaigns(
+                'LCD',
+                '102',
+                2,
+                5
+            )
 
             expect(mockPrismaClient.campaign.findMany).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -583,7 +722,9 @@ describe('Campaign Repository', () => {
         })
 
         it('should handle user without facultyId', async () => {
-            ;(mockPrismaClient.campaign.findMany as jest.Mock).mockResolvedValue([])
+            ;(
+                mockPrismaClient.campaign.findMany as jest.Mock
+            ).mockResolvedValue([])
             ;(mockPrismaClient.campaign.count as jest.Mock).mockResolvedValue(0)
 
             await campaignRepository.findAvailableCampaigns('CLB', null, 1, 10)
@@ -603,9 +744,12 @@ describe('Campaign Repository', () => {
         it('should set deletedAt timestamp', async () => {
             const deletedAt = new Date()
             const mockCampaign = createMockCampaign({ deletedAt })
-            ;(mockPrismaClient.campaign.update as jest.Mock).mockResolvedValue(mockCampaign)
+            ;(mockPrismaClient.campaign.update as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
 
-            const result = await campaignRepository.softDeleteCampaign('campaign-1')
+            const result =
+                await campaignRepository.softDeleteCampaign('campaign-1')
 
             expect(mockPrismaClient.campaign.update).toHaveBeenCalledWith({
                 where: { id: 'campaign-1' },
@@ -618,9 +762,13 @@ describe('Campaign Repository', () => {
 
         it('should throw error when campaign not found', async () => {
             const prismaError = new Error('Record not found')
-            ;(mockPrismaClient.campaign.update as jest.Mock).mockRejectedValue(prismaError)
+            ;(mockPrismaClient.campaign.update as jest.Mock).mockRejectedValue(
+                prismaError
+            )
 
-            await expect(campaignRepository.softDeleteCampaign('non-existent')).rejects.toThrow('Record not found')
+            await expect(
+                campaignRepository.softDeleteCampaign('non-existent')
+            ).rejects.toThrow('Record not found')
         })
     })
 })

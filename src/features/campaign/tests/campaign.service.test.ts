@@ -43,14 +43,18 @@ describe('Campaign Service', () => {
             const userRole = 'CLB'
             const userFacultyId = null
 
-            ;(campaignPermission.canCreateCampaign as jest.Mock).mockReturnValue({
+            ;(
+                campaignPermission.canCreateCampaign as jest.Mock
+            ).mockReturnValue({
                 allowed: true,
             })
-            ;(campaignRepository.createCampaign as jest.Mock).mockResolvedValue({
-                ...mockCampaign,
-                ...createInput,
-                creatorId: userId,
-            })
+            ;(campaignRepository.createCampaign as jest.Mock).mockResolvedValue(
+                {
+                    ...mockCampaign,
+                    ...createInput,
+                    creatorId: userId,
+                }
+            )
 
             const result = await campaignService.createCampaign(
                 createInput,
@@ -79,16 +83,28 @@ describe('Campaign Service', () => {
             const userRole = 'SINHVIEN'
             const userFacultyId = '102'
 
-            ;(campaignPermission.canCreateCampaign as jest.Mock).mockReturnValue({
+            ;(
+                campaignPermission.canCreateCampaign as jest.Mock
+            ).mockReturnValue({
                 allowed: false,
                 message: 'Bạn không có quyền tạo chiến dịch',
             })
 
             await expect(
-                campaignService.createCampaign(createInput, userId, userRole, userFacultyId)
+                campaignService.createCampaign(
+                    createInput,
+                    userId,
+                    userRole,
+                    userFacultyId
+                )
             ).rejects.toThrow(ApiError)
             await expect(
-                campaignService.createCampaign(createInput, userId, userRole, userFacultyId)
+                campaignService.createCampaign(
+                    createInput,
+                    userId,
+                    userRole,
+                    userFacultyId
+                )
             ).rejects.toHaveProperty('statusCode', HttpStatus.FORBIDDEN)
         })
 
@@ -98,22 +114,29 @@ describe('Campaign Service', () => {
             const userFacultyId = '102'
             const khoaInput = { ...createInput, scope: 'KHOA' as CampaignScope }
 
-            ;(campaignPermission.canCreateCampaign as jest.Mock).mockReturnValue({
+            ;(
+                campaignPermission.canCreateCampaign as jest.Mock
+            ).mockReturnValue({
                 allowed: false,
                 message: 'CLB không thể tạo chiến dịch cấp khoa',
             })
 
             await expect(
-                campaignService.createCampaign(khoaInput, userId, userRole, userFacultyId)
+                campaignService.createCampaign(
+                    khoaInput,
+                    userId,
+                    userRole,
+                    userFacultyId
+                )
             ).rejects.toThrow(ApiError)
         })
     })
 
     describe('getCampaignById', () => {
         it('should return campaign when found', async () => {
-            ;(campaignRepository.findCampaignById as jest.Mock).mockResolvedValue(
-                mockCampaign
-            )
+            ;(
+                campaignRepository.findCampaignById as jest.Mock
+            ).mockResolvedValue(mockCampaign)
 
             const result = await campaignService.getCampaignById('campaign-1')
 
@@ -124,9 +147,9 @@ describe('Campaign Service', () => {
         })
 
         it('should throw NOT_FOUND when campaign not found', async () => {
-            ;(campaignRepository.findCampaignById as jest.Mock).mockResolvedValue(
-                null
-            )
+            ;(
+                campaignRepository.findCampaignById as jest.Mock
+            ).mockResolvedValue(null)
 
             await expect(
                 campaignService.getCampaignById('nonexistent')
@@ -144,16 +167,18 @@ describe('Campaign Service', () => {
             const userId = 'user-1'
             const userRole = 'CLB'
 
-            ;(campaignRepository.findCampaignById as jest.Mock).mockResolvedValue(
-                mockCampaign
-            )
+            ;(
+                campaignRepository.findCampaignById as jest.Mock
+            ).mockResolvedValue(mockCampaign)
             ;(campaignPermission.canEditCampaign as jest.Mock).mockReturnValue({
                 allowed: true,
             })
-            ;(campaignRepository.updateCampaign as jest.Mock).mockResolvedValue({
-                ...mockCampaign,
-                ...updateInput,
-            })
+            ;(campaignRepository.updateCampaign as jest.Mock).mockResolvedValue(
+                {
+                    ...mockCampaign,
+                    ...updateInput,
+                }
+            )
 
             const result = await campaignService.updateCampaign(
                 'campaign-1',
@@ -169,16 +194,21 @@ describe('Campaign Service', () => {
             const userId = 'user-2'
             const userRole = 'CLB'
 
-            ;(campaignRepository.findCampaignById as jest.Mock).mockResolvedValue(
-                mockCampaign
-            )
+            ;(
+                campaignRepository.findCampaignById as jest.Mock
+            ).mockResolvedValue(mockCampaign)
             ;(campaignPermission.canEditCampaign as jest.Mock).mockReturnValue({
                 allowed: false,
                 message: 'Bạn không có quyền chỉnh sửa chiến dịch này',
             })
 
             await expect(
-                campaignService.updateCampaign('campaign-1', updateInput, userId, userRole)
+                campaignService.updateCampaign(
+                    'campaign-1',
+                    updateInput,
+                    userId,
+                    userRole
+                )
             ).rejects.toThrow(ApiError)
         })
     })
@@ -188,10 +218,12 @@ describe('Campaign Service', () => {
             const userId = 'user-1'
             const userRole = 'CLB'
 
-            ;(campaignRepository.findCampaignById as jest.Mock).mockResolvedValue(
-                mockCampaign
-            )
-            ;(campaignPermission.canDeleteCampaign as jest.Mock).mockReturnValue({
+            ;(
+                campaignRepository.findCampaignById as jest.Mock
+            ).mockResolvedValue(mockCampaign)
+            ;(
+                campaignPermission.canDeleteCampaign as jest.Mock
+            ).mockReturnValue({
                 allowed: true,
             })
             ;(
@@ -208,12 +240,17 @@ describe('Campaign Service', () => {
         it('should throw FORBIDDEN when trying to delete non-DRAFT campaign', async () => {
             const userId = 'user-1'
             const userRole = 'CLB'
-            const activeCampaign = { ...mockCampaign, status: 'ACTIVE' as CampaignStatus }
+            const activeCampaign = {
+                ...mockCampaign,
+                status: 'ACTIVE' as CampaignStatus,
+            }
 
-            ;(campaignRepository.findCampaignById as jest.Mock).mockResolvedValue(
-                activeCampaign
-            )
-            ;(campaignPermission.canDeleteCampaign as jest.Mock).mockReturnValue({
+            ;(
+                campaignRepository.findCampaignById as jest.Mock
+            ).mockResolvedValue(activeCampaign)
+            ;(
+                campaignPermission.canDeleteCampaign as jest.Mock
+            ).mockReturnValue({
                 allowed: false,
                 message: 'Chỉ có thể xóa chiến dịch ở trạng thái DRAFT',
             })
@@ -229,14 +266,20 @@ describe('Campaign Service', () => {
             const userId = 'user-1'
             const userRole = 'CLB'
 
-            ;(campaignRepository.findCampaignById as jest.Mock).mockResolvedValue(
-                mockCampaign
-            )
-            ;(campaignPermission.canSubmitCampaign as jest.Mock).mockReturnValue({
+            ;(
+                campaignRepository.findCampaignById as jest.Mock
+            ).mockResolvedValue(mockCampaign)
+            ;(
+                campaignPermission.canSubmitCampaign as jest.Mock
+            ).mockReturnValue({
                 allowed: true,
             })
-            ;(campaignStatus.isCampaignSubmittable as jest.Mock).mockReturnValue(true)
-            ;(campaignStatus.validateStatusTransition as jest.Mock).mockReturnValue({
+            ;(
+                campaignStatus.isCampaignSubmittable as jest.Mock
+            ).mockReturnValue(true)
+            ;(
+                campaignStatus.validateStatusTransition as jest.Mock
+            ).mockReturnValue({
                 valid: true,
             })
             ;(
@@ -250,24 +293,30 @@ describe('Campaign Service', () => {
             )
 
             expect(result.status).toBe('PENDING')
-            expect(campaignRepository.updateCampaignStatus).toHaveBeenCalledWith(
-                'campaign-1',
-                'PENDING'
-            )
+            expect(
+                campaignRepository.updateCampaignStatus
+            ).toHaveBeenCalledWith('campaign-1', 'PENDING')
         })
 
         it('should throw error when campaign is not in DRAFT status', async () => {
             const userId = 'user-1'
             const userRole = 'CLB'
-            const pendingCampaign = { ...mockCampaign, status: 'PENDING' as CampaignStatus }
+            const pendingCampaign = {
+                ...mockCampaign,
+                status: 'PENDING' as CampaignStatus,
+            }
 
-            ;(campaignRepository.findCampaignById as jest.Mock).mockResolvedValue(
-                pendingCampaign
-            )
-            ;(campaignPermission.canSubmitCampaign as jest.Mock).mockReturnValue({
+            ;(
+                campaignRepository.findCampaignById as jest.Mock
+            ).mockResolvedValue(pendingCampaign)
+            ;(
+                campaignPermission.canSubmitCampaign as jest.Mock
+            ).mockReturnValue({
                 allowed: true,
             })
-            ;(campaignStatus.isCampaignSubmittable as jest.Mock).mockReturnValue(false)
+            ;(
+                campaignStatus.isCampaignSubmittable as jest.Mock
+            ).mockReturnValue(false)
 
             await expect(
                 campaignService.submitCampaign('campaign-1', userId, userRole)
@@ -280,16 +329,25 @@ describe('Campaign Service', () => {
             const userId = 'approver-1'
             const userRole = 'DOANTRUONG'
             const comment = 'Chiến dịch phù hợp'
-            const pendingCampaign = { ...mockCampaign, status: 'PENDING' as CampaignStatus }
+            const pendingCampaign = {
+                ...mockCampaign,
+                status: 'PENDING' as CampaignStatus,
+            }
 
-            ;(campaignRepository.findCampaignById as jest.Mock).mockResolvedValue(
-                pendingCampaign
-            )
-            ;(campaignPermission.canApproveCampaign as jest.Mock).mockReturnValue({
+            ;(
+                campaignRepository.findCampaignById as jest.Mock
+            ).mockResolvedValue(pendingCampaign)
+            ;(
+                campaignPermission.canApproveCampaign as jest.Mock
+            ).mockReturnValue({
                 allowed: true,
             })
-            ;(campaignStatus.isCampaignApprovable as jest.Mock).mockReturnValue(true)
-            ;(campaignStatus.validateStatusTransition as jest.Mock).mockReturnValue({
+            ;(campaignStatus.isCampaignApprovable as jest.Mock).mockReturnValue(
+                true
+            )
+            ;(
+                campaignStatus.validateStatusTransition as jest.Mock
+            ).mockReturnValue({
                 valid: true,
             })
             ;(
@@ -309,28 +367,39 @@ describe('Campaign Service', () => {
             )
 
             expect(result.status).toBe('ACTIVE')
-            expect(campaignRepository.updateCampaignStatus).toHaveBeenCalledWith(
-                'campaign-1',
-                'ACTIVE',
-                { approverId: userId, adminComment: comment }
-            )
+            expect(
+                campaignRepository.updateCampaignStatus
+            ).toHaveBeenCalledWith('campaign-1', 'ACTIVE', {
+                approverId: userId,
+                adminComment: comment,
+            })
         })
 
         it('should throw FORBIDDEN when non-DOANTRUONG tries to approve', async () => {
             const userId = 'user-1'
             const userRole = 'CLB'
-            const pendingCampaign = { ...mockCampaign, status: 'PENDING' as CampaignStatus }
+            const pendingCampaign = {
+                ...mockCampaign,
+                status: 'PENDING' as CampaignStatus,
+            }
 
-            ;(campaignRepository.findCampaignById as jest.Mock).mockResolvedValue(
-                pendingCampaign
-            )
-            ;(campaignPermission.canApproveCampaign as jest.Mock).mockReturnValue({
+            ;(
+                campaignRepository.findCampaignById as jest.Mock
+            ).mockResolvedValue(pendingCampaign)
+            ;(
+                campaignPermission.canApproveCampaign as jest.Mock
+            ).mockReturnValue({
                 allowed: false,
                 message: 'Chỉ Đoàn trường có quyền phê duyệt chiến dịch',
             })
 
             await expect(
-                campaignService.approveCampaign('campaign-1', userId, userRole, 'comment')
+                campaignService.approveCampaign(
+                    'campaign-1',
+                    userId,
+                    userRole,
+                    'comment'
+                )
             ).rejects.toThrow(ApiError)
         })
     })
@@ -340,16 +409,25 @@ describe('Campaign Service', () => {
             const userId = 'approver-1'
             const userRole = 'DOANTRUONG'
             const comment = 'Kế hoạch chưa chi tiết'
-            const pendingCampaign = { ...mockCampaign, status: 'PENDING' as CampaignStatus }
+            const pendingCampaign = {
+                ...mockCampaign,
+                status: 'PENDING' as CampaignStatus,
+            }
 
-            ;(campaignRepository.findCampaignById as jest.Mock).mockResolvedValue(
-                pendingCampaign
-            )
-            ;(campaignPermission.canRejectCampaign as jest.Mock).mockReturnValue({
+            ;(
+                campaignRepository.findCampaignById as jest.Mock
+            ).mockResolvedValue(pendingCampaign)
+            ;(
+                campaignPermission.canRejectCampaign as jest.Mock
+            ).mockReturnValue({
                 allowed: true,
             })
-            ;(campaignStatus.isCampaignRejectable as jest.Mock).mockReturnValue(true)
-            ;(campaignStatus.validateStatusTransition as jest.Mock).mockReturnValue({
+            ;(campaignStatus.isCampaignRejectable as jest.Mock).mockReturnValue(
+                true
+            )
+            ;(
+                campaignStatus.validateStatusTransition as jest.Mock
+            ).mockReturnValue({
                 valid: true,
             })
             ;(
@@ -377,16 +455,25 @@ describe('Campaign Service', () => {
             const userId = 'user-1'
             const userRole = 'CLB'
             const eventPhotos = ['https://example.com/photo1.jpg']
-            const activeCampaign = { ...mockCampaign, status: 'ACTIVE' as CampaignStatus }
+            const activeCampaign = {
+                ...mockCampaign,
+                status: 'ACTIVE' as CampaignStatus,
+            }
 
-            ;(campaignRepository.findCampaignById as jest.Mock).mockResolvedValue(
-                activeCampaign
-            )
-            ;(campaignPermission.canCompleteCampaign as jest.Mock).mockReturnValue({
+            ;(
+                campaignRepository.findCampaignById as jest.Mock
+            ).mockResolvedValue(activeCampaign)
+            ;(
+                campaignPermission.canCompleteCampaign as jest.Mock
+            ).mockReturnValue({
                 allowed: true,
             })
-            ;(campaignStatus.isCampaignCompletable as jest.Mock).mockReturnValue(true)
-            ;(campaignStatus.validateStatusTransition as jest.Mock).mockReturnValue({
+            ;(
+                campaignStatus.isCampaignCompletable as jest.Mock
+            ).mockReturnValue(true)
+            ;(
+                campaignStatus.validateStatusTransition as jest.Mock
+            ).mockReturnValue({
                 valid: true,
             })
             ;(
@@ -411,16 +498,25 @@ describe('Campaign Service', () => {
         it('should cancel campaign (ACTIVE -> CANCELLED)', async () => {
             const userId = 'user-1'
             const userRole = 'CLB'
-            const activeCampaign = { ...mockCampaign, status: 'ACTIVE' as CampaignStatus }
+            const activeCampaign = {
+                ...mockCampaign,
+                status: 'ACTIVE' as CampaignStatus,
+            }
 
-            ;(campaignRepository.findCampaignById as jest.Mock).mockResolvedValue(
-                activeCampaign
-            )
-            ;(campaignPermission.canCancelCampaign as jest.Mock).mockReturnValue({
+            ;(
+                campaignRepository.findCampaignById as jest.Mock
+            ).mockResolvedValue(activeCampaign)
+            ;(
+                campaignPermission.canCancelCampaign as jest.Mock
+            ).mockReturnValue({
                 allowed: true,
             })
-            ;(campaignStatus.isCampaignCancellable as jest.Mock).mockReturnValue(true)
-            ;(campaignStatus.validateStatusTransition as jest.Mock).mockReturnValue({
+            ;(
+                campaignStatus.isCampaignCancellable as jest.Mock
+            ).mockReturnValue(true)
+            ;(
+                campaignStatus.validateStatusTransition as jest.Mock
+            ).mockReturnValue({
                 valid: true,
             })
             ;(
@@ -446,9 +542,9 @@ describe('Campaign Service', () => {
             const userRole = 'CLB'
             const planFileUrl = 'https://example.com/plan.pdf'
 
-            ;(campaignRepository.findCampaignById as jest.Mock).mockResolvedValue(
-                mockCampaign
-            )
+            ;(
+                campaignRepository.findCampaignById as jest.Mock
+            ).mockResolvedValue(mockCampaign)
             ;(campaignPermission.canUploadFile as jest.Mock).mockReturnValue({
                 allowed: true,
             })
@@ -476,9 +572,9 @@ describe('Campaign Service', () => {
             const userRole = 'CLB'
             const budgetFileUrl = 'https://example.com/budget.xlsx'
 
-            ;(campaignRepository.findCampaignById as jest.Mock).mockResolvedValue(
-                mockCampaign
-            )
+            ;(
+                campaignRepository.findCampaignById as jest.Mock
+            ).mockResolvedValue(mockCampaign)
             ;(campaignPermission.canUploadFile as jest.Mock).mockReturnValue({
                 allowed: true,
             })
