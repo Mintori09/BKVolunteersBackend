@@ -34,6 +34,25 @@ jest.mock('src/config', () => ({
     },
     corsConfig: {},
     helmetConfig: {},
+    uploadConfig: {
+        image: {
+            maxSize: 5 * 1024 * 1024,
+            allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+            allowedExtensions: ['.jpg', '.jpeg', '.png', '.webp'],
+            storagePath: '/uploads/images',
+            urlPrefix: '/files/images',
+        },
+        document: {
+            maxSize: 10 * 1024 * 1024,
+            allowedMimeTypes: ['application/pdf'],
+            allowedExtensions: ['.pdf'],
+            storagePath: '/uploads/documents',
+            urlPrefix: '/files/documents',
+        },
+        basePath: '/uploads',
+        staticUrlPrefix: '/files',
+    },
+    getAbsoluteStoragePath: (path: string) => path,
 }))
 
 const mockUser = {
