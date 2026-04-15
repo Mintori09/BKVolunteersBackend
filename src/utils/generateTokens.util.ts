@@ -5,13 +5,13 @@ import { UserRole } from 'src/features/auth/types'
 interface AccessTokenPayload {
     userId: string | number
     role: UserRole
-    facultyId?: string | null
+    facultyId?: string | number | null
 }
 
 export const createAccessToken = (
     userId: number | string,
     role: UserRole,
-    facultyId?: string | null
+    facultyId?: string | number | null
 ): string => {
     const payload: AccessTokenPayload = { userId, role }
     if (facultyId !== undefined) {
