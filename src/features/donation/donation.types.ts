@@ -11,13 +11,23 @@ export type RejectDonationInput = {
 }
 
 export type VerifyDonationInput = {
-    verifiedAmount: number
+    verifiedAmount?: number
+    points?: number
 }
 
 export type UserRole = 'SINHVIEN' | 'CLB' | 'LCD' | 'DOANTRUONG'
 
 export type DonationFilterQuery = {
     status?: DonationStatus
+    page?: number
+    limit?: number
+}
+
+export type AdminDonationFilterQuery = {
+    status?: DonationStatus
+    phaseId?: number
+    phaseType?: 'money' | 'item'
+    studentId?: string
     page?: number
     limit?: number
 }

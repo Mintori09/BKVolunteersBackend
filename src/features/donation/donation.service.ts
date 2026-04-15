@@ -1,5 +1,6 @@
 import * as donationRepository from './donation.repository'
 import * as moneyDonationRepository from '../money-donation/money-donation.repository'
+import * as gamificationService from '../gamification/gamification.service'
 import {
     canSubmitDonation,
     canRejectDonation,
@@ -11,6 +12,7 @@ import {
     VerifyDonationInput,
     UserRole,
     DonationFilterQuery,
+    AdminDonationFilterQuery,
 } from './donation.types'
 import { ApiError } from 'src/utils/ApiError'
 import { HttpStatus } from 'src/common/constants'
@@ -19,10 +21,15 @@ export const submitDonation = async (
     studentId: string,
     data: CreateDonationInput
 ) => {
-    const moneyPhase = await donationRepository.findMoneyPhaseWithCampaign(data.moneyPhaseId)
+    const moneyPhase = await donationRepository.findMoneyPhaseWithCampaign(
+        data.moneyPhaseId
+    )
 
     if (!moneyPhase) {
-        throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy giai đoạn quyên góp')
+        throw new ApiError(
+            HttpStatus.NOT_FOUND,
+            'Không tìm thấy giai đoạn quyên góp'
+        )
     }
 
     const permissionCheck = canSubmitDonation(moneyPhase.campaign as any)
@@ -48,23 +55,30 @@ export const rejectDonation = async (
     }
 
     if (donation.status !== 'PENDING') {
-        throw new ApiError(HttpStatus.BAD_REQUEST, 'Chỉ có thể từ chối đóng góp đang chờ xử lý')
+        throw new ApiError(
+            HttpStatus.BAD_REQUEST,
+            'Chỉ có thể từ chối đóng góp đang chờ xử lý'
+        )
     }
 
-    if (!donation.moneyPhase?.campaign) {
-        throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy chiến dịch liên quan')
+    const campaign =
+        donation.moneyPhase?.campaign || donation.itemPhase?.campaign
+    if (!campaign) {
+        throw new ApiError(
+            HttpStatus.NOT_FOUND,
+            'Không tìm thấy chiến dịch liên quan'
+        )
     }
 
-    const permissionCheck = canRejectDonation(
-        donation.moneyPhase.campaign as any,
-        userId,
-        userRole
-    )
+    const permissionCheck = canRejectDonation(campaign as any, userId, userRole)
     if (!permissionCheck.allowed) {
         throw new ApiError(HttpStatus.FORBIDDEN, permissionCheck.message!)
     }
 
-    const updatedDonation = await donationRepository.rejectDonation(donationId, data.reason)
+    const updatedDonation = await donationRepository.rejectDonation(
+        donationId,
+        data.reason
+    )
 
     return updatedDonation
 }
@@ -82,26 +96,51 @@ export const verifyDonation = async (
     }
 
     if (donation.status !== 'PENDING') {
-        throw new ApiError(HttpStatus.BAD_REQUEST, 'Chỉ có thể xác thực đóng góp đang chờ xử lý')
+        throw new ApiError(
+            HttpStatus.BAD_REQUEST,
+            'Chỉ có thể xác thực đóng góp đang chờ xử lý'
+        )
     }
 
-    if (!donation.moneyPhase?.campaign) {
-        throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy chiến dịch liên quan')
+    const campaign =
+        donation.moneyPhase?.campaign || donation.itemPhase?.campaign
+    if (!campaign) {
+        throw new ApiError(
+            HttpStatus.NOT_FOUND,
+            'Không tìm thấy chiến dịch liên quan'
+        )
     }
 
-    const permissionCheck = canVerifyDonation(
-        donation.moneyPhase.campaign as any,
-        userId,
-        userRole
-    )
+    const permissionCheck = canVerifyDonation(campaign as any, userId, userRole)
     if (!permissionCheck.allowed) {
         throw new ApiError(HttpStatus.FORBIDDEN, permissionCheck.message!)
     }
 
+    const isMoneyDonation = !!donation.moneyPhaseId
+    const verifiedAmount = data.verifiedAmount ?? 0
+    const pointsToAward = isMoneyDonation
+        ? Math.floor(verifiedAmount / 10000)
+        : data.points || 5
+
     const updatedDonation = await donationRepository.verifyDonation(
         donationId,
-        data.verifiedAmount
+        verifiedAmount
     )
+
+    if (pointsToAward > 0) {
+        const reason = isMoneyDonation
+            ? `Quyên góp ${verifiedAmount} VND cho chiến dịch "${campaign.title}"`
+            : `Quyên góp hiện vật cho chiến dịch "${campaign.title}"`
+
+        await gamificationService.awardPoints({
+            studentId: donation.studentId,
+            points: pointsToAward,
+            reason,
+            sourceType: isMoneyDonation ? 'MONEY_DONATION' : 'ITEM_DONATION',
+            sourceId: donationId,
+            awardedBy: userId,
+        })
+    }
 
     return updatedDonation
 }
@@ -111,4 +150,8 @@ export const getMyDonations = async (
     query: DonationFilterQuery
 ) => {
     return donationRepository.findDonationsByStudent(studentId, query)
+}
+
+export const getDonationsForAdmin = async (query: AdminDonationFilterQuery) => {
+    return donationRepository.findDonationsForAdmin(query)
 }

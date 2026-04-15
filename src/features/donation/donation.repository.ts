@@ -1,6 +1,10 @@
 import { Prisma, DonationStatus } from '@prisma/client'
 import prismaClient from 'src/config/prisma'
-import { CreateDonationInput, DonationFilterQuery } from './donation.types'
+import {
+    CreateDonationInput,
+    DonationFilterQuery,
+    AdminDonationFilterQuery,
+} from './donation.types'
 
 export const findDonationById = async (id: string) => {
     return prismaClient.donation.findUnique({
@@ -14,6 +18,18 @@ export const findDonationById = async (id: string) => {
                 },
             },
             moneyPhase: {
+                include: {
+                    campaign: {
+                        select: {
+                            id: true,
+                            title: true,
+                            status: true,
+                            creatorId: true,
+                        },
+                    },
+                },
+            },
+            itemPhase: {
                 include: {
                     campaign: {
                         select: {
@@ -132,7 +148,9 @@ export const findDonationsByStudent = async (
         donations: donations.map((d) => ({
             ...d,
             amount: d.amount.toString(),
-            verifiedAmount: d.verifiedAmount ? d.verifiedAmount.toString() : null,
+            verifiedAmount: d.verifiedAmount
+                ? d.verifiedAmount.toString()
+                : null,
         })),
         meta: {
             total,
@@ -157,4 +175,85 @@ export const findMoneyPhaseWithCampaign = async (phaseId: number) => {
             },
         },
     })
+}
+
+export const findDonationsForAdmin = async (
+    query: AdminDonationFilterQuery
+) => {
+    const page = query.page ?? 1
+    const limit = query.limit ?? 20
+    const skip = (page - 1) * limit
+
+    const where: Prisma.DonationWhereInput = {}
+
+    if (query.status) {
+        where.status = query.status
+    }
+    if (query.studentId) {
+        where.studentId = query.studentId
+    }
+    if (query.phaseType === 'money') {
+        where.moneyPhaseId = { not: null }
+    }
+    if (query.phaseType === 'item') {
+        where.itemPhaseId = { not: null }
+    }
+
+    const [donations, total] = await Promise.all([
+        prismaClient.donation.findMany({
+            where,
+            skip,
+            take: limit,
+            orderBy: { createdAt: 'desc' },
+            include: {
+                student: {
+                    select: {
+                        id: true,
+                        mssv: true,
+                        fullName: true,
+                        email: true,
+                    },
+                },
+                moneyPhase: {
+                    select: {
+                        id: true,
+                        campaign: {
+                            select: {
+                                id: true,
+                                title: true,
+                            },
+                        },
+                    },
+                },
+                itemPhase: {
+                    select: {
+                        id: true,
+                        campaign: {
+                            select: {
+                                id: true,
+                                title: true,
+                            },
+                        },
+                    },
+                },
+            },
+        }),
+        prismaClient.donation.count({ where }),
+    ])
+
+    return {
+        donations: donations.map((d) => ({
+            ...d,
+            amount: d.amount.toString(),
+            verifiedAmount: d.verifiedAmount
+                ? d.verifiedAmount.toString()
+                : null,
+        })),
+        meta: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+        },
+    }
 }

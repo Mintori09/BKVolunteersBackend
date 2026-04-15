@@ -43,6 +43,9 @@ export const canProcessDonation = (
 export const canRejectDonation = canProcessDonation
 export const canVerifyDonation = canProcessDonation
 
-export const canViewMyDonations = (studentId: string, userId: string): boolean => {
+export const canViewMyDonations = (
+    studentId: string,
+    userId: string
+): boolean => {
     return studentId === userId
 }

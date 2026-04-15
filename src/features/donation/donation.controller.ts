@@ -87,22 +87,56 @@ export const verifyDonation = catchAsync(
     }
 )
 
-export const getMyDonations = catchAsync(async (req: Request, res: Response) => {
-    const studentId = req.payload?.userId
+export const getMyDonations = catchAsync(
+    async (req: Request, res: Response) => {
+        const studentId = req.payload?.userId
 
-    if (!studentId) {
-        return ApiResponse.error(
-            res,
-            'Chưa xác thực người dùng',
-            HttpStatus.UNAUTHORIZED
-        )
+        if (!studentId) {
+            return ApiResponse.error(
+                res,
+                'Chưa xác thực người dùng',
+                HttpStatus.UNAUTHORIZED
+            )
+        }
+
+        const status = req.query.status as
+            | 'PENDING'
+            | 'VERIFIED'
+            | 'REJECTED'
+            | undefined
+        const page = req.query.page ? parseInt(req.query.page as string) : 1
+        const limit = req.query.limit ? parseInt(req.query.limit as string) : 10
+
+        const result = await donationService.getMyDonations(studentId, {
+            status,
+            page,
+            limit,
+        })
+
+        return ApiResponse.success(res, result)
     }
+)
 
-    const status = req.query.status as 'PENDING' | 'VERIFIED' | 'REJECTED' | undefined
-    const page = req.query.page ? parseInt(req.query.page as string) : 1
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : 10
+export const getDonationsForAdmin = catchAsync(
+    async (req: Request, res: Response) => {
+        const status = req.query.status as
+            | 'PENDING'
+            | 'VERIFIED'
+            | 'REJECTED'
+            | undefined
+        const phaseType = req.query.phaseType as 'money' | 'item' | undefined
+        const studentId = req.query.studentId as string | undefined
+        const page = req.query.page ? parseInt(req.query.page as string) : 1
+        const limit = req.query.limit ? parseInt(req.query.limit as string) : 20
 
-    const result = await donationService.getMyDonations(studentId, { status, page, limit })
+        const result = await donationService.getDonationsForAdmin({
+            status,
+            phaseType,
+            studentId,
+            page,
+            limit,
+        })
 
-    return ApiResponse.success(res, result)
-})
+        return ApiResponse.success(res, result)
+    }
+)

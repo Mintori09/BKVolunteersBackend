@@ -10,6 +10,7 @@ import {
     rejectDonationSchema,
     verifyDonationSchema,
     myDonationsSchema,
+    adminDonationsSchema,
 } from './donation.validation'
 
 const donationRouter = Router()
@@ -164,6 +165,14 @@ donationRouter.get(
     restrictTo('SINHVIEN'),
     validate(myDonationsSchema),
     donationController.getMyDonations
+)
+
+donationRouter.get(
+    '/admin',
+    isAuth,
+    restrictTo('CLB', 'LCD', 'DOANTRUONG'),
+    validate(adminDonationsSchema),
+    donationController.getDonationsForAdmin
 )
 
 export default donationRouter
