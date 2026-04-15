@@ -4,7 +4,6 @@ export type CreateCampaignInput = {
     title: string
     description?: string
     scope: CampaignScope
-    facultyId?: string
 }
 
 export type UpdateCampaignInput = {
@@ -48,7 +47,7 @@ export type UploadBudgetFileInput = {
 export type CampaignFilterQuery = {
     status?: CampaignStatus
     scope?: CampaignScope
-    facultyId?: string
+    facultyId?: number
     creatorId?: string
     page?: number
     limit?: number

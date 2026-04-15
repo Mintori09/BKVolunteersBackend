@@ -32,15 +32,15 @@ export const createCampaign = async (
     data: CreateCampaignInput,
     userId: string,
     userRole: UserRole,
-    userFacultyId?: string | number | null
+    userFacultyId?: string | null
 ) => {
-    const permissionCheck = canCreateCampaign(userRole, data.scope, userFacultyId)
+    const permissionCheck = canCreateCampaign(
+        userRole,
+        data.scope,
+        userFacultyId
+    )
     if (!permissionCheck.allowed) {
         throw new ApiError(HttpStatus.FORBIDDEN, permissionCheck.message!)
-    }
-
-    if (data.scope === 'KHOA' && !data.facultyId && userFacultyId) {
-        data.facultyId = String(userFacultyId)
     }
 
     return campaignRepository.createCampaign({
@@ -109,7 +109,11 @@ export const submitCampaign = async (
         )
     }
 
-    const statusCheck = validateStatusTransition(campaign.status, 'PENDING', userRole)
+    const statusCheck = validateStatusTransition(
+        campaign.status,
+        'PENDING',
+        userRole
+    )
     if (!statusCheck.valid) {
         throw new ApiError(HttpStatus.BAD_REQUEST, statusCheck.message!)
     }
@@ -137,7 +141,11 @@ export const approveCampaign = async (
         )
     }
 
-    const statusCheck = validateStatusTransition(campaign.status, 'ACTIVE', userRole)
+    const statusCheck = validateStatusTransition(
+        campaign.status,
+        'ACTIVE',
+        userRole
+    )
     if (!statusCheck.valid) {
         throw new ApiError(HttpStatus.BAD_REQUEST, statusCheck.message!)
     }
@@ -168,7 +176,11 @@ export const rejectCampaign = async (
         )
     }
 
-    const statusCheck = validateStatusTransition(campaign.status, 'REJECTED', userRole)
+    const statusCheck = validateStatusTransition(
+        campaign.status,
+        'REJECTED',
+        userRole
+    )
     if (!statusCheck.valid) {
         throw new ApiError(HttpStatus.BAD_REQUEST, statusCheck.message!)
     }
@@ -199,7 +211,11 @@ export const completeCampaign = async (
         )
     }
 
-    const statusCheck = validateStatusTransition(campaign.status, 'COMPLETED', userRole)
+    const statusCheck = validateStatusTransition(
+        campaign.status,
+        'COMPLETED',
+        userRole
+    )
     if (!statusCheck.valid) {
         throw new ApiError(HttpStatus.BAD_REQUEST, statusCheck.message!)
     }
@@ -226,7 +242,11 @@ export const cancelCampaign = async (
         )
     }
 
-    const statusCheck = validateStatusTransition(campaign.status, 'CANCELLED', userRole)
+    const statusCheck = validateStatusTransition(
+        campaign.status,
+        'CANCELLED',
+        userRole
+    )
     if (!statusCheck.valid) {
         throw new ApiError(HttpStatus.BAD_REQUEST, statusCheck.message!)
     }
@@ -272,7 +292,7 @@ export const getCampaigns = async (query: CampaignFilterQuery) => {
 
 export const getAvailableCampaigns = async (
     userRole: UserRole,
-    userFacultyId?: string | number | null,
+    userFacultyId?: string | null,
     page: number = 1,
     limit: number = 10
 ) => {

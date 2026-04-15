@@ -6,7 +6,9 @@ import {
     CampaignFilterQuery,
 } from './types'
 
-export const createCampaign = async (data: CreateCampaignInput & { creatorId: string }) => {
+export const createCampaign = async (
+    data: CreateCampaignInput & { creatorId: string }
+) => {
     return prismaClient.campaign.create({
         data: {
             title: data.title,
@@ -123,7 +125,10 @@ export const updatePlanFileUrl = async (id: string, planFileUrl: string) => {
     })
 }
 
-export const updateBudgetFileUrl = async (id: string, budgetFileUrl: string) => {
+export const updateBudgetFileUrl = async (
+    id: string,
+    budgetFileUrl: string
+) => {
     return prismaClient.campaign.update({
         where: { id },
         data: { budgetFileUrl },
@@ -182,7 +187,7 @@ export const findCampaignsWithFilter = async (query: CampaignFilterQuery) => {
 
 export const findAvailableCampaigns = async (
     userRole: string,
-    userFacultyId?: string | number | null,
+    userFacultyId?: string | null,
     page: number = 1,
     limit: number = 10
 ) => {
@@ -194,10 +199,7 @@ export const findAvailableCampaigns = async (
     }
 
     if (userRole !== 'DOANTRUONG' && userFacultyId) {
-        where.OR = [
-            { scope: 'TRUONG' },
-            { scope: 'KHOA' },
-        ]
+        where.OR = [{ scope: 'TRUONG' }, { scope: 'KHOA' }]
     }
 
     const [campaigns, total] = await Promise.all([

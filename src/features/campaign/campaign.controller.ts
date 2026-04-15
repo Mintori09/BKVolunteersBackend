@@ -10,7 +10,10 @@ export const createCampaign = catchAsync(
     async (req: TypedRequest<CreateCampaignInput>, res: Response) => {
         const userId = req.payload?.userId
         const userRole = req.payload?.role as UserRole
-        const userFacultyId = req.payload?.facultyId
+        const userFacultyId = req.payload?.facultyId as
+            | string
+            | null
+            | undefined
 
         if (!userId) {
             return ApiResponse.error(
@@ -298,7 +301,9 @@ export const uploadBudgetFile = catchAsync(
 export const getCampaigns = catchAsync(async (req: Request, res: Response) => {
     const status = req.query.status as string | undefined
     const scope = req.query.scope as string | undefined
-    const facultyId = req.query.facultyId as string | undefined
+    const facultyId = req.query.facultyId
+        ? parseInt(req.query.facultyId as string)
+        : undefined
     const creatorId = req.query.creatorId as string | undefined
     const page = req.query.page ? parseInt(req.query.page as string) : undefined
     const limit = req.query.limit
@@ -320,7 +325,10 @@ export const getCampaigns = catchAsync(async (req: Request, res: Response) => {
 export const getAvailableCampaigns = catchAsync(
     async (req: Request, res: Response) => {
         const userRole = req.payload?.role as UserRole
-        const userFacultyId = req.payload?.facultyId
+        const userFacultyId = req.payload?.facultyId as
+            | string
+            | null
+            | undefined
         const page = req.query.page ? parseInt(req.query.page as string) : 1
         const limit = req.query.limit ? parseInt(req.query.limit as string) : 10
 

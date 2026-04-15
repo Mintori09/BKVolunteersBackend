@@ -4,7 +4,7 @@ import { UserRole } from './types'
 export const canCreateCampaign = (
     userRole: UserRole,
     scope: CampaignScope,
-    userFacultyId?: string | number | null
+    userFacultyId?: string | null
 ): { allowed: boolean; message?: string } => {
     if (userRole === 'SINHVIEN') {
         return {
@@ -21,7 +21,10 @@ export const canCreateCampaign = (
             }
         }
 
-        if ((userRole === 'LCD' || userRole === 'DOANTRUONG') && !userFacultyId) {
+        if (
+            (userRole === 'LCD' || userRole === 'DOANTRUONG') &&
+            !userFacultyId
+        ) {
             return {
                 allowed: false,
                 message: 'Bạn cần thuộc một khoa để tạo chiến dịch cấp khoa',
@@ -214,7 +217,8 @@ export const canUploadFile = (
     if (campaign.status !== 'DRAFT' && campaign.status !== 'PENDING') {
         return {
             allowed: false,
-            message: 'Chỉ có thể upload file khi chiến dịch ở trạng thái DRAFT hoặc PENDING',
+            message:
+                'Chỉ có thể upload file khi chiến dịch ở trạng thái DRAFT hoặc PENDING',
         }
     }
 
@@ -224,14 +228,11 @@ export const canUploadFile = (
 export const canViewCampaign = (
     campaign: Campaign,
     userRole: UserRole,
-    userFacultyId?: string | number | null
+    userFacultyId?: string | null
 ): { allowed: boolean; message?: string } => {
     if (campaign.status === 'ACTIVE' || campaign.status === 'COMPLETED') {
         if (campaign.scope === 'KHOA') {
-            if (
-                userRole !== 'DOANTRUONG' &&
-                userFacultyId
-            ) {
+            if (userRole !== 'DOANTRUONG' && userFacultyId) {
                 return { allowed: true }
             }
         }

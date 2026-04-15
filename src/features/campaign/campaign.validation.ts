@@ -1,35 +1,18 @@
 import * as z from 'zod'
 import { RequestValidationSchema } from 'src/types/request'
-import {
-    CAMPAIGN_STATUS_VALUES,
-    CAMPAIGN_SCOPE_VALUES,
-} from './types'
+import { CAMPAIGN_STATUS_VALUES, CAMPAIGN_SCOPE_VALUES } from './types'
 
 export const createCampaignSchema: RequestValidationSchema = {
-    body: z
-        .object({
-            title: z
-                .string()
-                .min(1, 'Tiêu đề không được để trống')
-                .max(255, 'Tiêu đề không được quá 255 ký tự'),
-            description: z.string().optional(),
-            scope: z.enum(CAMPAIGN_SCOPE_VALUES, {
-                message: 'Phạm vi không hợp lệ',
-            }),
-            facultyId: z.string().optional(),
-        })
-        .refine(
-            (data) => {
-                if (data.scope === 'KHOA' && !data.facultyId) {
-                    return false
-                }
-                return true
-            },
-            {
-                message: 'facultyId là bắt buộc khi scope là KHOA',
-                path: ['facultyId'],
-            }
-        ),
+    body: z.object({
+        title: z
+            .string()
+            .min(1, 'Tiêu đề không được để trống')
+            .max(255, 'Tiêu đề không được quá 255 ký tự'),
+        description: z.string().optional(),
+        scope: z.enum(CAMPAIGN_SCOPE_VALUES, {
+            message: 'Phạm vi không hợp lệ',
+        }),
+    }),
 }
 
 export const updateCampaignSchema: RequestValidationSchema = {
@@ -57,7 +40,10 @@ export const approveCampaignSchema: RequestValidationSchema = {
         id: z.string().min(1, 'ID không hợp lệ'),
     }),
     body: z.object({
-        comment: z.string().max(1000, 'Ghi chú không được quá 1000 ký tự').optional(),
+        comment: z
+            .string()
+            .max(1000, 'Ghi chú không được quá 1000 ký tự')
+            .optional(),
     }),
 }
 
@@ -104,7 +90,7 @@ export const getCampaignsSchema: RequestValidationSchema = {
     query: z.object({
         status: z.enum(CAMPAIGN_STATUS_VALUES).optional(),
         scope: z.enum(CAMPAIGN_SCOPE_VALUES).optional(),
-        facultyId: z.string().optional(),
+        facultyId: z.coerce.number().int().positive().optional(),
         creatorId: z.string().optional(),
         page: z
             .string()
