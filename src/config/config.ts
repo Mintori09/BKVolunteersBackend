@@ -35,17 +35,23 @@ const envSchema = z.object({
     SMTP_USERNAME: z.string().default('test_user'),
     SMTP_PASSWORD: z.string().default('test_password'),
     EMAIL_FROM: z.email('EMAIL NOT VALID!').default('test@example.com'),
+    UPLOAD_BASE_PATH: z.string().default('/uploads'),
+    UPLOAD_IMAGE_PATH: z.string().default('/uploads/images'),
+    UPLOAD_DOCUMENT_PATH: z.string().default('/uploads/documents'),
+    STATIC_URL_PREFIX: z.string().default('/files'),
 })
 
 const parsedEnv = envSchema.safeParse(process.env)
 
 if (!parsedEnv.success) {
-    console.error('Configuration .env is not valid!')
-    parsedEnv.error.issues.forEach((issue) => {
-        console.error(` - [${issue.path.join('.')}]: ${issue.message}`)
-    })
     if (process.env.NODE_ENV !== 'test') {
-        process.exit(1)
+        console.error('Configuration .env is not valid!')
+        parsedEnv.error.issues.forEach((issue) => {
+            console.error(` - [${issue.path.join('.')}]: ${issue.message}`)
+        })
+        if (process.env.NODE_ENV === 'production') {
+            process.exit(1)
+        }
     }
 }
 
@@ -85,6 +91,12 @@ const config = {
         from: env.EMAIL_FROM,
     },
     database_url: env.DATABASE_URL,
+    upload: {
+        basePath: env.UPLOAD_BASE_PATH,
+        imagePath: env.UPLOAD_IMAGE_PATH,
+        documentPath: env.UPLOAD_DOCUMENT_PATH,
+        staticUrlPrefix: env.STATIC_URL_PREFIX,
+    },
 } as const
 
 export default config
