@@ -38,7 +38,8 @@ export const canCreateMoneyPhase = (
     if (campaign.status !== 'DRAFT' && campaign.status !== 'PENDING') {
         return {
             allowed: false,
-            message: 'Chỉ có thể tạo giai đoạn khi chiến dịch ở trạng thái DRAFT hoặc PENDING',
+            message:
+                'Chỉ có thể tạo giai đoạn khi chiến dịch ở trạng thái DRAFT hoặc PENDING',
         }
     }
 
@@ -71,7 +72,8 @@ export const canUpdateMoneyPhase = (
     if (campaign.status !== 'DRAFT' && campaign.status !== 'ACTIVE') {
         return {
             allowed: false,
-            message: 'Chỉ có thể cập nhật giai đoạn khi chiến dịch ở trạng thái DRAFT hoặc ACTIVE',
+            message:
+                'Chỉ có thể cập nhật giai đoạn khi chiến dịch ở trạng thái DRAFT hoặc ACTIVE',
         }
     }
 
@@ -119,7 +121,8 @@ export const canDeleteMoneyPhase = (
     if (campaign.status !== 'DRAFT') {
         return {
             allowed: false,
-            message: 'Chỉ có thể xóa giai đoạn khi chiến dịch ở trạng thái DRAFT',
+            message:
+                'Chỉ có thể xóa giai đoạn khi chiến dịch ở trạng thái DRAFT',
         }
     }
 
@@ -142,7 +145,8 @@ export const canViewProgress = (
 
     return {
         allowed: false,
-        message: 'Chỉ có thể xem tiến độ chiến dịch đang hoạt động hoặc đã hoàn thành',
+        message:
+            'Chỉ có thể xem tiến độ chiến dịch đang hoạt động hoặc đã hoàn thành',
     }
 }
 

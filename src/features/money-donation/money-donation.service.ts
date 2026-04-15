@@ -29,7 +29,11 @@ export const createMoneyPhase = async (
         throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy chiến dịch')
     }
 
-    const permissionCheck = canCreateMoneyPhase(campaign as any, userId, userRole)
+    const permissionCheck = canCreateMoneyPhase(
+        campaign as any,
+        userId,
+        userRole
+    )
     if (!permissionCheck.allowed) {
         throw new ApiError(HttpStatus.FORBIDDEN, permissionCheck.message!)
     }
@@ -41,10 +45,13 @@ export const createMoneyPhase = async (
         data.targetAmount
     )
 
-    const moneyPhase = await moneyDonationRepository.createMoneyPhase(campaignId, {
-        ...data,
-        qrImageUrl,
-    })
+    const moneyPhase = await moneyDonationRepository.createMoneyPhase(
+        campaignId,
+        {
+            ...data,
+            qrImageUrl,
+        }
+    )
 
     return moneyPhase
 }
@@ -53,7 +60,10 @@ export const getMoneyPhaseById = async (phaseId: number) => {
     const moneyPhase = await moneyDonationRepository.findMoneyPhaseById(phaseId)
 
     if (!moneyPhase) {
-        throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy giai đoạn quyên góp')
+        throw new ApiError(
+            HttpStatus.NOT_FOUND,
+            'Không tìm thấy giai đoạn quyên góp'
+        )
     }
 
     return moneyPhase
@@ -68,10 +78,17 @@ export const updateMoneyPhase = async (
     const moneyPhase = await moneyDonationRepository.findMoneyPhaseById(phaseId)
 
     if (!moneyPhase) {
-        throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy giai đoạn quyên góp')
+        throw new ApiError(
+            HttpStatus.NOT_FOUND,
+            'Không tìm thấy giai đoạn quyên góp'
+        )
     }
 
-    const permissionCheck = canUpdateMoneyPhase(moneyPhase.campaign as any, userId, userRole)
+    const permissionCheck = canUpdateMoneyPhase(
+        moneyPhase.campaign as any,
+        userId,
+        userRole
+    )
     if (!permissionCheck.allowed) {
         throw new ApiError(HttpStatus.FORBIDDEN, permissionCheck.message!)
     }
@@ -91,10 +108,13 @@ export const updateMoneyPhase = async (
         )
     }
 
-    const updatedPhase = await moneyDonationRepository.updateMoneyPhase(phaseId, {
-        ...data,
-        qrImageUrl: qrImageUrl ?? undefined,
-    })
+    const updatedPhase = await moneyDonationRepository.updateMoneyPhase(
+        phaseId,
+        {
+            ...data,
+            qrImageUrl: qrImageUrl ?? undefined,
+        }
+    )
 
     return updatedPhase
 }
@@ -107,10 +127,14 @@ export const deleteMoneyPhase = async (
     const moneyPhase = await moneyDonationRepository.findMoneyPhaseById(phaseId)
 
     if (!moneyPhase) {
-        throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy giai đoạn quyên góp')
+        throw new ApiError(
+            HttpStatus.NOT_FOUND,
+            'Không tìm thấy giai đoạn quyên góp'
+        )
     }
 
-    const donationCount = await moneyDonationRepository.countDonationsByPhase(phaseId)
+    const donationCount =
+        await moneyDonationRepository.countDonationsByPhase(phaseId)
 
     const permissionCheck = canDeleteMoneyPhase(
         moneyPhase.campaign as any,
@@ -132,7 +156,10 @@ export const getPhaseProgress = async (phaseId: number) => {
     const moneyPhase = await moneyDonationRepository.findMoneyPhaseById(phaseId)
 
     if (!moneyPhase) {
-        throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy giai đoạn quyên góp')
+        throw new ApiError(
+            HttpStatus.NOT_FOUND,
+            'Không tìm thấy giai đoạn quyên góp'
+        )
     }
 
     const permissionCheck = canViewProgress(moneyPhase.campaign as any)
@@ -158,10 +185,17 @@ export const getPhaseDonations = async (
     const moneyPhase = await moneyDonationRepository.findMoneyPhaseById(phaseId)
 
     if (!moneyPhase) {
-        throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy giai đoạn quyên góp')
+        throw new ApiError(
+            HttpStatus.NOT_FOUND,
+            'Không tìm thấy giai đoạn quyên góp'
+        )
     }
 
-    const permissionCheck = canViewPhaseDonations(moneyPhase.campaign as any, userId, userRole)
+    const permissionCheck = canViewPhaseDonations(
+        moneyPhase.campaign as any,
+        userId,
+        userRole
+    )
     if (!permissionCheck.allowed) {
         throw new ApiError(HttpStatus.FORBIDDEN, permissionCheck.message!)
     }

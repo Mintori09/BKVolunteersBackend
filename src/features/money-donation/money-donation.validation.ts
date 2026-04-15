@@ -7,7 +7,9 @@ export const createMoneyPhaseSchema: RequestValidationSchema = {
     }),
     body: z
         .object({
-            targetAmount: z.number().positive('Số tiền mục tiêu phải lớn hơn 0'),
+            targetAmount: z
+                .number()
+                .positive('Số tiền mục tiêu phải lớn hơn 0'),
             bankAccountNo: z
                 .string()
                 .min(1, 'Số tài khoản không được để trống')
@@ -43,7 +45,10 @@ export const updateMoneyPhaseSchema: RequestValidationSchema = {
     }),
     body: z
         .object({
-            targetAmount: z.number().positive('Số tiền mục tiêu phải lớn hơn 0').optional(),
+            targetAmount: z
+                .number()
+                .positive('Số tiền mục tiêu phải lớn hơn 0')
+                .optional(),
             bankAccountNo: z
                 .string()
                 .min(1, 'Số tài khoản không được để trống')

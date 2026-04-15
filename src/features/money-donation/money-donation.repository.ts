@@ -1,6 +1,10 @@
 import { Prisma, DonationStatus } from '@prisma/client'
 import prismaClient from 'src/config/prisma'
-import { CreateMoneyPhaseInput, UpdateMoneyPhaseInput, DonationFilterQuery } from './money-donation.types'
+import {
+    CreateMoneyPhaseInput,
+    UpdateMoneyPhaseInput,
+    DonationFilterQuery,
+} from './money-donation.types'
 
 export const findMoneyPhaseById = async (id: number) => {
     return prismaClient.moneyDonationCampaign.findUnique({
@@ -80,35 +84,47 @@ export const getPhaseProgress = async (moneyPhaseId: number) => {
 
     if (!phase) return null
 
-    const [totalDonations, verifiedDonations, pendingDonations, rejectedDonations, recentDonations] =
-        await Promise.all([
-            prismaClient.donation.count({ where: { moneyPhaseId } }),
-            prismaClient.donation.count({ where: { moneyPhaseId, status: 'VERIFIED' } }),
-            prismaClient.donation.count({ where: { moneyPhaseId, status: 'PENDING' } }),
-            prismaClient.donation.count({ where: { moneyPhaseId, status: 'REJECTED' } }),
-            prismaClient.donation.findMany({
-                where: { moneyPhaseId },
-                orderBy: { createdAt: 'desc' },
-                take: 5,
-                select: {
-                    id: true,
-                    amount: true,
-                    status: true,
-                    createdAt: true,
-                    student: {
-                        select: {
-                            id: true,
-                            mssv: true,
-                            fullName: true,
-                        },
+    const [
+        totalDonations,
+        verifiedDonations,
+        pendingDonations,
+        rejectedDonations,
+        recentDonations,
+    ] = await Promise.all([
+        prismaClient.donation.count({ where: { moneyPhaseId } }),
+        prismaClient.donation.count({
+            where: { moneyPhaseId, status: 'VERIFIED' },
+        }),
+        prismaClient.donation.count({
+            where: { moneyPhaseId, status: 'PENDING' },
+        }),
+        prismaClient.donation.count({
+            where: { moneyPhaseId, status: 'REJECTED' },
+        }),
+        prismaClient.donation.findMany({
+            where: { moneyPhaseId },
+            orderBy: { createdAt: 'desc' },
+            take: 5,
+            select: {
+                id: true,
+                amount: true,
+                status: true,
+                createdAt: true,
+                student: {
+                    select: {
+                        id: true,
+                        mssv: true,
+                        fullName: true,
                     },
                 },
-            }),
-        ])
+            },
+        }),
+    ])
 
     const targetAmount = Number(phase.targetAmount)
     const currentAmount = Number(phase.currentAmount)
-    const percentage = targetAmount > 0 ? (currentAmount / targetAmount) * 100 : 0
+    const percentage =
+        targetAmount > 0 ? (currentAmount / targetAmount) * 100 : 0
 
     return {
         phaseId: phase.id,
@@ -169,7 +185,9 @@ export const findDonationsByPhase = async (
         donations: donations.map((d) => ({
             ...d,
             amount: d.amount.toString(),
-            verifiedAmount: d.verifiedAmount ? d.verifiedAmount.toString() : null,
+            verifiedAmount: d.verifiedAmount
+                ? d.verifiedAmount.toString()
+                : null,
         })),
         meta: {
             total,

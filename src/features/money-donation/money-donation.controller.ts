@@ -4,7 +4,11 @@ import { ApiResponse } from 'src/utils/ApiResponse'
 import { catchAsync } from 'src/utils/catchAsync'
 import { TypedRequest } from 'src/types/request'
 import * as moneyDonationService from './money-donation.service'
-import { CreateMoneyPhaseInput, UpdateMoneyPhaseInput, UserRole } from './money-donation.types'
+import {
+    CreateMoneyPhaseInput,
+    UpdateMoneyPhaseInput,
+    UserRole,
+} from './money-donation.types'
 
 export const createMoneyPhase = catchAsync(
     async (req: TypedRequest<CreateMoneyPhaseInput>, res: Response) => {
@@ -97,37 +101,45 @@ export const deleteMoneyPhase = catchAsync(
     }
 )
 
-export const getPhaseProgress = catchAsync(async (req: Request, res: Response) => {
-    const phaseId = parseInt(req.params.phaseId as string)
+export const getPhaseProgress = catchAsync(
+    async (req: Request, res: Response) => {
+        const phaseId = parseInt(req.params.phaseId as string)
 
-    const progress = await moneyDonationService.getPhaseProgress(phaseId)
+        const progress = await moneyDonationService.getPhaseProgress(phaseId)
 
-    return ApiResponse.success(res, progress)
-})
-
-export const getPhaseDonations = catchAsync(async (req: Request, res: Response) => {
-    const phaseId = parseInt(req.params.phaseId as string)
-    const userId = req.payload?.userId
-    const userRole = req.payload?.role as UserRole
-
-    if (!userId) {
-        return ApiResponse.error(
-            res,
-            'Chưa xác thực người dùng',
-            HttpStatus.UNAUTHORIZED
-        )
+        return ApiResponse.success(res, progress)
     }
+)
 
-    const status = req.query.status as 'PENDING' | 'VERIFIED' | 'REJECTED' | undefined
-    const page = req.query.page ? parseInt(req.query.page as string) : 1
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : 10
+export const getPhaseDonations = catchAsync(
+    async (req: Request, res: Response) => {
+        const phaseId = parseInt(req.params.phaseId as string)
+        const userId = req.payload?.userId
+        const userRole = req.payload?.role as UserRole
 
-    const result = await moneyDonationService.getPhaseDonations(
-        phaseId,
-        { status, page, limit },
-        userId,
-        userRole
-    )
+        if (!userId) {
+            return ApiResponse.error(
+                res,
+                'Chưa xác thực người dùng',
+                HttpStatus.UNAUTHORIZED
+            )
+        }
 
-    return ApiResponse.success(res, result)
-})
+        const status = req.query.status as
+            | 'PENDING'
+            | 'VERIFIED'
+            | 'REJECTED'
+            | undefined
+        const page = req.query.page ? parseInt(req.query.page as string) : 1
+        const limit = req.query.limit ? parseInt(req.query.limit as string) : 10
+
+        const result = await moneyDonationService.getPhaseDonations(
+            phaseId,
+            { status, page, limit },
+            userId,
+            userRole
+        )
+
+        return ApiResponse.success(res, result)
+    }
+)
