@@ -21,11 +21,9 @@ export const getValidTransitions = (
     currentStatus: CampaignStatus,
     userRole: UserRole
 ): CampaignStatus[] => {
-    return STATUS_TRANSITIONS
-        .filter(
-            (t) => t.from === currentStatus && t.allowedRoles.includes(userRole)
-        )
-        .map((t) => t.to)
+    return STATUS_TRANSITIONS.filter(
+        (t) => t.from === currentStatus && t.allowedRoles.includes(userRole)
+    ).map((t) => t.to)
 }
 
 export const validateStatusTransition = (
@@ -36,12 +34,16 @@ export const validateStatusTransition = (
     const validTransitions = getValidTransitions(currentStatus, userRole)
 
     if (!validTransitions.includes(targetStatus)) {
-        const statusMessages: Record<CampaignStatus, Record<CampaignStatus, string>> = {
+        const statusMessages: Record<
+            CampaignStatus,
+            Record<CampaignStatus, string>
+        > = {
             DRAFT: {
                 DRAFT: 'Chiến dịch đã ở trạng thái DRAFT',
                 PENDING: 'Chiến dịch đã được gửi phê duyệt',
                 ACTIVE: 'Chiến dịch cần được phê duyệt trước khi kích hoạt',
-                REJECTED: 'Chiến dịch cần được gửi phê duyệt trước khi bị từ chối',
+                REJECTED:
+                    'Chiến dịch cần được gửi phê duyệt trước khi bị từ chối',
                 COMPLETED: 'Chiến dịch cần được kích hoạt trước khi hoàn thành',
                 CANCELLED: 'Chiến dịch cần được kích hoạt trước khi hủy',
             },
@@ -89,7 +91,9 @@ export const validateStatusTransition = (
 
         return {
             valid: false,
-            message: statusMessages[currentStatus]?.[targetStatus] || 'Chuyển trạng thái không hợp lệ',
+            message:
+                statusMessages[currentStatus]?.[targetStatus] ||
+                'Chuyển trạng thái không hợp lệ',
         }
     }
 
