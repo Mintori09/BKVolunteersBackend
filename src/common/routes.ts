@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { authRouter } from 'src/features/auth'
 import { passwordRouter } from 'src/features/forgotPassword'
 import { facultyRouter } from 'src/features/faculty'
+import { campaignRouter } from 'src/features/campaign'
 import { authLimiter } from 'src/common/middleware'
 import { config } from 'src/config'
 
@@ -20,6 +21,10 @@ const defaultRoutes = [
     {
         path: '/faculties',
         route: facultyRouter,
+    },
+    {
+        path: '/campaigns',
+        route: campaignRouter,
     },
 ]
 
