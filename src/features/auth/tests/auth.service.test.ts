@@ -228,7 +228,11 @@ describe('Auth Service', () => {
 
             const result = await authService.createSession(userId, role)
 
-            expect(createAccessToken).toHaveBeenCalledWith(userId, role)
+            expect(createAccessToken).toHaveBeenCalledWith(
+                userId,
+                role,
+                undefined
+            )
             expect(createRefreshToken).toHaveBeenCalledWith(userId)
             expect(authRepository.createRefreshToken).toHaveBeenCalledWith(
                 userId,

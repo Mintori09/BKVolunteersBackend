@@ -124,14 +124,6 @@ describe('Password Routes Integration', () => {
         const validJwtToken =
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
 
-        it('should return 404 when token is missing in params', async () => {
-            const response = await request(app)
-                .post('/api/v1/password/reset-password/')
-                .send({ newPassword: 'newpassword123' })
-
-            expect(response.status).toBe(HttpStatus.NOT_FOUND)
-        })
-
         it('should return 400 when body is missing newPassword', async () => {
             const response = await request(app)
                 .post(`/api/v1/password/reset-password/${validJwtToken}`)

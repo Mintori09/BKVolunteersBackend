@@ -62,7 +62,16 @@ export const deleteAllUserRefreshTokens = async (
 }
 
 export const createSession = async (userId: string, role: UserRole) => {
-    const accessToken = createAccessToken(userId, role)
+    let facultyId: string | null | undefined = undefined
+
+    if (role === 'SINHVIEN') {
+        const student = await authRepository.getUserById(userId, role)
+        if (student && 'mssv' in student) {
+            facultyId = (student as any).facultyId ?? null
+        }
+    }
+
+    const accessToken = createAccessToken(userId, role, facultyId)
     const refreshToken = createRefreshToken(userId)
 
     await authRepository.createRefreshToken(userId, refreshToken, role)

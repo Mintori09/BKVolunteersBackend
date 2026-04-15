@@ -4,6 +4,7 @@ import { passwordRouter } from 'src/features/forgotPassword'
 import { facultyRouter } from 'src/features/faculty'
 import { campaignRouter } from 'src/features/campaign'
 import { uploadRouter, filesRouter } from 'src/features/upload'
+import { eventRouter } from 'src/features/event'
 import { authLimiter } from 'src/common/middleware'
 import { config } from 'src/config'
 
@@ -34,6 +35,10 @@ const defaultRoutes = [
     {
         path: '/files',
         route: filesRouter,
+    },
+    {
+        path: '/events',
+        route: eventRouter,
     },
 ]
 
