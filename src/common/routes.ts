@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { authRouter } from 'src/features/auth'
 import { passwordRouter } from 'src/features/forgotPassword'
+import { uploadRouter, filesRouter } from 'src/features/upload'
 import { authLimiter } from 'src/common/middleware'
 import { config } from 'src/config'
 
@@ -15,6 +16,14 @@ const defaultRoutes = [
     {
         path: '/password',
         route: passwordRouter,
+    },
+    {
+        path: '/upload',
+        route: uploadRouter,
+    },
+    {
+        path: '/files',
+        route: filesRouter,
     },
 ]
 

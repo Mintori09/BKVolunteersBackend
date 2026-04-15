@@ -7,6 +7,7 @@ import {
 import transporter from './nodemailer'
 import prismaClient from './prisma'
 import { helmetConfig } from './helmetConfig'
+import { uploadConfig, getAbsoluteStoragePath } from './upload'
 
 export {
     prismaClient,
@@ -16,4 +17,6 @@ export {
     refreshTokenCookieConfig,
     clearRefreshTokenCookieConfig,
     helmetConfig,
+    uploadConfig,
+    getAbsoluteStoragePath,
 }
