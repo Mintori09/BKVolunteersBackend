@@ -46,6 +46,14 @@ enum ParticipantStatus {
   WAITLISTED
 }
 
+enum PointSourceType {
+  EVENT_PARTICIPATION
+  MONEY_DONATION
+  ITEM_DONATION
+  MANUAL_ADJUSTMENT
+  BONUS
+}
+
 // ============================================
 // CORE MODELS
 // ============================================
@@ -105,11 +113,12 @@ facultyId String?  @map("faculty_id") @db.Char(3)
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
 
-faculty     Faculty? @relation(fields: [facultyId], references: [code], onDelete: SetNull)
-  titles        StudentTitle[]
-  donations     Donation[]
-  participants  Participant[]
-  refreshTokens StudentRefreshToken[]
+  faculty           Faculty?            @relation(fields: [facultyId], references: [code], onDelete: SetNull)
+  titles            StudentTitle[]
+  pointTransactions PointTransaction[]
+  donations         Donation[]
+  participants      Participant[]
+  refreshTokens     StudentRefreshToken[]
 
   @@index([mssv])
   @@index([email])
@@ -240,6 +249,8 @@ model Title {
   description String?  @db.Text
   minPoints   Int      @default(0) @map("min_points")
   iconUrl     String?  @map("icon_url")
+  badgeColor  String?  @map("badge_color") @db.VarChar(7)
+  isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -259,6 +270,25 @@ model StudentTitle {
 
   @@id([studentId, titleId])
   @@map("student_titles")
+}
+
+/// Lịch sử tích điểm - điểm danh cho mọi nguồn
+model PointTransaction {
+  id         String          @id @default(cuid())
+  studentId  String          @map("student_id")
+  points     Int
+  reason     String          @db.VarChar(255)
+  sourceType PointSourceType @map("source_type")
+  sourceId   String?         @map("source_id")
+  awardedBy  String?         @map("awarded_by")
+  createdAt  DateTime        @default(now()) @map("created_at")
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([sourceType])
+  @@index([createdAt])
+  @@map("point_transactions")
 }
 
 // ============================================

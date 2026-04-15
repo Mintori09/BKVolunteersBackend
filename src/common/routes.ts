@@ -5,6 +5,8 @@ import { facultyRouter } from 'src/features/faculty'
 import { campaignRouter } from 'src/features/campaign'
 import { uploadRouter, filesRouter } from 'src/features/upload'
 import { eventRouter } from 'src/features/event'
+import { studentRouter } from 'src/features/student'
+import { titleRouter } from 'src/features/title'
 import { authLimiter } from 'src/common/middleware'
 import { config } from 'src/config'
 
@@ -39,6 +41,14 @@ const defaultRoutes = [
     {
         path: '/events',
         route: eventRouter,
+    },
+    {
+        path: '/students',
+        route: studentRouter,
+    },
+    {
+        path: '/titles',
+        route: titleRouter,
     },
 ]
 
