@@ -10,22 +10,22 @@ interface StudentJson {
     'Chương trình đào tạo': string
 }
 
-const FACULTY_CODE_MAP: Record<string, number> = {
-    '101': 101, // Khoa Cơ khí
-    '102': 102, // Khoa Công nghệ Thông tin
-    '103': 103, // Khoa Cơ khí Giao thông
-    '104': 104, // Khoa CN Nhiệt–Điện lạnh
-    '105': 105, // Khoa Điện
-    '106': 106, // Khoa Điện tử Viễn thông
-    '107': 107, // Khoa Hóa
-    '109': 109, // Khoa XD Cầu Đường
-    '110': 110, // Khoa XD Dân dụng & Công nghiệp
-    '111': 111, // Khoa XD Công trình thủy
-    '117': 117, // Khoa Môi trường
-    '118': 118, // Khoa Quản lý dự án
-    '121': 121, // Khoa Kiến trúc
-    '123': 123, // Khoa Khoa học Công nghệ tiên tiến
-}
+// const FACULTY_CODE_MAP: Record<string, number> = {
+//     '101': 101, // Khoa Cơ khí
+//     '102': 102, // Khoa Công nghệ Thông tin
+//     '103': 103, // Khoa Cơ khí Giao thông
+//     '104': 104, // Khoa CN Nhiệt–Điện lạnh
+//     '105': 105, // Khoa Điện
+//     '106': 106, // Khoa Điện tử Viễn thông
+//     '107': 107, // Khoa Hóa
+//     '109': 109, // Khoa XD Cầu Đường
+//     '110': 110, // Khoa XD Dân dụng & Công nghiệp
+//     '111': 111, // Khoa XD Công trình thủy
+//     '117': 117, // Khoa Môi trường
+//     '118': 118, // Khoa Quản lý dự án
+//     '121': 121, // Khoa Kiến trúc
+//     '123': 123, // Khoa Khoa học Công nghệ tiên tiến
+// }
 
 function parseMSSV(mssv: string): {
     facultyCode: string
@@ -38,12 +38,12 @@ function parseMSSV(mssv: string): {
     return { facultyCode, admissionYear, sequence }
 }
 
-function getFacultyId(facultyCode: string): number {
-    const facultyId = FACULTY_CODE_MAP[facultyCode]
-    if (!facultyId) {
+function getFacultyId(facultyCode: string): string {
+    // const facultyId = FACULTY_CODE_MAP[facultyCode]
+    if (!facultyCode) {
         throw new Error(`Unknown faculty code: ${facultyCode}`)
     }
-    return facultyId
+    return facultyCode
 }
 
 async function hashPassword(password: string): Promise<string> {
