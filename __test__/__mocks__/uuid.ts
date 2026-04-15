@@ -10,4 +10,17 @@ export const parse = jest.fn()
 export const stringify = jest.fn()
 export const NIL = '00000000-0000-0000-0000-000000000000'
 export const MAX = 'ffffffff-ffff-ffff-ffff-ffffffffffff'
-export default { v4, v1, v3, v5, v6, v7, validate, version, parse, stringify, NIL, MAX }
+export default {
+    v4,
+    v1,
+    v3,
+    v5,
+    v6,
+    v7,
+    validate,
+    version,
+    parse,
+    stringify,
+    NIL,
+    MAX,
+}
