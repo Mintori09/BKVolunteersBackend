@@ -22,6 +22,13 @@ export const findEventById = async (eventId: number) => {
                         select: {
                             id: true,
                             facultyId: true,
+                            faculty: {
+                                select: {
+                                    id: true,
+                                    code: true,
+                                    name: true,
+                                },
+                            },
                         },
                     },
                 },

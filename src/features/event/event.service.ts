@@ -203,11 +203,8 @@ export const registerForEvent = async (
     }
 
     if (event.campaign.scope === CampaignScope.KHOA) {
-        const creatorFacultyId = event.campaign.creator.facultyId
-        if (
-            creatorFacultyId !== null &&
-            studentFacultyId !== creatorFacultyId.toString()
-        ) {
+        const creatorFaculty = event.campaign.creator.faculty
+        if (creatorFaculty && studentFacultyId !== creatorFaculty.code) {
             throw new ApiError(
                 HttpStatus.FORBIDDEN,
                 'Sinh viên không thuộc khoa được chỉ định'
