@@ -5,6 +5,8 @@ import isAuth from './isAuth'
 import { xssMiddleware } from './xssMiddleware'
 import validate from './validate'
 import { restrictTo } from './restrictTo'
+import isCreator from './isCreator'
+import isStudent from './isStudent'
 
 export {
     errorHandler,
@@ -14,4 +16,6 @@ export {
     xssMiddleware,
     validate,
     restrictTo,
+    isCreator,
+    isStudent,
 }
