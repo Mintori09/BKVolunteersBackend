@@ -71,10 +71,8 @@
 | US-026 | As a **Creator**, I want to **tạo giai đoạn quyên góp tiền với mã QR**, so that **sinh viên có thể chuyển khoản**.   | HIGH     | M    | `POST /campaigns/:campaignId/money-phases`                  |
 | US-027 | As a **Creator**, I want to **cập nhật thông tin giai đoạn quyên góp tiền**, so that **tôi điều chỉnh mục tiêu/QR**. | MED      | S    | `PUT /campaigns/:campaignId/money-phases/:phaseId`          |
 | US-028 | As a **Creator**, I want to **xóa giai đoạn quyên góp tiền**, so that **tôi loại bỏ giai đoạn không cần thiết**.     | LOW      | S    | `DELETE /campaigns/:campaignId/money-phases/:phaseId`       |
-| US-029 | As a **User**, I want to **xem các giai đoạn quyên góp tiền của chiến dịch**, so that **tôi biết cách đóng góp**.    | MED      | S    | `GET /campaigns/:campaignId/money-phases`                   |
 | US-030 | As a **User**, I want to **xem tiến độ gây quỹ tiền**, so that **tôi biết bao nhiêu đã được quyên góp**.             | HIGH     | S    | `GET /campaigns/:campaignId/money-phases/:phaseId/progress` |
 | US-031 | As a **Student**, I want to **đóng góp tiền với ảnh minh chứng**, so that **đóng góp của tôi được ghi nhận**.        | HIGH     | M    | `POST /donations/money`                                     |
-| US-032 | As a **Creator**, I want to **xác thực đóng góp tiền và cộng điểm**, so that **sinh viên được ghi nhận điểm**.       | HIGH     | M    | `POST /donations/:id/verify`                                |
 | US-033 | As a **Creator**, I want to **từ chối đóng góp với lý do**, so that **sinh viên biết lý do bị từ chối**.             | MED      | S    | `POST /donations/:id/reject`                                |
 | US-034 | As a **Creator**, I want to **cập nhật số tiền thực tế khi xác thực**, so that **số tiền đúng với minh chứng**.      | MED      | S    | `PUT /donations/:id`                                        |
 | US-035 | As a **Student**, I want to **xem lịch sử đóng góp của tôi**, so that **tôi theo dõi các hoạt động đã làm**.         | MED      | S    | `GET /donations/me`                                         |

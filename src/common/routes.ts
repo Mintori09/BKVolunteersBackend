@@ -9,6 +9,8 @@ import { studentRouter } from 'src/features/student'
 import { titleRouter } from 'src/features/title'
 import { itemPhaseRouter } from 'src/features/item-phase'
 import { itemDonationRouter } from 'src/features/item-donation'
+import moneyDonationRouter, { phaseDonationsRouter } from 'src/features/money-donation/money-donation.route'
+import donationRouter from 'src/features/donation/donation.route'
 import { authLimiter } from 'src/common/middleware'
 import { config } from 'src/config'
 
@@ -72,6 +74,24 @@ const itemDonationRoutes = [
     },
 ]
 
+const moneyDonationRoutes = [
+    {
+        path: '/campaigns/:campaignId/money-phases',
+        route: moneyDonationRouter,
+    },
+    {
+        path: '/money-phases',
+        route: phaseDonationsRouter,
+    },
+]
+
+const donationRoutes = [
+    {
+        path: '/donations',
+        route: donationRouter,
+    },
+]
+
 defaultRoutes.forEach((route) => {
     if (route.limiter) {
         router.use(route.path, route.limiter, route.route)
@@ -85,6 +105,14 @@ itemPhaseRoutes.forEach((route) => {
 })
 
 itemDonationRoutes.forEach((route) => {
+    router.use(route.path, route.route)
+})
+
+moneyDonationRoutes.forEach((route) => {
+    router.use(route.path, route.route)
+})
+
+donationRoutes.forEach((route) => {
     router.use(route.path, route.route)
 })
 

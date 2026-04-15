@@ -13,6 +13,7 @@ import { ApiError } from 'src/utils/ApiError'
 import swaggerJsdoc from 'swagger-jsdoc'
 import swaggerUi from 'swagger-ui-express'
 import { swaggerOptions } from 'src/config/swagger'
+import path from 'path'
 
 const app: Express = express()
 
@@ -25,6 +26,9 @@ app.use(xssMiddleware())
 app.use(cookieParser())
 app.use(cors(corsConfig))
 app.use(compression({ filter: compressFilter }))
+
+// Static files serving
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')))
 
 // Swagger API Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs))
