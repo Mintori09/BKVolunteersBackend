@@ -2,13 +2,13 @@
 
 ## 1. TỔNG QUAN API
 
-| US     | Method | Endpoint                                      | Description                      | Priority |
-| ------ | ------ | --------------------------------------------- | -------------------------------- | -------- |
-| US-037 | POST   | `/campaigns/:campaignId/item-phases`          | Tạo giai đoạn quyên góp hiện vật | HIGH     |
-| US-038 | PUT    | `/campaigns/:campaignId/item-phases/:phaseId` | Cập nhật giai đoạn               | MED      |
-| US-039 | DELETE | `/campaigns/:campaignId/item-phases/:phaseId` | Xóa giai đoạn                    | LOW      |
-| US-041 | POST   | `/donations/items`                            | Student đóng góp hiện vật        | HIGH     |
-| US-043 | GET    | `/item-phases/:phaseId/donations`             | Xem danh sách đóng góp           | MED      |
+| US | Method | Endpoint | Description | Priority |
+| --- | --- | --- | --- | --- |
+| US-037 | POST | `/campaigns/:campaignId/item-phases` | Tạo giai đoạn quyên góp hiện vật | HIGH |
+| US-038 | PUT | `/campaigns/:campaignId/item-phases/:phaseId` | Cập nhật giai đoạn | MED |
+| US-039 | DELETE | `/campaigns/:campaignId/item-phases/:phaseId` | Xóa giai đoạn | LOW |
+| US-041 | POST | `/donations/items` | Student đóng góp hiện vật | HIGH |
+| US-043 | GET | `/item-phases/:phaseId/donations` | Xem danh sách đóng góp | MED |
 
 ---
 
@@ -49,10 +49,10 @@ src/features/
 
 ```json
 {
-    "acceptedItems": ["Áo quần cũ", "Sách vở", "Đồ dùng học tập"],
-    "collectionAddress": "Phòng 101, Nhà A, Trường ĐH Bách Khoa",
-    "startDate": "2025-05-01T00:00:00Z",
-    "endDate": "2025-05-30T23:59:59Z"
+  "acceptedItems": ["Áo quần cũ", "Sách vở", "Đồ dùng học tập"],
+  "collectionAddress": "Phòng 101, Nhà A, Trường ĐH Bách Khoa",
+  "startDate": "2025-05-01T00:00:00Z",
+  "endDate": "2025-05-30T23:59:59Z"
 }
 ```
 
@@ -60,18 +60,18 @@ src/features/
 
 ```json
 {
-    "success": true,
-    "message": "Tạo giai đoạn quyên góp hiện vật thành công",
-    "data": {
-        "id": 1,
-        "campaignId": "clx...",
-        "acceptedItems": ["Áo quần cũ", "Sách vở"],
-        "collectionAddress": "...",
-        "startDate": "...",
-        "endDate": "...",
-        "createdAt": "...",
-        "updatedAt": "..."
-    }
+  "success": true,
+  "message": "Tạo giai đoạn quyên góp hiện vật thành công",
+  "data": {
+    "id": 1,
+    "campaignId": "clx...",
+    "acceptedItems": ["Áo quần cũ", "Sách vở"],
+    "collectionAddress": "...",
+    "startDate": "...",
+    "endDate": "...",
+    "createdAt": "...",
+    "updatedAt": "..."
+  }
 }
 ```
 
@@ -104,9 +104,9 @@ src/features/
 
 ```json
 {
-    "itemPhaseId": 1,
-    "itemDescription": "5 chiếc áo sơ mi cũ, còn tốt",
-    "proofImageUrl": "https://example.com/image.jpg"
+  "itemPhaseId": 1,
+  "itemDescription": "5 chiếc áo sơ mi cũ, còn tốt",
+  "proofImageUrl": "https://example.com/image.jpg"
 }
 ```
 
@@ -114,16 +114,16 @@ src/features/
 
 ```json
 {
-    "success": true,
-    "message": "Ghi nhận đóng góp thành công, chờ xác minh",
-    "data": {
-        "id": "clx...",
-        "itemPhaseId": 1,
-        "itemDescription": "...",
-        "proofImageUrl": "...",
-        "status": "PENDING",
-        "createdAt": "..."
-    }
+  "success": true,
+  "message": "Ghi nhận đóng góp thành công, chờ xác minh",
+  "data": {
+    "id": "clx...",
+    "itemPhaseId": 1,
+    "itemDescription": "...",
+    "proofImageUrl": "...",
+    "status": "PENDING",
+    "createdAt": "..."
+  }
 }
 ```
 
@@ -159,28 +159,28 @@ src/features/
 
 ```typescript
 export interface CreateItemPhaseInput {
-    acceptedItems: string[]
-    collectionAddress?: string
-    startDate?: Date
-    endDate?: Date
+  acceptedItems: string[];
+  collectionAddress?: string;
+  startDate?: Date;
+  endDate?: Date;
 }
 
 export interface UpdateItemPhaseInput {
-    acceptedItems?: string[]
-    collectionAddress?: string
-    startDate?: Date
-    endDate?: Date
+  acceptedItems?: string[];
+  collectionAddress?: string;
+  startDate?: Date;
+  endDate?: Date;
 }
 
 export interface ItemPhaseOutput {
-    id: number
-    campaignId: string
-    acceptedItems: string[]
-    collectionAddress: string | null
-    startDate: Date | null
-    endDate: Date | null
-    createdAt: Date
-    updatedAt: Date
+  id: number;
+  campaignId: string;
+  acceptedItems: string[];
+  collectionAddress: string | null;
+  startDate: Date | null;
+  endDate: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 ```
 
@@ -188,20 +188,20 @@ export interface ItemPhaseOutput {
 
 ```typescript
 export interface CreateItemDonationInput {
-    itemPhaseId: number
-    itemDescription: string
-    proofImageUrl?: string
+  itemPhaseId: number;
+  itemDescription: string;
+  proofImageUrl?: string;
 }
 
 export interface ItemDonationOutput {
-    id: string
-    studentId: string
-    itemPhaseId: number
-    itemDescription: string | null
-    proofImageUrl: string | null
-    status: 'PENDING' | 'VERIFIED' | 'REJECTED'
-    createdAt: Date
-    updatedAt: Date
+  id: string;
+  studentId: string;
+  itemPhaseId: number;
+  itemDescription: string | null;
+  proofImageUrl: string | null;
+  status: "PENDING" | "VERIFIED" | "REJECTED";
+  createdAt: Date;
+  updatedAt: Date;
 }
 ```
 

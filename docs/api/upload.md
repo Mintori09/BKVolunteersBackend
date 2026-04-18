@@ -1,7 +1,7 @@
-| ID     | User Story                                                                                                        | Priority | Est. | API Endpoint            |
-| ------ | ----------------------------------------------------------------------------------------------------------------- | -------- | ---- | ----------------------- |
-| US-078 | As a **User**, I want to **upload ảnh minh chứng (JPG/PNG/WEBP)**, so that **tôi chứng minh hoạt động/đóng góp**. | HIGH     | M    | `POST /upload/image`    |
-| US-079 | As a **User**, I want to **upload tài liệu (PDF/DOC/XLS)**, so that **tôi lưu trữ kế hoạch/báo cáo**.             | HIGH     | M    | `POST /upload/document` |
+| ID | User Story | Priority | Est. | API Endpoint |
+| --- | --- | --- | --- | --- |
+| US-078 | As a **User**, I want to **upload ảnh minh chứng (JPG/PNG/WEBP)**, so that **tôi chứng minh hoạt động/đóng góp**. | HIGH | M | `POST /upload/image` |
+| US-079 | As a **User**, I want to **upload tài liệu (PDF/DOC/XLS)**, so that **tôi lưu trữ kế hoạch/báo cáo**. | HIGH | M | `POST /upload/document` |
 
 ---
 
@@ -25,9 +25,9 @@
 
 #### Request
 
-| Field | Type | Required | Description          | Constraints                          |
-| ----- | ---- | -------- | -------------------- | ------------------------------------ |
-| file  | File | Yes      | Image file to upload | Max size: 5MB, Allowed: JPG/PNG/WEBP |
+| Field | Type | Required | Description | Constraints |
+| --- | --- | --- | --- | --- |
+| file | File | Yes | Image file to upload | Max size: 5MB, Allowed: JPG/PNG/WEBP |
 
 #### Response
 
@@ -35,37 +35,37 @@
 
 ```json
 {
-    "success": true,
-    "data": {
-        "url": "/static/images/<uuid>.jpg",
-        "filename": "<uuid>.jpg",
-        "originalName": "proof.jpg",
-        "mimeType": "image/jpeg",
-        "size": 2097152,
-        "path": "/uploads/images/<uuid>.jpg"
-    }
+  "success": true,
+  "data": {
+    "url": "/static/images/<uuid>.jpg",
+    "filename": "<uuid>.jpg",
+    "originalName": "proof.jpg",
+    "mimeType": "image/jpeg",
+    "size": 2097152,
+    "path": "/uploads/images/<uuid>.jpg"
+  }
 }
 ```
 
-| Field             | Type    | Description                                            |
-| ----------------- | ------- | ------------------------------------------------------ |
-| success           | boolean | Request status                                         |
-| data.url          | string  | Public URL to access the uploaded file (relative path) |
-| data.filename     | string  | Generated unique filename                              |
-| data.originalName | string  | Original filename from client                          |
-| data.mimeType     | string  | MIME type of the file                                  |
-| data.size         | number  | File size in bytes                                     |
-| data.path         | string  | Absolute file path on server                           |
+| Field | Type | Description |
+| --- | --- | --- |
+| success | boolean | Request status |
+| data.url | string | Public URL to access the uploaded file (relative path) |
+| data.filename | string | Generated unique filename |
+| data.originalName | string | Original filename from client |
+| data.mimeType | string | MIME type of the file |
+| data.size | number | File size in bytes |
+| data.path | string | Absolute file path on server |
 
 **Error (400 Bad Request - Invalid File Type):**
 
 ```json
 {
-    "success": false,
-    "error": {
-        "code": "VALIDATION_ERROR",
-        "message": "Chỉ chấp nhận file ảnh JPG, PNG, WEBP"
-    }
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Chỉ chấp nhận file ảnh JPG, PNG, WEBP"
+  }
 }
 ```
 
@@ -73,11 +73,11 @@
 
 ```json
 {
-    "success": false,
-    "error": {
-        "code": "VALIDATION_ERROR",
-        "message": "Kích thước file không được vượt quá 5MB"
-    }
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Kích thước file không được vượt quá 5MB"
+  }
 }
 ```
 
@@ -85,11 +85,11 @@
 
 ```json
 {
-    "success": false,
-    "error": {
-        "code": "VALIDATION_ERROR",
-        "message": "File là bắt buộc"
-    }
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "File là bắt buộc"
+  }
 }
 ```
 
@@ -97,11 +97,11 @@
 
 ```json
 {
-    "success": false,
-    "error": {
-        "code": "UNAUTHORIZED",
-        "message": "Unauthorized"
-    }
+  "success": false,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Unauthorized"
+  }
 }
 ```
 
@@ -109,11 +109,11 @@
 
 ```json
 {
-    "success": false,
-    "error": {
-        "code": "STORAGE_ERROR",
-        "message": "Không thể lưu trữ file"
-    }
+  "success": false,
+  "error": {
+    "code": "STORAGE_ERROR",
+    "message": "Không thể lưu trữ file"
+  }
 }
 ```
 
@@ -193,9 +193,9 @@ Scenario: Upload thất bại khi chưa đăng nhập
 
 #### Request
 
-| Field | Type | Required | Description             | Constraints                                    |
-| ----- | ---- | -------- | ----------------------- | ---------------------------------------------- |
-| file  | File | Yes      | Document file to upload | Max size: 10MB, Allowed: PDF/DOC/DOCX/XLS/XLSX |
+| Field | Type | Required | Description | Constraints |
+| --- | --- | --- | --- | --- |
+| file | File | Yes | Document file to upload | Max size: 10MB, Allowed: PDF/DOC/DOCX/XLS/XLSX |
 
 #### Response
 
@@ -203,37 +203,37 @@ Scenario: Upload thất bại khi chưa đăng nhập
 
 ```json
 {
-    "success": true,
-    "data": {
-        "url": "/static/documents/<uuid>.pdf",
-        "filename": "<uuid>.pdf",
-        "originalName": "plan.pdf",
-        "mimeType": "application/pdf",
-        "size": 3145728,
-        "path": "/uploads/documents/<uuid>.pdf"
-    }
+  "success": true,
+  "data": {
+    "url": "/static/documents/<uuid>.pdf",
+    "filename": "<uuid>.pdf",
+    "originalName": "plan.pdf",
+    "mimeType": "application/pdf",
+    "size": 3145728,
+    "path": "/uploads/documents/<uuid>.pdf"
+  }
 }
 ```
 
-| Field             | Type    | Description                                            |
-| ----------------- | ------- | ------------------------------------------------------ |
-| success           | boolean | Request status                                         |
-| data.url          | string  | Public URL to access the uploaded file (relative path) |
-| data.filename     | string  | Generated unique filename                              |
-| data.originalName | string  | Original filename from client                          |
-| data.mimeType     | string  | MIME type of the file                                  |
-| data.size         | number  | File size in bytes                                     |
-| data.path         | string  | Absolute file path on server                           |
+| Field | Type | Description |
+| --- | --- | --- |
+| success | boolean | Request status |
+| data.url | string | Public URL to access the uploaded file (relative path) |
+| data.filename | string | Generated unique filename |
+| data.originalName | string | Original filename from client |
+| data.mimeType | string | MIME type of the file |
+| data.size | number | File size in bytes |
+| data.path | string | Absolute file path on server |
 
 **Error (400 Bad Request - Invalid File Type):**
 
 ```json
 {
-    "success": false,
-    "error": {
-        "code": "VALIDATION_ERROR",
-        "message": "Chỉ chấp nhận file PDF, DOC, DOCX, XLS, XLSX"
-    }
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Chỉ chấp nhận file PDF, DOC, DOCX, XLS, XLSX"
+  }
 }
 ```
 
@@ -241,11 +241,11 @@ Scenario: Upload thất bại khi chưa đăng nhập
 
 ```json
 {
-    "success": false,
-    "error": {
-        "code": "VALIDATION_ERROR",
-        "message": "Kích thước file không được vượt quá 10MB"
-    }
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Kích thước file không được vượt quá 10MB"
+  }
 }
 ```
 
@@ -253,11 +253,11 @@ Scenario: Upload thất bại khi chưa đăng nhập
 
 ```json
 {
-    "success": false,
-    "error": {
-        "code": "VALIDATION_ERROR",
-        "message": "File là bắt buộc"
-    }
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "File là bắt buộc"
+  }
 }
 ```
 
@@ -265,11 +265,11 @@ Scenario: Upload thất bại khi chưa đăng nhập
 
 ```json
 {
-    "success": false,
-    "error": {
-        "code": "UNAUTHORIZED",
-        "message": "Unauthorized"
-    }
+  "success": false,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Unauthorized"
+  }
 }
 ```
 
@@ -277,11 +277,11 @@ Scenario: Upload thất bại khi chưa đăng nhập
 
 ```json
 {
-    "success": false,
-    "error": {
-        "code": "STORAGE_ERROR",
-        "message": "Không thể lưu trữ file"
-    }
+  "success": false,
+  "error": {
+    "code": "STORAGE_ERROR",
+    "message": "Không thể lưu trữ file"
+  }
 }
 ```
 
@@ -332,12 +332,12 @@ Scenario: Upload thất bại khi file quá lớn
 
 ### Environment Variables
 
-| Variable               | Description                         | Default              |
-| ---------------------- | ----------------------------------- | -------------------- |
-| `UPLOAD_BASE_PATH`     | Base directory for all uploads      | `/uploads`           |
-| `UPLOAD_IMAGE_PATH`    | Subdirectory for images             | `/uploads/images`    |
-| `UPLOAD_DOCUMENT_PATH` | Subdirectory for documents          | `/uploads/documents` |
-| `STATIC_URL_PREFIX`    | URL prefix for serving static files | `/static`            |
+| Variable | Description | Default |
+| --- | --- | --- |
+| `UPLOAD_BASE_PATH` | Base directory for all uploads | `/uploads` |
+| `UPLOAD_IMAGE_PATH` | Subdirectory for images | `/uploads/images` |
+| `UPLOAD_DOCUMENT_PATH` | Subdirectory for documents | `/uploads/documents` |
+| `STATIC_URL_PREFIX` | URL prefix for serving static files | `/static` |
 
 ### Directory Structure
 

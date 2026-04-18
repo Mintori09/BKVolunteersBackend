@@ -59,29 +59,37 @@ src/
 
 1. **Clone repository:**
 
-    ```bash
-    git clone <repository-url>
-    cd BKVolunteersBackend
-    ```
+   ```bash
+
+   git clone <repository-url>
+
+   cd BKVolunteersBackend
+
+   ```
 
 2. **Cài dependencies:**
 
-    ```bash
-    pnpm install
-    ```
+   ```bash
+
+   pnpm install
+
+   ```
 
 3. **Setup môi trường:**
 
-    ```bash
-    cp .env-example .env
-    # Sửa .env với thông tin database và JWT secrets
-    ```
+   ```bash
+
+   cp .env-example .env
+   # Sửa .env với thông tin database và JWT secrets
+   ```
 
 4. **Generate Prisma Client:**
 
-    ```bash
-    pnpm exec prisma generate
-    ```
+   ```bash
+
+   pnpm exec prisma generate
+
+   ```
 
 ### Chạy Development
 
@@ -115,20 +123,20 @@ Server chạy tại: `http://localhost:4000`
 
 ### Authentication
 
-| Method | Endpoint                       | Mô tả                          | Auth Required |
-| ------ | ------------------------------ | ------------------------------ | ------------- |
-| POST   | `/api/v1/auth/login`           | Đăng nhập (username hoặc MSSV) | No            |
-| POST   | `/api/v1/auth/logout`          | Đăng xuất                      | Yes           |
-| POST   | `/api/v1/auth/refresh`         | Refresh access token           | No (cookie)   |
-| GET    | `/api/v1/auth/me`              | Lấy thông tin user hiện tại    | Yes           |
-| PATCH  | `/api/v1/auth/change-password` | Đổi mật khẩu                   | Yes           |
+| Method | Endpoint | Mô tả | Auth Required |
+| --- | --- | --- | --- |
+| POST | `/api/v1/auth/login` | Đăng nhập (username hoặc MSSV) | No |
+| POST | `/api/v1/auth/logout` | Đăng xuất | Yes |
+| POST | `/api/v1/auth/refresh` | Refresh access token | No (cookie) |
+| GET | `/api/v1/auth/me` | Lấy thông tin user hiện tại | Yes |
+| PATCH | `/api/v1/auth/change-password` | Đổi mật khẩu | Yes |
 
 ### Password Reset
 
-| Method | Endpoint                                 | Mô tả                    | Auth Required |
-| ------ | ---------------------------------------- | ------------------------ | ------------- |
-| POST   | `/api/v1/password/forgot-password`       | Yêu cầu reset mật khẩu   | No            |
-| POST   | `/api/v1/password/reset-password/:token` | Reset mật khẩu với token | No            |
+| Method | Endpoint | Mô tả | Auth Required |
+| --- | --- | --- | --- |
+| POST | `/api/v1/password/forgot-password` | Yêu cầu reset mật khẩu | No |
+| POST | `/api/v1/password/reset-password/:token` | Reset mật khẩu với token | No |
 
 ### Users (chưa triển khai)
 
