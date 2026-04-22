@@ -5,7 +5,9 @@ import { CAMPAIGN_STATUS_VALUES, CAMPAIGN_SCOPE_VALUES } from './types'
 export const createCampaignSchema: RequestValidationSchema = {
     body: z.object({
         title: z
-            .string()
+            .string({
+                message: 'Tiêu đề không được để trống',
+            })
             .min(1, 'Tiêu đề không được để trống')
             .max(255, 'Tiêu đề không được quá 255 ký tự'),
         description: z.string().optional(),
