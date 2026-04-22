@@ -8,6 +8,7 @@ logs/
 .vscode/
 .idea/
 generated/
+.worktrees/
 .aider*
 prisma/migrations
 students.json
