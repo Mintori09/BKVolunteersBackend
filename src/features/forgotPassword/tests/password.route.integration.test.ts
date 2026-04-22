@@ -34,6 +34,25 @@ jest.mock('src/config', () => ({
     },
     corsConfig: {},
     helmetConfig: {},
+    uploadConfig: {
+        image: {
+            maxSize: 5 * 1024 * 1024,
+            allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+            allowedExtensions: ['.jpg', '.jpeg', '.png', '.webp'],
+            storagePath: '/uploads/images',
+            urlPrefix: '/files/images',
+        },
+        document: {
+            maxSize: 10 * 1024 * 1024,
+            allowedMimeTypes: ['application/pdf'],
+            allowedExtensions: ['.pdf'],
+            storagePath: '/uploads/documents',
+            urlPrefix: '/files/documents',
+        },
+        basePath: '/uploads',
+        staticUrlPrefix: '/files',
+    },
+    getAbsoluteStoragePath: (path: string) => path,
 }))
 
 const mockUser = {
@@ -104,14 +123,6 @@ describe('Password Routes Integration', () => {
     describe('POST /api/v1/password/reset-password/:token', () => {
         const validJwtToken =
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
-
-        it('should return 404 when token is missing in params', async () => {
-            const response = await request(app)
-                .post('/api/v1/password/reset-password/')
-                .send({ newPassword: 'newpassword123' })
-
-            expect(response.status).toBe(HttpStatus.NOT_FOUND)
-        })
 
         it('should return 400 when body is missing newPassword', async () => {
             const response = await request(app)

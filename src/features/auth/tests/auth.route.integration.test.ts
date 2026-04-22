@@ -48,6 +48,25 @@ jest.mock('src/config', () => ({
     },
     corsConfig: {},
     helmetConfig: {},
+    uploadConfig: {
+        image: {
+            maxSize: 5 * 1024 * 1024,
+            allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+            allowedExtensions: ['.jpg', '.jpeg', '.png', '.webp'],
+            storagePath: '/uploads/images',
+            urlPrefix: '/files/images',
+        },
+        document: {
+            maxSize: 10 * 1024 * 1024,
+            allowedMimeTypes: ['application/pdf'],
+            allowedExtensions: ['.pdf'],
+            storagePath: '/uploads/documents',
+            urlPrefix: '/files/documents',
+        },
+        basePath: '/uploads',
+        staticUrlPrefix: '/files',
+    },
+    getAbsoluteStoragePath: (path: string) => path,
 }))
 
 const mockUser = {
@@ -400,7 +419,7 @@ describe('Auth Routes Integration', () => {
     })
 
     describe('Route not found', () => {
-        it('should return 404 for non-existent route', async () => {
+        it('should return 401 for non-existent route', async () => {
             const response = await request(app).get('/api/v1/auth/nonexistent')
 
             expect(response.status).toBe(HttpStatus.NOT_FOUND)

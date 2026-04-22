@@ -10,89 +10,125 @@
 
 - **POST** `/auth/student/login`
 - **Request Body:**
-    ```json
-    {
-        "mssv": "string",
-        "password": "string"
-    }
-    ```
+
+  ```json
+  {
+    "mssv": "string",
+
+    "password": "string"
+  }
+  ```
+
 - **Response:**
-    ```json
-    {
-        "success": true,
-        "data": {
-            "token": "string",
-            "student": {
-                "id": "string",
-                "mssv": "string",
-                "fullName": "string",
-                "email": "string",
-                "facultyId": "number",
-                "className": "string",
-                "totalPoints": "number"
-            }
-        }
+
+  ```json
+  {
+    "success": true,
+
+    "data": {
+      "token": "string",
+
+      "student": {
+        "id": "string",
+
+        "mssv": "string",
+
+        "fullName": "string",
+
+        "email": "string",
+
+        "facultyId": "number",
+
+        "className": "string",
+
+        "totalPoints": "number"
+      }
     }
-    ```
+  }
+  ```
 
 ### 1.2 User Login (CLB/LCD/Đoàn trường)
 
 - **POST** `/auth/user/login`
 - **Request Body:**
-    ```json
-    {
-        "username": "string",
-        "password": "string"
-    }
-    ```
+
+  ```json
+  {
+    "username": "string",
+
+    "password": "string"
+  }
+  ```
+
 - **Response:**
-    ```json
-    {
-        "success": true,
-        "data": {
-            "token": "string",
-            "user": {
-                "id": "string",
-                "username": "string",
-                "fullName": "string",
-                "email": "string",
-                "role": "CLB | LCD | DOANTRUONG",
-                "facultyId": "number"
-            }
-        }
+
+  ```json
+  {
+    "success": true,
+
+    "data": {
+      "token": "string",
+
+      "user": {
+        "id": "string",
+
+        "username": "string",
+
+        "fullName": "string",
+
+        "email": "string",
+
+        "role": "CLB | LCD | DOANTRUONG",
+
+        "facultyId": "number"
+      }
     }
-    ```
+  }
+  ```
 
 ### 1.3 Student Register
 
 - **POST** `/auth/student/register`
 - **Request Body:**
-    ```json
-    {
-        "mssv": "string",
-        "fullName": "string",
-        "email": "string",
-        "password": "string",
-        "facultyId": "number",
-        "className": "string",
-        "phone": "string"
-    }
-    ```
+
+  ```json
+  {
+    "mssv": "string",
+
+    "fullName": "string",
+
+    "email": "string",
+
+    "password": "string",
+
+    "facultyId": "number",
+
+    "className": "string",
+
+    "phone": "string"
+  }
+  ```
 
 ### 1.4 User Register
 
 - **POST** `/auth/user/register`
 - **Request Body:**
-    ```json
-    {
-        "username": "string",
-        "fullName": "string",
-        "email": "string",
-        "password": "string",
-        "role": "CLB | LCD | DOANTRUONG",
-        "facultyId": "number"
-    }
-    ```
+
+  ```json
+  {
+    "username": "string",
+
+    "fullName": "string",
+
+    "email": "string",
+
+    "password": "string",
+
+    "role": "CLB | LCD | DOANTRUONG",
+
+    "facultyId": "number"
+  }
+  ```
 
 ### 1.5 Logout
 
@@ -112,18 +148,22 @@
 
 - **GET** `/faculties`
 - **Response:**
-    ```json
-    {
-        "success": true,
-        "data": [
-            {
-                "id": "number",
-                "code": "string",
-                "name": "string"
-            }
-        ]
-    }
-    ```
+
+  ```json
+  {
+    "success": true,
+
+    "data": [
+      {
+        "id": "number",
+
+        "code": "string",
+
+        "name": "string"
+      }
+    ]
+  }
+  ```
 
 ### 2.2 Get Faculty by ID
 
@@ -141,46 +181,65 @@
 
 - **GET** `/campaigns`
 - **Query Params:**
-    - `status`: DRAFT | PENDING | ACTIVE | REJECTED | COMPLETED | CANCELLED
-    - `scope`: KHOA | TRUONG
-    - `facultyId`: number
-    - `creatorId`: string
-    - `page`: number
-    - `limit`: number
+  - `status`: DRAFT | PENDING | ACTIVE | REJECTED | COMPLETED | CANCELLED
+  - `scope`: KHOA | TRUONG
+  - `facultyId`: number
+  - `creatorId`: string
+  - `page`: number
+  - `limit`: number
 - **Response:**
-    ```json
-    {
-        "success": true,
-        "data": {
-            "campaigns": [
-                {
-                    "id": "string",
-                    "title": "string",
-                    "description": "string",
-                    "scope": "KHOA | TRUONG",
-                    "status": "DRAFT | PENDING | ACTIVE | REJECTED | COMPLETED | CANCELLED",
-                    "planFileUrl": "string",
-                    "budgetFileUrl": "string",
-                    "adminComment": "string",
-                    "creatorId": "string",
-                    "facultyId": "number",
-                    "createdAt": "datetime",
-                    "updatedAt": "datetime",
-                    "creator": {
-                        "id": "string",
-                        "username": "string",
-                        "fullName": "string"
-                    }
-                }
-            ],
-            "pagination": {
-                "page": "number",
-                "limit": "number",
-                "total": "number"
-            }
+
+  ```json
+  {
+    "success": true,
+
+    "data": {
+      "campaigns": [
+        {
+          "id": "string",
+
+          "title": "string",
+
+          "description": "string",
+
+          "scope": "KHOA | TRUONG",
+
+          "status": "DRAFT | PENDING | ACTIVE | REJECTED | COMPLETED | CANCELLED",
+
+          "planFileUrl": "string",
+
+          "budgetFileUrl": "string",
+
+          "adminComment": "string",
+
+          "creatorId": "string",
+
+          "facultyId": "number",
+
+          "createdAt": "datetime",
+
+          "updatedAt": "datetime",
+
+          "creator": {
+            "id": "string",
+
+            "username": "string",
+
+            "fullName": "string"
+          }
         }
+      ],
+
+      "pagination": {
+        "page": "number",
+
+        "limit": "number",
+
+        "total": "number"
+      }
     }
-    ```
+  }
+  ```
 
 ### 3.2 Get Campaign by ID
 
@@ -191,28 +250,36 @@
 - **POST** `/campaigns`
 - **Headers:** `Authorization: Bearer <token>` (Role: CLB | LCD | DOANTRUONG)
 - **Request Body:**
-    ```json
-    {
-        "title": "string",
-        "description": "string",
-        "scope": "KHOA | TRUONG",
-        "facultyId": "number (required if scope = KHOA)"
-    }
-    ```
+
+  ```json
+  {
+    "title": "string",
+
+    "description": "string",
+
+    "scope": "KHOA | TRUONG",
+
+    "facultyId": "number (required if scope = KHOA)"
+  }
+  ```
 
 ### 3.4 Update Campaign
 
 - **PUT** `/campaigns/:id`
 - **Headers:** `Authorization: Bearer <token>` (Creator only)
 - **Request Body:**
-    ```json
-    {
-        "title": "string",
-        "description": "string",
-        "scope": "KHOA | TRUONG",
-        "facultyId": "number"
-    }
-    ```
+
+  ```json
+  {
+    "title": "string",
+
+    "description": "string",
+
+    "scope": "KHOA | TRUONG",
+
+    "facultyId": "number"
+  }
+  ```
 
 ### 3.5 Delete Campaign
 
@@ -230,11 +297,13 @@
 - **POST** `/campaigns/:id/approve`
 - **Headers:** `Authorization: Bearer <token>` (Role: DOANTRUONG)
 - **Request Body:**
-    ```json
-    {
-        "comment": "string (optional)"
-    }
-    ```
+
+  ```json
+  {
+    "comment": "string (optional)"
+  }
+  ```
+
 - **Description:** Chuyển status từ PENDING → ACTIVE, gán approverId
 
 ### 3.8 Reject Campaign
@@ -242,11 +311,13 @@
 - **POST** `/campaigns/:id/reject`
 - **Headers:** `Authorization: Bearer <token>` (Role: DOANTRUONG)
 - **Request Body:**
-    ```json
-    {
-        "comment": "string (required)"
-    }
-    ```
+
+  ```json
+  {
+    "comment": "string (required)"
+  }
+  ```
+
 - **Description:** Chuyển status từ PENDING → REJECTED
 
 ### 3.9 Complete Campaign
@@ -254,11 +325,13 @@
 - **POST** `/campaigns/:id/complete`
 - **Headers:** `Authorization: Bearer <token>` (Creator only)
 - **Request Body:**
-    ```json
-    {
-        "eventPhotos": ["string (URLs)"]
-    }
-    ```
+
+  ```json
+  {
+    "eventPhotos": ["string (URLs)"]
+  }
+  ```
+
 - **Description:** Chuyển status từ ACTIVE → COMPLETED
 
 ### 3.10 Cancel Campaign
@@ -271,14 +344,14 @@
 - **POST** `/campaigns/:id/plan-file`
 - **Headers:** `Authorization: Bearer <token>` (Creator only)
 - **Request:** `multipart/form-data`
-    - `file`: File (PDF, DOC, DOCX)
+  - `file`: File (PDF, DOC, DOCX)
 
 ### 3.12 Upload Budget File
 
 - **POST** `/campaigns/:id/budget-file`
 - **Headers:** `Authorization: Bearer <token>` (Creator only)
 - **Request:** `multipart/form-data`
-    - `file`: File (PDF, DOC, DOCX, XLS, XLSX)
+  - `file`: File (PDF, DOC, DOCX, XLS, XLSX)
 
 ### 3.13 Get Campaigns by Faculty (for Student)
 
@@ -295,14 +368,18 @@
 - **POST** `/campaigns/:campaignId/money-phases`
 - **Headers:** `Authorization: Bearer <token>` (Creator only)
 - **Request Body:**
-    ```json
-    {
-        "targetAmount": "number",
-        "qrImageUrl": "string",
-        "startDate": "datetime",
-        "endDate": "datetime"
-    }
-    ```
+
+  ```json
+  {
+    "targetAmount": "number",
+
+    "qrImageUrl": "string",
+
+    "startDate": "datetime",
+
+    "endDate": "datetime"
+  }
+  ```
 
 ### 4.2 Update Money Donation Phase
 
@@ -322,17 +399,22 @@
 
 - **GET** `/campaigns/:campaignId/money-phases/:phaseId/progress`
 - **Response:**
-    ```json
-    {
-        "success": true,
-        "data": {
-            "targetAmount": "number",
-            "currentAmount": "number",
-            "percentage": "number",
-            "donationsCount": "number"
-        }
+
+  ```json
+  {
+    "success": true,
+
+    "data": {
+      "targetAmount": "number",
+
+      "currentAmount": "number",
+
+      "percentage": "number",
+
+      "donationsCount": "number"
     }
-    ```
+  }
+  ```
 
 ---
 
@@ -343,14 +425,18 @@
 - **POST** `/campaigns/:campaignId/item-phases`
 - **Headers:** `Authorization: Bearer <token>` (Creator only)
 - **Request Body:**
-    ```json
-    {
-        "acceptedItems": "string (danh sách hiện vật chấp nhận)",
-        "collectionAddress": "string",
-        "startDate": "datetime",
-        "endDate": "datetime"
-    }
-    ```
+
+  ```json
+  {
+    "acceptedItems": "string (danh sách hiện vật chấp nhận)",
+
+    "collectionAddress": "string",
+
+    "startDate": "datetime",
+
+    "endDate": "datetime"
+  }
+  ```
 
 ### 5.2 Update Item Donation Phase
 
@@ -375,16 +461,22 @@
 - **POST** `/campaigns/:campaignId/events`
 - **Headers:** `Authorization: Bearer <token>` (Creator only)
 - **Request Body:**
-    ```json
-    {
-        "location": "string",
-        "maxParticipants": "number",
-        "registrationStart": "datetime",
-        "registrationEnd": "datetime",
-        "eventStart": "datetime",
-        "eventEnd": "datetime"
-    }
-    ```
+
+  ```json
+  {
+    "location": "string",
+
+    "maxParticipants": "number",
+
+    "registrationStart": "datetime",
+
+    "registrationEnd": "datetime",
+
+    "eventStart": "datetime",
+
+    "eventEnd": "datetime"
+  }
+  ```
 
 ### 6.2 Update Event Phase
 
@@ -413,26 +505,32 @@
 - **POST** `/donations/money`
 - **Headers:** `Authorization: Bearer <token>` (Student)
 - **Request Body:**
-    ```json
-    {
-        "moneyPhaseId": "number",
-        "amount": "number",
-        "proofImageUrl": "string (optional)"
-    }
-    ```
+
+  ```json
+  {
+    "moneyPhaseId": "number",
+
+    "amount": "number",
+
+    "proofImageUrl": "string (optional)"
+  }
+  ```
 
 ### 7.2 Create Item Donation
 
 - **POST** `/donations/items`
 - **Headers:** `Authorization: Bearer <token>` (Student)
 - **Request Body:**
-    ```json
-    {
-        "itemPhaseId": "number",
-        "itemDescription": "string",
-        "proofImageUrl": "string (optional)"
-    }
-    ```
+
+  ```json
+  {
+    "itemPhaseId": "number",
+
+    "itemDescription": "string",
+
+    "proofImageUrl": "string (optional)"
+  }
+  ```
 
 ### 7.3 Get My Donations
 
@@ -456,23 +554,26 @@
 - **POST** `/donations/:id/reject`
 - **Headers:** `Authorization: Bearer <token>` (Creator only)
 - **Request Body:**
-    ```json
-    {
-        "reason": "string"
-    }
-    ```
+
+  ```json
+  {
+    "reason": "string"
+  }
+  ```
 
 ### 7.7 Update Donation Amount (for money verification)
 
 - **PUT** `/donations/:id`
 - **Headers:** `Authorization: Bearer <token>` (Creator only)
 - **Request Body:**
-    ```json
-    {
-        "amount": "number",
-        "status": "VERIFIED"
-    }
-    ```
+
+  ```json
+  {
+    "amount": "number",
+
+    "status": "VERIFIED"
+  }
+  ```
 
 ---
 
@@ -499,7 +600,7 @@
 - **GET** `/events/:eventId/participants`
 - **Headers:** `Authorization: Bearer <token>` (Creator/Approver)
 - **Query Params:**
-    - `status`: PENDING | APPROVED | REJECTED | WAITLISTED
+  - `status`: PENDING | APPROVED | REJECTED | WAITLISTED
 
 ### 8.5 Approve Participant
 
@@ -512,11 +613,13 @@
 - **POST** `/participants/:id/reject`
 - **Headers:** `Authorization: Bearer <token>` (Creator only)
 - **Request Body:**
-    ```json
-    {
-        "reason": "string"
-    }
-    ```
+
+  ```json
+  {
+    "reason": "string"
+  }
+  ```
+
 - **Description:** Gửi thông báo cho sinh viên
 
 ### 8.7 Check-in Participant
@@ -530,11 +633,13 @@
 - **POST** `/participants/:id/certificate`
 - **Headers:** `Authorization: Bearer <token>` (Creator only)
 - **Request Body:**
-    ```json
-    {
-        "certificateUrl": "string"
-    }
-    ```
+
+  ```json
+  {
+    "certificateUrl": "string"
+  }
+  ```
+
 - **Description:** Gửi chứng nhận qua email, cộng điểm rèn luyện
 
 ### 8.9 Bulk Send Certificates
@@ -557,13 +662,16 @@
 - **PUT** `/students/me`
 - **Headers:** `Authorization: Bearer <token>` (Student)
 - **Request Body:**
-    ```json
-    {
-        "fullName": "string",
-        "phone": "string",
-        "className": "string"
-    }
-    ```
+
+  ```json
+  {
+    "fullName": "string",
+
+    "phone": "string",
+
+    "className": "string"
+  }
+  ```
 
 ### 9.3 Get Student Points History
 
@@ -588,20 +696,26 @@
 
 - **GET** `/titles`
 - **Response:**
-    ```json
-    {
-        "success": true,
-        "data": [
-            {
-                "id": "number",
-                "name": "string",
-                "description": "string",
-                "minPoints": "number",
-                "iconUrl": "string"
-            }
-        ]
-    }
-    ```
+
+  ```json
+  {
+    "success": true,
+
+    "data": [
+      {
+        "id": "number",
+
+        "name": "string",
+
+        "description": "string",
+
+        "minPoints": "number",
+
+        "iconUrl": "string"
+      }
+    ]
+  }
+  ```
 
 ### 10.2 Create Title
 
@@ -635,13 +749,16 @@
 - **POST** `/clubs`
 - **Headers:** `Authorization: Bearer <token>` (Role: DOANTRUONG)
 - **Request Body:**
-    ```json
-    {
-        "name": "string",
-        "facultyId": "number",
-        "leaderId": "string"
-    }
-    ```
+
+  ```json
+  {
+    "name": "string",
+
+    "facultyId": "number",
+
+    "leaderId": "string"
+  }
+  ```
 
 ### 11.4 Update Club
 
@@ -662,23 +779,25 @@
 - **POST** `/upload/image`
 - **Headers:** `Authorization: Bearer <token>`
 - **Request:** `multipart/form-data`
-    - `file`: Image file (JPG, PNG, WEBP)
+  - `file`: Image file (JPG, PNG, WEBP)
 - **Response:**
-    ```json
-    {
-        "success": true,
-        "data": {
-            "url": "string"
-        }
+
+  ```json
+  {
+    "success": true,
+
+    "data": {
+      "url": "string"
     }
-    ```
+  }
+  ```
 
 ### 12.2 Upload Document
 
 - **POST** `/upload/document`
 - **Headers:** `Authorization: Bearer <token>`
 - **Request:** `multipart/form-data`
-    - `file`: Document file (PDF, DOC, DOCX, XLS, XLSX)
+  - `file`: Document file (PDF, DOC, DOCX, XLS, XLSX)
 
 ---
 
@@ -708,18 +827,24 @@
 - **GET** `/campaigns/:id/statistics`
 - **Headers:** `Authorization: Bearer <token>` (Creator/Approver)
 - **Response:**
-    ```json
-    {
-        "success": true,
-        "data": {
-            "totalDonations": "number",
-            "totalAmount": "number",
-            "totalParticipants": "number",
-            "approvedParticipants": "number",
-            "checkedInParticipants": "number"
-        }
+
+  ```json
+  {
+    "success": true,
+
+    "data": {
+      "totalDonations": "number",
+
+      "totalAmount": "number",
+
+      "totalParticipants": "number",
+
+      "approvedParticipants": "number",
+
+      "checkedInParticipants": "number"
     }
-    ```
+  }
+  ```
 
 ### 14.2 Get Faculty Statistics
 
@@ -737,12 +862,12 @@
 
 ```json
 {
-    "success": false,
-    "error": {
-        "code": "string",
-        "message": "string",
-        "details": "object (optional)"
-    }
+  "success": false,
+  "error": {
+    "code": "string",
+    "message": "string",
+    "details": "object (optional)"
+  }
 }
 ```
 
@@ -762,12 +887,12 @@
 
 ## Permission Matrix
 
-| Action                                 | Student | CLB             | LCD         | DOANTRUONG      |
-| -------------------------------------- | ------- | --------------- | ----------- | --------------- |
-| Xem chiến dịch (cùng khoa/toàn trường) | ✓       | ✓               | ✓           | ✓               |
-| Tạo chiến dịch                         | ✗       | ✓ (toàn trường) | ✓ (khoa)    | ✓ (toàn trường) |
-| Duyệt chiến dịch                       | ✗       | ✗               | ✗           | ✓               |
-| Đăng ký tham gia event                 | ✓       | ✓               | ✓           | ✓               |
-| Quyên góp tiền/vật                     | ✓       | ✓               | ✓           | ✓               |
-| Duyệt donation/participant             | ✗       | ✓ (creator)     | ✓ (creator) | ✓ (all)         |
-| Quản lý CLB                            | ✗       | ✗               | ✗           | ✓               |
+| Action | Student | CLB | LCD | DOANTRUONG |
+| --- | --- | --- | --- | --- |
+| Xem chiến dịch (cùng khoa/toàn trường) | ✓ | ✓ | ✓ | ✓ |
+| Tạo chiến dịch | ✗ | ✓ (toàn trường) | ✓ (khoa) | ✓ (toàn trường) |
+| Duyệt chiến dịch | ✗ | ✗ | ✗ | ✓ |
+| Đăng ký tham gia event | ✓ | ✓ | ✓ | ✓ |
+| Quyên góp tiền/vật | ✓ | ✓ | ✓ | ✓ |
+| Duyệt donation/participant | ✗ | ✓ (creator) | ✓ (creator) | ✓ (all) |
+| Quản lý CLB | ✗ | ✗ | ✗ | ✓ |

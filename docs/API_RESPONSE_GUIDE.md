@@ -9,30 +9,30 @@ Always use the `ApiResponse.success` method to return data. This ensures the fro
 ### Usage
 
 ```typescript
-import { ApiResponse } from 'src/utils/ApiResponse'
-import { HttpStatus } from 'src/common/constants'
+import { ApiResponse } from "src/utils/ApiResponse";
+import { HttpStatus } from "src/common/constants";
 
 // Simple success message
-return ApiResponse.success(res, null, 'Operation successful')
+return ApiResponse.success(res, null, "Operation successful");
 
 // Success with data
-const user = { id: 1, name: 'John' }
-return ApiResponse.success(res, user, 'User retrieved successfully')
+const user = { id: 1, name: "John" };
+return ApiResponse.success(res, user, "User retrieved successfully");
 
 // Custom Status Code (Default is 200 OK)
-return ApiResponse.success(res, newUser, 'User created', HttpStatus.CREATED)
+return ApiResponse.success(res, newUser, "User created", HttpStatus.CREATED);
 ```
 
 ### Response Format
 
 ```json
 {
-    "success": true,
-    "message": "User retrieved successfully",
-    "data": {
-        "id": 1,
-        "name": "John"
-    }
+  "success": true,
+  "message": "User retrieved successfully",
+  "data": {
+    "id": 1,
+    "name": "John"
+  }
 }
 ```
 
@@ -45,29 +45,29 @@ Errors should be handled by throwing an `ApiError`. These are automatically caug
 ### Usage
 
 ```typescript
-import { ApiError } from 'src/utils/ApiError'
-import { HttpStatus } from 'src/common/constants'
+import { ApiError } from "src/utils/ApiError";
+import { HttpStatus } from "src/common/constants";
 
 // Standard Error
-throw new ApiError(HttpStatus.NOT_FOUND, 'User not found')
+throw new ApiError(HttpStatus.NOT_FOUND, "User not found");
 
 // Validation Error (Structured)
-const validationErrors = [{ field: 'email', message: 'Invalid email format' }]
+const validationErrors = [{ field: "email", message: "Invalid email format" }];
 throw new ApiError(
-    HttpStatus.BAD_REQUEST,
-    'Validation failed',
-    true,
-    validationErrors
-)
+  HttpStatus.BAD_REQUEST,
+  "Validation failed",
+  true,
+  validationErrors,
+);
 ```
 
 ### Response Format (Production)
 
 ```json
 {
-    "success": false,
-    "message": "User not found",
-    "errors": null
+  "success": false,
+  "message": "User not found",
+  "errors": null
 }
 ```
 
@@ -77,10 +77,10 @@ In development mode (`NODE_ENV=development`), the response includes the stack tr
 
 ```json
 {
-    "success": false,
-    "message": "User not found",
-    "errors": null,
-    "stack": "Error: User not found\n    at handleRequest (controller.ts:10:15)..."
+  "success": false,
+  "message": "User not found",
+  "errors": null,
+  "stack": "Error: User not found\n    at handleRequest (controller.ts:10:15)..."
 }
 ```
 
@@ -92,12 +92,12 @@ To avoid repetitive `try-catch` blocks, wrap your controller functions with `cat
 
 ```typescript
 export const getMe = catchAsync(async (req: Request, res: Response) => {
-    const user = await service.getUser(req.userId)
-    if (!user) {
-        throw new ApiError(HttpStatus.NOT_FOUND, 'User not found')
-    }
-    return ApiResponse.success(res, user)
-})
+  const user = await service.getUser(req.userId);
+  if (!user) {
+    throw new ApiError(HttpStatus.NOT_FOUND, "User not found");
+  }
+  return ApiResponse.success(res, user);
+});
 ```
 
 ---

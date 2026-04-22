@@ -228,13 +228,118 @@ describe('Auth Service', () => {
 
             const result = await authService.createSession(userId, role)
 
-            expect(createAccessToken).toHaveBeenCalledWith(userId, role)
+            expect(createAccessToken).toHaveBeenCalledWith(
+                userId,
+                role,
+                undefined
+            )
             expect(createRefreshToken).toHaveBeenCalledWith(userId)
             expect(authRepository.createRefreshToken).toHaveBeenCalledWith(
                 userId,
                 refreshToken,
                 role
             )
+            expect(result).toEqual({ accessToken, refreshToken })
+        })
+
+        it('should create session for SINHVIEN with facultyId', async () => {
+            const userId = 'student-1'
+            const role: UserRole = 'SINHVIEN'
+            const student = { id: userId, mssv: '123456789', facultyId: '101' }
+            const accessToken = 'access-token-123'
+            const refreshToken = 'refresh-token-123'
+
+            ;(authRepository.getUserById as jest.Mock).mockResolvedValue(student)
+            ;(createAccessToken as jest.Mock).mockReturnValue(accessToken)
+            ;(createRefreshToken as jest.Mock).mockReturnValue(refreshToken)
+            ;(authRepository.createRefreshToken as jest.Mock).mockResolvedValue(
+                undefined
+            )
+
+            const result = await authService.createSession(userId, role)
+
+            expect(authRepository.getUserById).toHaveBeenCalledWith(userId, role)
+            expect(createAccessToken).toHaveBeenCalledWith(userId, role, '101')
+            expect(result).toEqual({ accessToken, refreshToken })
+        })
+
+        it('should create session for SINHVIEN without facultyId', async () => {
+            const userId = 'student-1'
+            const role: UserRole = 'SINHVIEN'
+            const student = { id: userId, mssv: '123456789', facultyId: null }
+            const accessToken = 'access-token-123'
+            const refreshToken = 'refresh-token-123'
+
+            ;(authRepository.getUserById as jest.Mock).mockResolvedValue(student)
+            ;(createAccessToken as jest.Mock).mockReturnValue(accessToken)
+            ;(createRefreshToken as jest.Mock).mockReturnValue(refreshToken)
+            ;(authRepository.createRefreshToken as jest.Mock).mockResolvedValue(
+                undefined
+            )
+
+            const result = await authService.createSession(userId, role)
+
+            expect(createAccessToken).toHaveBeenCalledWith(userId, role, null)
+            expect(result).toEqual({ accessToken, refreshToken })
+        })
+
+        it('should create session for SINHVIEN when student not found', async () => {
+            const userId = 'student-1'
+            const role: UserRole = 'SINHVIEN'
+            const accessToken = 'access-token-123'
+            const refreshToken = 'refresh-token-123'
+
+            ;(authRepository.getUserById as jest.Mock).mockResolvedValue(null)
+            ;(createAccessToken as jest.Mock).mockReturnValue(accessToken)
+            ;(createRefreshToken as jest.Mock).mockReturnValue(refreshToken)
+            ;(authRepository.createRefreshToken as jest.Mock).mockResolvedValue(
+                undefined
+            )
+
+            const result = await authService.createSession(userId, role)
+
+            expect(createAccessToken).toHaveBeenCalledWith(userId, role, undefined)
+            expect(result).toEqual({ accessToken, refreshToken })
+        })
+
+        it('should create session for non-SINHVIEN with facultyId', async () => {
+            const userId = 'user-1'
+            const role: UserRole = 'LCD'
+            const user = { id: userId, role, facultyId: 1 }
+            const accessToken = 'access-token-123'
+            const refreshToken = 'refresh-token-123'
+
+            ;(authRepository.getUserById as jest.Mock).mockResolvedValue(user)
+            ;(createAccessToken as jest.Mock).mockReturnValue(accessToken)
+            ;(createRefreshToken as jest.Mock).mockReturnValue(refreshToken)
+            ;(authRepository.createRefreshToken as jest.Mock).mockResolvedValue(
+                undefined
+            )
+
+            const result = await authService.createSession(userId, role)
+
+            expect(authRepository.getUserById).toHaveBeenCalledWith(userId, role)
+            expect(createAccessToken).toHaveBeenCalledWith(userId, role, 1)
+            expect(result).toEqual({ accessToken, refreshToken })
+        })
+
+        it('should create session for non-SINHVIEN without facultyId', async () => {
+            const userId = 'user-1'
+            const role: UserRole = 'LCD'
+            const user = { id: userId, role, facultyId: null }
+            const accessToken = 'access-token-123'
+            const refreshToken = 'refresh-token-123'
+
+            ;(authRepository.getUserById as jest.Mock).mockResolvedValue(user)
+            ;(createAccessToken as jest.Mock).mockReturnValue(accessToken)
+            ;(createRefreshToken as jest.Mock).mockReturnValue(refreshToken)
+            ;(authRepository.createRefreshToken as jest.Mock).mockResolvedValue(
+                undefined
+            )
+
+            const result = await authService.createSession(userId, role)
+
+            expect(createAccessToken).toHaveBeenCalledWith(userId, role, null)
             expect(result).toEqual({ accessToken, refreshToken })
         })
     })

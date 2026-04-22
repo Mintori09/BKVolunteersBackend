@@ -2,11 +2,22 @@ import jwt from 'jsonwebtoken'
 import { config } from 'src/config'
 import { UserRole } from 'src/features/auth/types'
 
+interface AccessTokenPayload {
+    userId: string | number
+    role: UserRole
+    facultyId?: string | number | null
+}
+
 export const createAccessToken = (
     userId: number | string,
-    role: UserRole
+    role: UserRole,
+    facultyId?: string | number | null
 ): string => {
-    return jwt.sign({ userId, role }, config.jwt.access_token.secret, {
+    const payload: AccessTokenPayload = { userId, role }
+    if (facultyId !== undefined) {
+        payload.facultyId = facultyId
+    }
+    return jwt.sign(payload, config.jwt.access_token.secret, {
         expiresIn: config.jwt.access_token.expire,
     } as jwt.SignOptions)
 }

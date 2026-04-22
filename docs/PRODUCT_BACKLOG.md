@@ -71,10 +71,8 @@
 | US-026 | As a **Creator**, I want to **tạo giai đoạn quyên góp tiền với mã QR**, so that **sinh viên có thể chuyển khoản**.   | HIGH     | M    | `POST /campaigns/:campaignId/money-phases`                  |
 | US-027 | As a **Creator**, I want to **cập nhật thông tin giai đoạn quyên góp tiền**, so that **tôi điều chỉnh mục tiêu/QR**. | MED      | S    | `PUT /campaigns/:campaignId/money-phases/:phaseId`          |
 | US-028 | As a **Creator**, I want to **xóa giai đoạn quyên góp tiền**, so that **tôi loại bỏ giai đoạn không cần thiết**.     | LOW      | S    | `DELETE /campaigns/:campaignId/money-phases/:phaseId`       |
-| US-029 | As a **User**, I want to **xem các giai đoạn quyên góp tiền của chiến dịch**, so that **tôi biết cách đóng góp**.    | MED      | S    | `GET /campaigns/:campaignId/money-phases`                   |
 | US-030 | As a **User**, I want to **xem tiến độ gây quỹ tiền**, so that **tôi biết bao nhiêu đã được quyên góp**.             | HIGH     | S    | `GET /campaigns/:campaignId/money-phases/:phaseId/progress` |
 | US-031 | As a **Student**, I want to **đóng góp tiền với ảnh minh chứng**, so that **đóng góp của tôi được ghi nhận**.        | HIGH     | M    | `POST /donations/money`                                     |
-| US-032 | As a **Creator**, I want to **xác thực đóng góp tiền và cộng điểm**, so that **sinh viên được ghi nhận điểm**.       | HIGH     | M    | `POST /donations/:id/verify`                                |
 | US-033 | As a **Creator**, I want to **từ chối đóng góp với lý do**, so that **sinh viên biết lý do bị từ chối**.             | MED      | S    | `POST /donations/:id/reject`                                |
 | US-034 | As a **Creator**, I want to **cập nhật số tiền thực tế khi xác thực**, so that **số tiền đúng với minh chứng**.      | MED      | S    | `PUT /donations/:id`                                        |
 | US-035 | As a **Student**, I want to **xem lịch sử đóng góp của tôi**, so that **tôi theo dõi các hoạt động đã làm**.         | MED      | S    | `GET /donations/me`                                         |
@@ -161,60 +159,6 @@
 ---
 
 ## 3. ACCEPTANCE CRITERIA (GHERKIN) - PRIORITY HIGH
-
-### US-001: Đăng ký tài khoản Student
-
-```gherkin
-Feature: Student Registration
-
-Scenario: Đăng ký thành công với thông tin hợp lệ
-    Given tôi là người chưa có tài khoản
-    When tôi gửi POST /auth/student/register với:
-        | mssv        | "20110001"        |
-        | fullName    | "Nguyễn Văn A"    |
-        | email       | "a@student.edu"   |
-        | password    | "Password123!"    |
-        | facultyId   | 1                 |
-        | className   | "DHKTPM17A"       |
-        | phone       | "0909123456"      |
-    Then response status là 201
-    And response chứa thông tin student với mssv "20110001"
-    And email xác thực được gửi đến "a@student.edu"
-
-Scenario Outline: Đăng ký thất bại với dữ liệu không hợp lệ
-    Given tôi là người chưa có tài khoản
-    When tôi gửi POST /auth/student/register với:
-        | mssv        | <mssv>        |
-        | fullName    | <fullName>    |
-        | email       | <email>       |
-        | password    | <password>    |
-        | facultyId   | <facultyId>   |
-    Then response status là 400
-    And response error code là "VALIDATION_ERROR"
-    And response message chứa "<errorField>"
-
-    Examples:
-        | mssv        | fullName        | email            | password     | facultyId | errorField   |
-        | ""          | "Nguyễn Văn A"  | "a@student.edu"  | "Pass123!"   | 1         | mssv         |
-        | "20110001"  | ""              | "a@student.edu"  | "Pass123!"   | 1         | fullName     |
-        | "20110001"  | "Nguyễn Văn A"  | "invalid-email"  | "Pass123!"   | 1         | email        |
-        | "20110001"  | "Nguyễn Văn A"  | "a@student.edu"  | "123"        | 1         | password     |
-        | "20110001"  | "Nguyễn Văn A"  | "a@student.edu"  | "Pass123!"   | ""        | facultyId    |
-
-Scenario: Đăng ký thất bại với MSSV đã tồn tại
-    Given tồn tại student với mssv "20110001"
-    When tôi gửi POST /auth/student/register với mssv "20110001"
-    Then response status là 409
-    And response error code là "CONFLICT"
-    And response message là "MSSV đã được đăng ký"
-
-Scenario: Đăng ký thất bại với email đã tồn tại
-    Given tồn tại student với email "a@student.edu"
-    When tôi gửi POST /auth/student/register với email "a@student.edu"
-    Then response status là 409
-    And response error code là "CONFLICT"
-    And response message là "Email đã được đăng ký"
-```
 
 ### US-002: Đăng nhập Student
 
