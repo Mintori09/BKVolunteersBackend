@@ -183,6 +183,35 @@ describe('Campaign Permission', () => {
             )
             expect(result.allowed).toBe(false)
         })
+
+        it('should allow DOANTRUONG to delete any campaign', () => {
+            const campaign = createMockCampaign({
+                status: 'ACTIVE',
+                creatorId: 'user-1',
+            })
+            const result = campaignPermission.canDeleteCampaign(
+                campaign,
+                'admin-1',
+                'DOANTRUONG'
+            )
+            expect(result.allowed).toBe(true)
+        })
+
+        it('should not allow non-creator to delete campaign', () => {
+            const campaign = createMockCampaign({
+                status: 'DRAFT',
+                creatorId: 'user-1',
+            })
+            const result = campaignPermission.canDeleteCampaign(
+                campaign,
+                'user-2',
+                'CLB'
+            )
+            expect(result.allowed).toBe(false)
+            expect(result.message).toBe(
+                'Bạn không có quyền xóa chiến dịch này'
+            )
+        })
     })
 
     describe('canSubmitCampaign', () => {
