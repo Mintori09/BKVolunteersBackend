@@ -2,7 +2,12 @@ import nodemailer, { Transporter } from 'nodemailer'
 import config from './config'
 // const nodemailer = require('nodemailer')
 
-let transporter: Transporter | null = null
+const createFallbackTransporter = () =>
+    nodemailer.createTransport({
+        jsonTransport: true,
+    })
+
+export let transporter: Transporter = createFallbackTransporter()
 
 const createTestAccount = async () => {
     try {
@@ -19,10 +24,24 @@ const createTestAccount = async () => {
         console.log(`Test account created: ${account.user}`)
     } catch (error) {
         console.error(`Failed to create a test account:`, error)
+        console.warn(
+            'Falling back to jsonTransport. Configure SENDGRID_API_KEY or SMTP_* in .env for real email delivery.'
+        )
     }
 }
 
-if (
+if (config.sendgrid.is_configured) {
+    transporter = nodemailer.createTransport({
+        host: 'smtp.sendgrid.net',
+        port: 587,
+        secure: false,
+        auth: {
+            user: 'apikey',
+            pass: config.sendgrid.api_key,
+        },
+    })
+    console.log('SMTP transporter created: SendGrid')
+} else if (
     config.email.smtp.host !== 'localhost' &&
     config.email.smtp.auth.username !== 'test_user'
 ) {
@@ -47,7 +66,5 @@ if (
         },
     })
 } else {
-    createTestAccount()
+    void createTestAccount()
 }
-
-export default transporter

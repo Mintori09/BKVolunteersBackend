@@ -144,9 +144,19 @@ enum CampaignPublicationStatus {
     PUBLISHED
     REGISTRATION_OPEN
     ONGOING
+    PAUSED
     ENDED
     ARCHIVED
     CANCELLED
+}
+
+enum CampaignTemplateType {
+    VOLUNTEER_ONLY
+    FUNDRAISING_ONLY
+    ITEM_DONATION_ONLY
+    FUNDRAISING_AND_VOLUNTEER
+    ITEM_DONATION_AND_VOLUNTEER
+    FUNDRAISING_ITEM_DONATION_AND_VOLUNTEER
 }
 
 enum CampaignPhaseType {
@@ -418,6 +428,7 @@ model Campaign {
     description       String                    @db.Text
     creatorManagerId  String                    @map("creator_manager_id") @db.Char(36)
     organizerType     OrganizerType             @map("organizer_type")
+    templateType      CampaignTemplateType?     @map("template_type")
     facultyId         Int?                      @map("faculty_id")
     clubId            String?                   @map("club_id") @db.Char(36)
     approvalStatus    CampaignApprovalStatus    @default(DRAFT) @map("approval_status")
@@ -442,6 +453,7 @@ model Campaign {
 
     @@index([creatorManagerId])
     @@index([organizerType])
+    @@index([templateType])
     @@index([facultyId])
     @@index([clubId])
     @@index([approvalStatus])
@@ -487,6 +499,7 @@ model PhaseFundraisingConfig {
     bankAccountId      String           @map("bank_account_id") @db.Char(36)
     qrFileId           String?          @map("qr_file_id") @db.Char(36)
     transferNotePrefix String?          @map("transfer_note_prefix") @db.VarChar(100)
+    usageDescription   String?          @map("usage_description") @db.Text
     verificationMode   VerificationMode @default(MANUAL) @map("verification_mode")
 
     phase              CampaignPhase    @relation(fields: [phaseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -526,7 +539,12 @@ model PhaseVolunteerConfig {
     maxParticipants           Int              @default(0) @map("max_participants")
     participantScope          ParticipantScope @default(ALL_STUDENTS) @map("participant_scope")
     requiresCheckin           Boolean          @default(false) @map("requires_checkin")
+    taskDescription           String?          @map("task_description") @db.Text
     certificateTemplateFileId String?          @map("certificate_template_file_id") @db.Char(36)
+    certificateNamePosXPercent Decimal         @default(50) @map("certificate_name_pos_x_percent") @db.Decimal(5, 2)
+    certificateNamePosYPercent Decimal         @default(50) @map("certificate_name_pos_y_percent") @db.Decimal(5, 2)
+    certificateNameFontSize   Int              @default(36) @map("certificate_name_font_size")
+    certificateNameColorHex   String           @default("#1E293B") @map("certificate_name_color_hex") @db.VarChar(7)
 
     phase                     CampaignPhase    @relation(fields: [phaseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
     certificateTemplateFile   File?            @relation("CertificateTemplate", fields: [certificateTemplateFileId], references: [id], onDelete: SetNull, onUpdate: Cascade)

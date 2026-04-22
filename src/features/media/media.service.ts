@@ -1,4 +1,4 @@
-import { CampaignFileType, Prisma } from '@prisma/client'
+import { CampaignFileType, CampaignPublicationStatus, Prisma } from '@prisma/client'
 import { HttpStatus } from 'src/common/constants'
 import { prismaClient } from 'src/config'
 import * as cloudinaryMediaService from 'src/services/media'
@@ -22,7 +22,6 @@ const singularReferenceUseCases = new Set<MediaUseCase>([
     'fundraising-qr',
     'contribution-proof',
     'certificate-template',
-    'certificate-issued',
 ])
 
 const campaignFileUseCaseToType: Partial<Record<MediaUseCase, CampaignFileType>> =
@@ -388,14 +387,24 @@ const prepareSingularContext = async (
             if (!target) {
                 throw new ApiError(
                     HttpStatus.NOT_FOUND,
-                    'Volunteer phase config not found'
+                    'Campaign phase not found'
+                )
+            }
+
+            if (
+                target.campaign.publicationStatus !==
+                CampaignPublicationStatus.ENDED
+            ) {
+                throw new ApiError(
+                    HttpStatus.CONFLICT,
+                    'Certificate template can only be uploaded after the campaign has ended'
                 )
             }
 
             return {
                 kind: 'singular',
                 referenceId,
-                existingFile: target.certificateTemplateFile,
+                existingFile: target.volunteerConfig?.certificateTemplateFile ?? null,
                 attachFile: (fileId, db) =>
                     mediaRepository.attachCertificateTemplate(
                         referenceId,
@@ -501,6 +510,41 @@ const prepareUploadContext = async (
     payload: MediaUploadPayload
 ): Promise<UploadContext> => {
     await ensureUploaderExists(payload)
+
+    if (payload.useCase === 'certificate-issued') {
+        const referenceId = payload.referenceId?.trim()
+
+        if (!referenceId) {
+            return {
+                kind: 'standalone',
+                referenceId: resolveUploadReferenceId(payload),
+            }
+        }
+
+        const target = await mediaRepository.findCertificateIssuedTarget(referenceId)
+
+        if (!target) {
+            // Allow upload-first flow for generated certificates:
+            // referenceId may be a registrationId, then business relation
+            // is created later by campaign certificate upsert endpoint.
+            return {
+                kind: 'standalone',
+                referenceId,
+            }
+        }
+
+        return {
+            kind: 'singular',
+            referenceId,
+            existingFile: target.file,
+            attachFile: (fileId, db) =>
+                mediaRepository.attachCertificateIssuedFile(
+                    referenceId,
+                    fileId,
+                    db
+                ),
+        }
+    }
 
     if (singularReferenceUseCases.has(payload.useCase)) {
         return prepareSingularContext(payload)

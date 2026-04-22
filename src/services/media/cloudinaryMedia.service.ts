@@ -95,9 +95,25 @@ const normalizeCloudinaryError = (
         )
     }
 
+    const message = error.message || 'Cloudinary upload failed'
+    const normalizedMessage = message.toLowerCase()
+    const isNetworkConnectivityError =
+        normalizedMessage.includes('enotfound api.cloudinary.com') ||
+        normalizedMessage.includes('eai_again') ||
+        normalizedMessage.includes('etimedout') ||
+        normalizedMessage.includes('econnreset') ||
+        normalizedMessage.includes('econnrefused')
+
+    if (isNetworkConnectivityError) {
+        return new ApiError(
+            HttpStatus.SERVICE_UNAVAILABLE,
+            'Cannot connect to Cloudinary (api.cloudinary.com). Check your Internet/DNS/proxy or VPN settings and try again.'
+        )
+    }
+
     return new ApiError(
         HttpStatus.BAD_GATEWAY,
-        error.message || 'Cloudinary upload failed'
+        message
     )
 }
 
@@ -225,10 +241,18 @@ export const deleteMediaFile = async ({
         )
     }
 
-    const result = await cloudinary.uploader.destroy(normalizedPublicId, {
-        resource_type: resourceType,
-        invalidate,
-    })
+    let result: {
+        result: string
+    }
+
+    try {
+        result = await cloudinary.uploader.destroy(normalizedPublicId, {
+            resource_type: resourceType,
+            invalidate,
+        })
+    } catch (error) {
+        throw normalizeCloudinaryError(error as Error)
+    }
 
     if (result.result !== 'ok' && result.result !== 'not found') {
         throw new ApiError(

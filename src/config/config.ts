@@ -2,6 +2,7 @@ import * as dotenv from 'dotenv'
 import * as z from 'zod'
 
 dotenv.config()
+dotenv.config({ path: 'sendgrid.env', override: false })
 
 const emptyStringToUndefined = (value: unknown) => {
     if (typeof value !== 'string') {
@@ -49,6 +50,7 @@ const envSchema = z.object({
     SMTP_USERNAME: z.string().default('test_user'),
     SMTP_PASSWORD: z.string().default('test_password'),
     EMAIL_FROM: z.email('EMAIL NOT VALID!').default('test@example.com'),
+    SENDGRID_API_KEY: z.string().default(''),
     CLOUDINARY_CLOUD_NAME: z.string().default(''),
     CLOUDINARY_API_KEY: z.string().default(''),
     CLOUDINARY_API_SECRET: z.string().default(''),
@@ -105,6 +107,10 @@ const config = {
             },
         },
         from: env.EMAIL_FROM,
+    },
+    sendgrid: {
+        api_key: env.SENDGRID_API_KEY,
+        is_configured: Boolean(env.SENDGRID_API_KEY),
     },
     cloudinary: {
         cloud_name: env.CLOUDINARY_CLOUD_NAME,

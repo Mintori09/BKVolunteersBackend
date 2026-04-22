@@ -4,7 +4,7 @@ import {
     refreshTokenCookieConfig,
     clearRefreshTokenCookieConfig,
 } from './cookieConfig'
-import transporter from './nodemailer'
+import { transporter } from './nodemailer'
 import prismaClient from './prisma'
 import { helmetConfig } from './helmetConfig'
 

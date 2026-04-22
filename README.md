@@ -167,3 +167,41 @@ Server chạy tại: `http://localhost:3000`
 ## License
 
 None License
+
+## Local Docker Database
+
+The backend is now configured for a local MariaDB container instead of the unstable remote database that caused login pool timeouts.
+
+Default local settings:
+
+- MariaDB host: `127.0.0.1`
+- MariaDB port: `3307`
+- Database: `pbl5_db`
+- App user: `pbl5`
+
+Quick start:
+
+```bash
+npm run db:docker:up
+npm run db:seed
+```
+
+If Prisma Studio fails, run Adminer:
+
+```bash
+npm run db:docker:up:with-adminer
+```
+
+Then open `http://localhost:8081` and login with:
+
+- System: `MariaDB`
+- Server: `mariadb`
+- Username: `pbl5`
+- Password: value of `MYSQL_PASSWORD` in `.env`
+- Database: `pbl5_db`
+
+Seeded manager accounts:
+
+- `doantruong / QL@123456`
+- `lcd_cntt / QL@123456`
+- `clb_protech / QL@123456`

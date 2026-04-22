@@ -1,5 +1,6 @@
 node_modules/
 .env
+sendgrid.env
 dist/
 coverage/
 logs/

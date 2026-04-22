@@ -201,12 +201,22 @@ export const attachContributionProof = async (
 }
 
 export const findCertificateTemplateTarget = async (phaseId: string) => {
-    return prismaClient.phaseVolunteerConfig.findUnique({
-        where: { phaseId },
+    return prismaClient.campaignPhase.findUnique({
+        where: { id: phaseId },
         select: {
-            phaseId: true,
-            certificateTemplateFileId: true,
-            certificateTemplateFile: fileRelationSelect,
+            id: true,
+            campaign: {
+                select: {
+                    publicationStatus: true,
+                },
+            },
+            volunteerConfig: {
+                select: {
+                    phaseId: true,
+                    certificateTemplateFileId: true,
+                    certificateTemplateFile: fileRelationSelect,
+                },
+            },
         },
     })
 }
@@ -216,9 +226,13 @@ export const attachCertificateTemplate = async (
     fileId: string,
     db?: DbClient
 ) => {
-    return resolveDbClient(db).phaseVolunteerConfig.update({
+    return resolveDbClient(db).phaseVolunteerConfig.upsert({
         where: { phaseId },
-        data: {
+        create: {
+            phaseId,
+            certificateTemplateFileId: fileId,
+        },
+        update: {
             certificateTemplateFileId: fileId,
         },
         select: {

@@ -83,10 +83,13 @@ const IDS = {
     lcdKhang: '00000000-0000-4000-8000-000000000702',
     protechAn: '00000000-0000-4000-8000-000000000703',
     protechBao: '00000000-0000-4000-8000-000000000704',
+    protechKhang: '00000000-0000-4000-8000-000000000705',
   },
   contributions: {
     fundAn: '00000000-0000-4000-8000-000000000801',
     fundBao: '00000000-0000-4000-8000-000000000802',
+    fundKhang: '00000000-0000-4000-8000-000000000803',
+    fundHuy: '00000000-0000-4000-8000-000000000804',
   },
 } as const;
 
@@ -304,6 +307,38 @@ async function main() {
   await loadStudents(facultyMap, studentPasswordHash);
   if (!sampleStudents) throw new Error('Sample students were not loaded');
 
+  await prisma.student.updateMany({
+    where: {
+      id: {
+        in: [
+          IDS.students.an,
+          IDS.students.khang,
+          IDS.students.bao,
+          IDS.students.huy,
+        ],
+      },
+    },
+    data: {
+      phone: '0900000000',
+    },
+  });
+  await prisma.student.update({
+    where: { id: IDS.students.an },
+    data: { phone: '0901000001' },
+  });
+  await prisma.student.update({
+    where: { id: IDS.students.khang },
+    data: { phone: '0901000002' },
+  });
+  await prisma.student.update({
+    where: { id: IDS.students.bao },
+    data: { phone: '0901000003' },
+  });
+  await prisma.student.update({
+    where: { id: IDS.students.huy },
+    data: { phone: '0901000004' },
+  });
+
   const lcdCover = await uploadImage('bkvolunteers/seed/lcd-support-cover', 'Tiep suc mua thi', 'LCD CNTT 2026 cover', 'COVER', '#22c55e', '#14532d');
   const lcdLogo = await uploadImage('bkvolunteers/seed/lcd-support-logo', 'LCD CNTT', 'Organization logo', 'LOGO', '#38bdf8', '#0f172a');
   const protechCover = await uploadImage('bkvolunteers/seed/protech-books-cover', 'Gop sach cho em', 'ProTech 2026 cover', 'COVER', '#f97316', '#7c2d12');
@@ -365,7 +400,7 @@ async function main() {
         organizerType: OrganizerType.CLB,
         clubId: IDS.clubs.protech,
         approvalStatus: CampaignApprovalStatus.APPROVED,
-        publicationStatus: CampaignPublicationStatus.ONGOING,
+        publicationStatus: CampaignPublicationStatus.ENDED,
         publicFrom: d('2026-01-10T08:00:00+07:00'),
         publicUntil: d('2026-03-15T23:59:59+07:00'),
         coverFileId: IDS.files.protechCover,
@@ -424,6 +459,7 @@ async function main() {
       { id: IDS.registrations.lcdKhang, phaseId: IDS.phases.lcdRecruit, studentId: IDS.students.khang, status: RegistrationStatus.WAITLISTED, appliedAt: d('2026-05-02T09:30:00+07:00'), reviewedById: IDS.managers.lcdCntt, reviewedAt: d('2026-05-03T11:00:00+07:00') },
       { id: IDS.registrations.protechAn, phaseId: IDS.phases.protechField, studentId: IDS.students.an, status: RegistrationStatus.COMPLETED, appliedAt: d('2026-02-12T09:00:00+07:00'), reviewedById: IDS.managers.clbProtech, reviewedAt: d('2026-02-13T10:00:00+07:00') },
       { id: IDS.registrations.protechBao, phaseId: IDS.phases.protechField, studentId: IDS.students.bao, status: RegistrationStatus.COMPLETED, appliedAt: d('2026-02-12T10:00:00+07:00'), reviewedById: IDS.managers.clbProtech, reviewedAt: d('2026-02-13T10:15:00+07:00') },
+      { id: IDS.registrations.protechKhang, phaseId: IDS.phases.protechField, studentId: IDS.students.khang, status: RegistrationStatus.APPROVED, appliedAt: d('2026-02-12T10:30:00+07:00'), reviewedById: IDS.managers.clbProtech, reviewedAt: d('2026-02-13T11:00:00+07:00') },
     ],
   });
 
@@ -441,8 +477,10 @@ async function main() {
 
   await prisma.contribution.createMany({
     data: [
-      { id: IDS.contributions.fundAn, phaseId: IDS.phases.protechFund, studentId: IDS.students.an, contributionType: ContributionType.MONEY, amount: 500000, proofFileId: IDS.files.proofAn, status: ContributionStatus.VERIFIED, verifiedById: IDS.managers.clbProtech, verifiedAt: d('2026-01-25T14:00:00+07:00') },
-      { id: IDS.contributions.fundBao, phaseId: IDS.phases.protechFund, studentId: IDS.students.bao, contributionType: ContributionType.MONEY, amount: 300000, proofFileId: IDS.files.proofBao, status: ContributionStatus.VERIFIED, verifiedById: IDS.managers.clbProtech, verifiedAt: d('2026-01-26T09:15:00+07:00') },
+      { id: IDS.contributions.fundAn, phaseId: IDS.phases.protechFund, studentId: IDS.students.an, contributionType: ContributionType.MONEY, amount: 120000, proofFileId: IDS.files.proofAn, status: ContributionStatus.VERIFIED, verifiedById: IDS.managers.clbProtech, verifiedAt: d('2026-01-25T14:00:00+07:00') },
+      { id: IDS.contributions.fundBao, phaseId: IDS.phases.protechFund, studentId: IDS.students.bao, contributionType: ContributionType.MONEY, amount: 45000, proofFileId: IDS.files.proofBao, status: ContributionStatus.VERIFIED, verifiedById: IDS.managers.clbProtech, verifiedAt: d('2026-01-26T09:15:00+07:00') },
+      { id: IDS.contributions.fundKhang, phaseId: IDS.phases.protechFund, studentId: IDS.students.khang, contributionType: ContributionType.MONEY, amount: 25000, status: ContributionStatus.PENDING },
+      { id: IDS.contributions.fundHuy, phaseId: IDS.phases.protechFund, studentId: IDS.students.huy, contributionType: ContributionType.MONEY, amount: 15000, status: ContributionStatus.REJECTED, rejectionReason: 'Sai nội dung chuyển khoản' },
     ],
   });
 

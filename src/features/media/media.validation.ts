@@ -21,7 +21,6 @@ const singularReferenceUseCases = new Set([
     'fundraising-qr',
     'contribution-proof',
     'certificate-template',
-    'certificate-issued',
 ])
 
 const campaignFileUseCases = new Set([

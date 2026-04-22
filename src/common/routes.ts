@@ -1,6 +1,8 @@
 import { Router } from 'express'
 import { authRouter } from 'src/features/auth'
+import { campaignRouter } from 'src/features/campaign'
 import { passwordRouter } from 'src/features/forgotPassword'
+import { managerWorkspaceRouter } from 'src/features/managerWorkspace'
 import { mediaRouter } from 'src/features/media'
 import { verifyEmailRouter } from 'src/features/verifyEmail'
 import { authLimiter } from 'src/common/middleware'
@@ -25,6 +27,14 @@ const defaultRoutes = [
     {
         path: '/media',
         route: mediaRouter,
+    },
+    {
+        path: '/campaigns',
+        route: campaignRouter,
+    },
+    {
+        path: '/manager-workspace',
+        route: managerWorkspaceRouter,
     },
 ]
 

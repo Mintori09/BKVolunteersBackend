@@ -1,0 +1,41 @@
+services:
+  mariadb:
+    image: mariadb:11.4
+    container_name: bkvolunteers-mariadb
+    restart: unless-stopped
+    ports:
+      - "${MYSQL_PORT:-3307}:3306"
+    environment:
+      MARIADB_DATABASE: "${MYSQL_DATABASE:-pbl5_db}"
+      MARIADB_USER: "${MYSQL_USER:-pbl5}"
+      MARIADB_PASSWORD: "${MYSQL_PASSWORD:-Khonhatthegioi@36}"
+      MARIADB_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-root_local_2026}"
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --max-connections=200
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mariadb-admin ping -h 127.0.0.1 -uroot -p$$MARIADB_ROOT_PASSWORD --silent",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
+  adminer:
+    image: adminer:4.8.1
+    container_name: bkvolunteers-adminer
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    ports:
+      - "${ADMINER_PORT:-8081}:8080"
+
+volumes:
+  mariadb_data:

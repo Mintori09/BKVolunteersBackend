@@ -39,4 +39,4 @@ reset-ignored:
     rm -rf dist/ logs/*.log node_modules/
 
 db-seed:
-    pnpm tsx ./prisma/seed.ts
+    pnpm db:seed
