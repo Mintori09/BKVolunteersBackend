@@ -5,10 +5,12 @@ import * as campaignStatus from '../campaign.status'
 import { ApiError } from 'src/utils/ApiError'
 import { HttpStatus } from 'src/common/constants'
 import { CampaignStatus, CampaignScope } from '@prisma/client'
+import * as notificationService from 'src/features/notification/notification.service'
 
 jest.mock('../campaign.repository')
 jest.mock('../campaign.permission')
 jest.mock('../campaign.status')
+jest.mock('src/features/notification/notification.service')
 
 describe('Campaign Service', () => {
     beforeEach(() => {
@@ -129,6 +131,110 @@ describe('Campaign Service', () => {
                     userFacultyId
                 )
             ).rejects.toThrow(ApiError)
+        })
+    })
+
+    describe('approval notifications', () => {
+        it('should create notification when campaign is approved', async () => {
+            ;(campaignRepository.findCampaignById as jest.Mock).mockResolvedValue({
+                ...mockCampaign,
+                status: 'PENDING',
+            })
+            ;(campaignPermission.canApproveCampaign as jest.Mock).mockReturnValue({
+                allowed: true,
+            })
+            ;(campaignStatus.isCampaignApprovable as jest.Mock).mockReturnValue(
+                true
+            )
+            ;(campaignStatus.validateStatusTransition as jest.Mock).mockReturnValue(
+                { valid: true }
+            )
+            ;(campaignRepository.updateCampaignStatus as jest.Mock).mockResolvedValue({
+                ...mockCampaign,
+                status: 'ACTIVE',
+            })
+
+            await campaignService.approveCampaign(
+                'campaign-1',
+                'admin-1',
+                'DOANTRUONG'
+            )
+
+            expect(notificationService.createForUser).toHaveBeenCalledWith({
+                userId: 'user-1',
+                title: 'Chiến dịch được phê duyệt',
+                message: 'Chiến dịch "Test Campaign" đã được phê duyệt',
+                type: 'CAMPAIGN_APPROVED',
+                relatedEntityType: 'campaign',
+                relatedEntityId: 'campaign-1',
+            })
+        })
+
+        it('should create notification when campaign is rejected', async () => {
+            ;(campaignRepository.findCampaignById as jest.Mock).mockResolvedValue({
+                ...mockCampaign,
+                status: 'PENDING',
+            })
+            ;(campaignPermission.canRejectCampaign as jest.Mock).mockReturnValue({
+                allowed: true,
+            })
+            ;(campaignStatus.isCampaignRejectable as jest.Mock).mockReturnValue(
+                true
+            )
+            ;(campaignStatus.validateStatusTransition as jest.Mock).mockReturnValue(
+                { valid: true }
+            )
+            ;(campaignRepository.updateCampaignStatus as jest.Mock).mockResolvedValue({
+                ...mockCampaign,
+                status: 'REJECTED',
+            })
+
+            await campaignService.rejectCampaign(
+                'campaign-1',
+                'admin-1',
+                'DOANTRUONG',
+                'Thiếu hồ sơ'
+            )
+
+            expect(notificationService.createForUser).toHaveBeenCalledWith({
+                userId: 'user-1',
+                title: 'Chiến dịch bị từ chối',
+                message:
+                    'Chiến dịch "Test Campaign" bị từ chối. Lý do: Thiếu hồ sơ',
+                type: 'CAMPAIGN_REJECTED',
+                relatedEntityType: 'campaign',
+                relatedEntityId: 'campaign-1',
+            })
+        })
+    })
+
+    describe('getCampaignStatistics', () => {
+        it('should return campaign statistics from repository', async () => {
+            ;(campaignRepository.findCampaignById as jest.Mock).mockResolvedValue(
+                mockCampaign
+            )
+            ;(campaignRepository.getCampaignStatistics as jest.Mock).mockResolvedValue(
+                {
+                    totalVerifiedAmount: 100000,
+                    moneyDonations: { pending: 1, verified: 2, rejected: 0 },
+                    itemDonations: { pending: 0, verified: 3, rejected: 1 },
+                    participants: {
+                        pending: 2,
+                        approved: 10,
+                        rejected: 1,
+                        checkedIn: 8,
+                    },
+                    totalEvents: 1,
+                }
+            )
+
+            const result =
+                await campaignService.getCampaignStatistics('campaign-1')
+
+            expect(campaignRepository.getCampaignStatistics).toHaveBeenCalledWith(
+                'campaign-1'
+            )
+            expect(result.totalEvents).toBe(1)
         })
     })
 
