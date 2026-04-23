@@ -245,4 +245,34 @@ describe('ItemDonation Controller', () => {
             })
         })
     })
+
+    describe('verifyItemDonation', () => {
+        it('should verify item donation successfully', async () => {
+            req.payload = { userId: 'user-1' }
+            req.params = { id: 'don-1' }
+            req.body = { points: 5 }
+            ;(itemDonationService.verifyItemDonation as jest.Mock).mockResolvedValue(
+                {
+                    id: 'don-1',
+                    status: 'VERIFIED',
+                }
+            )
+
+            await itemDonationController.verifyItemDonation(req, res, next)
+
+            expect(itemDonationService.verifyItemDonation).toHaveBeenCalledWith(
+                'don-1',
+                { points: 5 },
+                'user-1'
+            )
+            expect(res.json).toHaveBeenCalledWith({
+                success: true,
+                message: 'Xác thực đóng góp hiện vật thành công',
+                data: {
+                    id: 'don-1',
+                    status: 'VERIFIED',
+                },
+            })
+        })
+    })
 })

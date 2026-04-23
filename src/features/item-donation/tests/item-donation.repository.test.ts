@@ -203,7 +203,7 @@ describe('ItemDonation Repository', () => {
         })
 
         it('should return paginated donations with custom page and limit', async () => {
-            const mockDonations = []
+            const mockDonations: Array<Record<string, unknown>> = []
             ;(prismaClient.donation.findMany as jest.Mock).mockResolvedValue(mockDonations)
             ;(prismaClient.donation.count as jest.Mock).mockResolvedValue(0)
 

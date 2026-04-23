@@ -2,8 +2,12 @@ import { HttpStatus } from 'src/common/constants'
 import { ApiError } from 'src/utils/ApiError'
 import * as itemDonationRepository from '../item-donation.repository'
 import * as itemDonationService from '../item-donation.service'
+import * as gamificationService from 'src/features/gamification/gamification.service'
+import * as notificationService from 'src/features/notification/notification.service'
 
 jest.mock('../item-donation.repository')
+jest.mock('src/features/gamification/gamification.service')
+jest.mock('src/features/notification/notification.service')
 
 describe('ItemDonation Service', () => {
     beforeEach(() => {
@@ -304,6 +308,92 @@ describe('ItemDonation Service', () => {
                 status: 'VERIFIED',
             })
             expect(result).toEqual(mockResult)
+        })
+    })
+
+    describe('verifyItemDonation', () => {
+        it('should verify a pending item donation and award points', async () => {
+            ;(itemDonationRepository.findDonationById as jest.Mock).mockResolvedValue({
+                id: 'don-1',
+                status: 'PENDING',
+                studentId: 'student-1',
+                itemPhase: {
+                    campaign: {
+                        id: 'campaign-1',
+                        title: 'Xuân tình nguyện',
+                        creatorId: 'user-1',
+                    },
+                },
+            })
+            ;(itemDonationRepository.verifyDonation as jest.Mock).mockResolvedValue({
+                id: 'don-1',
+                status: 'VERIFIED',
+            })
+            ;(gamificationService.awardPoints as jest.Mock).mockResolvedValue([])
+
+            const result = await itemDonationService.verifyItemDonation(
+                'don-1',
+                { points: 5 },
+                'user-1'
+            )
+
+            expect(itemDonationRepository.verifyDonation).toHaveBeenCalledWith(
+                'don-1'
+            )
+            expect(gamificationService.awardPoints).toHaveBeenCalledWith({
+                studentId: 'student-1',
+                points: 5,
+                reason: 'Quyên góp hiện vật cho chiến dịch "Xuân tình nguyện"',
+                sourceType: 'ITEM_DONATION',
+                sourceId: 'don-1',
+                awardedBy: 'user-1',
+            })
+            expect(notificationService.createForStudent).toHaveBeenCalledWith({
+                studentId: 'student-1',
+                title: 'Đóng góp hiện vật đã được xác thực',
+                message:
+                    'Đóng góp hiện vật của bạn cho chiến dịch "Xuân tình nguyện" đã được xác thực',
+                type: 'ITEM_DONATION_VERIFIED',
+                relatedEntityType: 'donation',
+                relatedEntityId: 'don-1',
+            })
+            expect(result.status).toBe('VERIFIED')
+        })
+
+        it('should not award points when caller explicitly sends 0', async () => {
+            ;(itemDonationRepository.findDonationById as jest.Mock).mockResolvedValue({
+                id: 'don-1',
+                status: 'PENDING',
+                studentId: 'student-1',
+                itemPhase: {
+                    campaign: {
+                        id: 'campaign-1',
+                        title: 'Xuân tình nguyện',
+                        creatorId: 'user-1',
+                    },
+                },
+            })
+            ;(itemDonationRepository.verifyDonation as jest.Mock).mockResolvedValue({
+                id: 'don-1',
+                status: 'VERIFIED',
+            })
+
+            await itemDonationService.verifyItemDonation(
+                'don-1',
+                { points: 0 },
+                'user-1'
+            )
+
+            expect(gamificationService.awardPoints).not.toHaveBeenCalled()
+            expect(notificationService.createForStudent).toHaveBeenCalledWith({
+                studentId: 'student-1',
+                title: 'Đóng góp hiện vật đã được xác thực',
+                message:
+                    'Đóng góp hiện vật của bạn cho chiến dịch "Xuân tình nguyện" đã được xác thực',
+                type: 'ITEM_DONATION_VERIFIED',
+                relatedEntityType: 'donation',
+                relatedEntityId: 'don-1',
+            })
         })
     })
 })
