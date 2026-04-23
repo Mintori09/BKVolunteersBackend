@@ -3,8 +3,10 @@ import * as eventRepository from '../event.repository'
 import * as eventService from '../event.service'
 import { ApiError } from 'src/utils/ApiError'
 import { HttpStatus } from 'src/common/constants'
+import * as notificationService from 'src/features/notification/notification.service'
 
 jest.mock('../event.repository')
+jest.mock('src/features/notification/notification.service')
 jest.mock('src/config/nodemailer', () => ({
     __esModule: true,
     default: {
@@ -719,6 +721,156 @@ describe('Event Service', () => {
             expect(result.successCount).toBe(0)
             expect(result.failedCount).toBe(1)
             expect(result.failedParticipants).toHaveLength(1)
+        })
+    })
+
+    describe('participant notifications', () => {
+        const participant = {
+            id: 'p-1',
+            studentId: 'student-1',
+            status: ParticipantStatus.PENDING,
+            isCheckedIn: false,
+            student: {
+                id: 'student-1',
+                email: 'student@example.com',
+                fullName: 'Student One',
+            },
+            event: {
+                id: 1,
+                campaign: {
+                    id: 'campaign-1',
+                    title: 'Campaign A',
+                    creatorId: 'user-1',
+                },
+            },
+        }
+
+        it('should notify student when participant is approved', async () => {
+            ;(eventRepository.findParticipantById as jest.Mock).mockResolvedValue(
+                participant
+            )
+            ;(eventRepository.updateParticipantStatus as jest.Mock).mockResolvedValue(
+                { ...participant, status: ParticipantStatus.APPROVED }
+            )
+
+            await eventService.approveParticipant('p-1', 'user-1', {})
+
+            expect(notificationService.createForStudent).toHaveBeenCalledWith({
+                studentId: 'student-1',
+                title: 'Đăng ký tham gia được phê duyệt',
+                message:
+                    'Đăng ký tham gia của bạn cho chiến dịch "Campaign A" đã được phê duyệt',
+                type: 'PARTICIPANT_APPROVED',
+                relatedEntityType: 'participant',
+                relatedEntityId: 'p-1',
+            })
+        })
+
+        it('should notify student when participant is rejected', async () => {
+            ;(eventRepository.findParticipantById as jest.Mock).mockResolvedValue(
+                participant
+            )
+            ;(eventRepository.updateParticipantStatus as jest.Mock).mockResolvedValue(
+                { ...participant, status: ParticipantStatus.REJECTED }
+            )
+
+            await eventService.rejectParticipant('p-1', 'user-1', {
+                reason: 'Không phù hợp',
+            })
+
+            expect(notificationService.createForStudent).toHaveBeenCalledWith({
+                studentId: 'student-1',
+                title: 'Đăng ký tham gia bị từ chối',
+                message:
+                    'Đăng ký tham gia của bạn cho chiến dịch "Campaign A" đã bị từ chối',
+                type: 'PARTICIPANT_REJECTED',
+                relatedEntityType: 'participant',
+                relatedEntityId: 'p-1',
+            })
+        })
+
+        it('should notify student when participant is checked in', async () => {
+            ;(eventRepository.findParticipantById as jest.Mock).mockResolvedValue(
+                { ...participant, status: ParticipantStatus.APPROVED }
+            )
+            ;(eventRepository.updateParticipantCheckIn as jest.Mock).mockResolvedValue(
+                { ...participant, status: ParticipantStatus.APPROVED, isCheckedIn: true }
+            )
+
+            await eventService.checkInParticipant('p-1', 'user-1')
+
+            expect(notificationService.createForStudent).toHaveBeenCalledWith({
+                studentId: 'student-1',
+                title: 'Đã check-in sự kiện',
+                message:
+                    'Bạn đã được check-in cho chiến dịch "Campaign A"',
+                type: 'PARTICIPANT_CHECKED_IN',
+                relatedEntityType: 'participant',
+                relatedEntityId: 'p-1',
+            })
+        })
+
+        it('should notify student when certificate is sent', async () => {
+            ;(eventRepository.findParticipantById as jest.Mock).mockResolvedValue(
+                { ...participant, status: ParticipantStatus.APPROVED, isCheckedIn: true }
+            )
+            ;(eventRepository.updateParticipantCertificate as jest.Mock).mockResolvedValue(
+                undefined
+            )
+            ;(eventRepository.addPointsToStudent as jest.Mock).mockResolvedValue(
+                undefined
+            )
+
+            await eventService.sendCertificateToParticipant('p-1', 'user-1', {
+                certificateUrl: 'https://example.com/cert.pdf',
+            })
+
+            expect(notificationService.createForStudent).toHaveBeenCalledWith({
+                studentId: 'student-1',
+                title: 'Chứng nhận đã được gửi',
+                message:
+                    'Chứng nhận tham gia chiến dịch "Campaign A" đã được gửi cho bạn',
+                type: 'CERTIFICATE_SENT',
+                relatedEntityType: 'participant',
+                relatedEntityId: 'p-1',
+            })
+        })
+
+        it('should notify students when certificates are sent in bulk', async () => {
+            ;(eventRepository.findEventById as jest.Mock).mockResolvedValue({
+                id: 1,
+                campaign: { id: 'campaign-1', title: 'Campaign A', creatorId: 'user-1' },
+            })
+            ;(eventRepository.findParticipantsForBulkCertificate as jest.Mock).mockResolvedValue(
+                [
+                    {
+                        id: 'p-1',
+                        studentId: 'student-1',
+                        student: {
+                            email: 'student@example.com',
+                            fullName: 'Student One',
+                        },
+                    },
+                ]
+            )
+            ;(eventRepository.updateParticipantCertificate as jest.Mock).mockResolvedValue(
+                undefined
+            )
+            ;(eventRepository.addPointsToStudent as jest.Mock).mockResolvedValue(
+                undefined
+            )
+
+            await eventService.sendBulkCertificates(1, 'user-1', {})
+
+            expect(notificationService.createForStudent).toHaveBeenCalledWith({
+                studentId: 'student-1',
+                title: 'Chứng nhận đã được gửi',
+                message:
+                    'Chứng nhận tham gia chiến dịch "Campaign A" đã được gửi cho bạn',
+                type: 'CERTIFICATE_SENT',
+                relatedEntityType: 'participant',
+                relatedEntityId: 'p-1',
+            })
         })
     })
 })

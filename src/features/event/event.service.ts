@@ -18,6 +18,7 @@ import {
 } from './types'
 import transporter from 'src/config/nodemailer'
 import config from 'src/config/config'
+import * as notificationService from 'src/features/notification/notification.service'
 
 const DEFAULT_EVENT_POINTS = 10
 
@@ -297,10 +298,21 @@ export const approveParticipant = async (
         )
     }
 
-    return eventRepository.updateParticipantStatus(
+    const updatedParticipant = await eventRepository.updateParticipantStatus(
         participantId,
         ParticipantStatus.APPROVED
     )
+
+    await notificationService.createForStudent({
+        studentId: participant.studentId,
+        title: 'Đăng ký tham gia được phê duyệt',
+        message: `Đăng ký tham gia của bạn cho chiến dịch "${participant.event.campaign.title}" đã được phê duyệt`,
+        type: 'PARTICIPANT_APPROVED',
+        relatedEntityType: 'participant',
+        relatedEntityId: participantId,
+    })
+
+    return updatedParticipant
 }
 
 export const rejectParticipant = async (
@@ -325,10 +337,21 @@ export const rejectParticipant = async (
         )
     }
 
-    return eventRepository.updateParticipantStatus(
+    const updatedParticipant = await eventRepository.updateParticipantStatus(
         participantId,
         ParticipantStatus.REJECTED
     )
+
+    await notificationService.createForStudent({
+        studentId: participant.studentId,
+        title: 'Đăng ký tham gia bị từ chối',
+        message: `Đăng ký tham gia của bạn cho chiến dịch "${participant.event.campaign.title}" đã bị từ chối`,
+        type: 'PARTICIPANT_REJECTED',
+        relatedEntityType: 'participant',
+        relatedEntityId: participantId,
+    })
+
+    return updatedParticipant
 }
 
 export const checkInParticipant = async (
@@ -359,7 +382,19 @@ export const checkInParticipant = async (
         throw new ApiError(HttpStatus.BAD_REQUEST, 'Người này đã được check-in')
     }
 
-    return eventRepository.updateParticipantCheckIn(participantId)
+    const updatedParticipant =
+        await eventRepository.updateParticipantCheckIn(participantId)
+
+    await notificationService.createForStudent({
+        studentId: participant.studentId,
+        title: 'Đã check-in sự kiện',
+        message: `Bạn đã được check-in cho chiến dịch "${participant.event.campaign.title}"`,
+        type: 'PARTICIPANT_CHECKED_IN',
+        relatedEntityType: 'participant',
+        relatedEntityId: participantId,
+    })
+
+    return updatedParticipant
 }
 
 const sendCertificateEmail = async (
@@ -448,6 +483,15 @@ export const sendCertificateToParticipant = async (
         console.error('Failed to send certificate email:', error)
     }
 
+    await notificationService.createForStudent({
+        studentId: participant.studentId,
+        title: 'Chứng nhận đã được gửi',
+        message: `Chứng nhận tham gia chiến dịch "${participant.event.campaign.title}" đã được gửi cho bạn`,
+        type: 'CERTIFICATE_SENT',
+        relatedEntityType: 'participant',
+        relatedEntityId: participantId,
+    })
+
     return {
         ...participant,
         certificateUrl: data.certificateUrl,
@@ -510,6 +554,15 @@ export const sendBulkCertificates = async (
             )
 
             successCount++
+
+            await notificationService.createForStudent({
+                studentId: participant.studentId,
+                title: 'Chứng nhận đã được gửi',
+                message: `Chứng nhận tham gia chiến dịch "${event.campaign.title}" đã được gửi cho bạn`,
+                type: 'CERTIFICATE_SENT',
+                relatedEntityType: 'participant',
+                relatedEntityId: participant.id,
+            })
         } catch (error) {
             failedParticipants.push({
                 participantId: participant.id,
