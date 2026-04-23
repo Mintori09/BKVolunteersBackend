@@ -20,3 +20,7 @@ export interface GetItemDonationsQuery {
     page?: number
     limit?: number
 }
+
+export interface VerifyItemDonationInput {
+    points?: number
+}

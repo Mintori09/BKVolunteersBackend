@@ -4,7 +4,7 @@ import { catchAsync } from 'src/utils/catchAsync'
 import { ApiResponse } from 'src/utils/ApiResponse'
 import { ApiError } from 'src/utils/ApiError'
 import * as itemDonationService from './item-donation.service'
-import { CreateItemDonationInput } from './types'
+import { CreateItemDonationInput, VerifyItemDonationInput } from './types'
 
 const getParam = (param: string | string[] | undefined): string => {
     if (Array.isArray(param)) return param[0]
@@ -77,5 +77,31 @@ export const getItemDonationsByPhase = catchAsync(
         )
 
         return ApiResponse.success(res, result)
+    }
+)
+
+export const verifyItemDonation = catchAsync(
+    async (req: Request, res: Response) => {
+        const userId = req.payload?.userId as string | undefined
+        const donationId = getParam(req.params.id)
+
+        if (!userId) {
+            throw new ApiError(
+                HttpStatus.UNAUTHORIZED,
+                'Chưa xác thực người dùng'
+            )
+        }
+
+        const donation = await itemDonationService.verifyItemDonation(
+            donationId,
+            req.body as VerifyItemDonationInput,
+            userId
+        )
+
+        return ApiResponse.success(
+            res,
+            donation,
+            'Xác thực đóng góp hiện vật thành công'
+        )
     }
 )

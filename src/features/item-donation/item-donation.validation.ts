@@ -25,3 +25,12 @@ export const getItemDonationsSchema: RequestValidationSchema = {
         limit: z.coerce.number().int().positive().max(100).default(10),
     }),
 }
+
+export const verifyItemDonationSchema: RequestValidationSchema = {
+    params: z.object({
+        id: z.string().min(1, 'Donation ID là bắt buộc'),
+    }),
+    body: z.object({
+        points: z.number().int().min(0).optional(),
+    }),
+}

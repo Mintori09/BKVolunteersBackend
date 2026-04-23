@@ -8,6 +8,19 @@ export const findItemPhaseById = async (phaseId: number) => {
     })
 }
 
+export const findDonationById = async (donationId: string) => {
+    return prismaClient.donation.findUnique({
+        where: { id: donationId },
+        include: {
+            itemPhase: {
+                include: {
+                    campaign: true,
+                },
+            },
+        },
+    })
+}
+
 export const createItemDonation = async (
     studentId: string,
     data: CreateItemDonationInput
@@ -66,4 +79,13 @@ export const findDonationsByPhaseId = async (
             totalPages: Math.ceil(total / limit),
         },
     }
+}
+
+export const verifyDonation = async (donationId: string) => {
+    return prismaClient.donation.update({
+        where: { id: donationId },
+        data: {
+            status: 'VERIFIED',
+        },
+    })
 }
