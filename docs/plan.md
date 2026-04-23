@@ -1,3 +1,5 @@
+> Tài liệu ghi chú kế hoạch/brain dump ở giai đoạn đầu dự án. Nội dung hiện tại mang tính lịch sử; API docs chính thức nằm trong `docs/api/`.
+
 User
 
 ROLE: Sinh viên, BCH LCĐ/BCN CLB, Đoàn trường

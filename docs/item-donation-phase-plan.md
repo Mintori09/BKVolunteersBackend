@@ -1,5 +1,7 @@
 # Kế Hoạch Triển Khai Item Donation Phase
 
+> Tài liệu lịch sử. Phần item phase/item donation hiện đã được triển khai; API docs chính thức nằm trong `docs/api/`.
+
 ## 1. TỔNG QUAN API
 
 | US | Method | Endpoint | Description | Priority |
