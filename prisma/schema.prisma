@@ -54,6 +54,18 @@ enum PointSourceType {
   BONUS
 }
 
+enum NotificationType {
+  CAMPAIGN_APPROVED
+  CAMPAIGN_REJECTED
+  DONATION_VERIFIED
+  DONATION_REJECTED
+  ITEM_DONATION_VERIFIED
+  PARTICIPANT_APPROVED
+  PARTICIPANT_REJECTED
+  PARTICIPANT_CHECKED_IN
+  CERTIFICATE_SENT
+}
+
 // ============================================
 // CORE MODELS
 // ============================================
@@ -91,6 +103,7 @@ model User {
   accounts            Account[]
   resetTokens         ResetToken[]
   refreshTokens       RefreshToken[]
+  notifications       Notification[]     @relation("UserNotifications")
 
   @@index([email])
   @@index([username])
@@ -119,6 +132,7 @@ facultyId String?  @map("faculty_id") @db.Char(3)
   donations         Donation[]
   participants      Participant[]
   refreshTokens     StudentRefreshToken[]
+  notifications     Notification[]      @relation("StudentNotifications")
 
   @@index([mssv])
   @@index([email])
@@ -344,6 +358,27 @@ model Participant {
   @@index([eventId])
   @@index([status])
   @@map("participants")
+}
+
+model Notification {
+  id                 String           @id @default(cuid())
+  title              String           @db.VarChar(255)
+  message            String           @db.Text
+  type               NotificationType
+  isRead             Boolean          @default(false) @map("is_read")
+  recipientUserId    String?          @map("recipient_user_id")
+  recipientStudentId String?          @map("recipient_student_id")
+  relatedEntityType  String?          @map("related_entity_type") @db.VarChar(50)
+  relatedEntityId    String?          @map("related_entity_id") @db.VarChar(191)
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+
+  recipientUser      User?            @relation("UserNotifications", fields: [recipientUserId], references: [id], onDelete: Cascade)
+  recipientStudent   Student?         @relation("StudentNotifications", fields: [recipientStudentId], references: [id], onDelete: Cascade)
+
+  @@index([recipientUserId, isRead, createdAt])
+  @@index([recipientStudentId, isRead, createdAt])
+  @@map("notifications")
 }
 
 // ============================================
