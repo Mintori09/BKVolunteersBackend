@@ -2,6 +2,8 @@ node_modules/
 .env
 dist/
 coverage/
+.coverage-title
+coverage-auth/
 logs/
 *.log
 .DS_Store
