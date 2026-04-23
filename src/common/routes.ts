@@ -14,6 +14,9 @@ import moneyDonationRouter, {
     phaseDonationsRouter,
 } from 'src/features/money-donation/money-donation.route'
 import donationRouter from 'src/features/donation/donation.route'
+import { notificationRouter } from 'src/features/notification'
+import { userRouter } from 'src/features/user'
+import { statisticsRouter } from 'src/features/statistics'
 import { authLimiter } from 'src/common/middleware'
 import { config } from 'src/config'
 
@@ -60,6 +63,18 @@ const defaultRoutes = [
     {
         path: '/titles',
         route: titleRouter,
+    },
+    {
+        path: '/notifications',
+        route: notificationRouter,
+    },
+    {
+        path: '/users',
+        route: userRouter,
+    },
+    {
+        path: '/statistics',
+        route: statisticsRouter,
     },
 ]
 

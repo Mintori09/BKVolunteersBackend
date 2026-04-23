@@ -54,7 +54,7 @@ facultyRouter.get(
 )
 
 facultyRouter.get(
-    '/:id/stats',
+    '/:id/statistics',
     isAuth,
     validate(facultyIdSchema),
     facultyController.getFacultyStats
