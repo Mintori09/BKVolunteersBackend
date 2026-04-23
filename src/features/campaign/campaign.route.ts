@@ -51,10 +51,19 @@ const campaignRouter = Router()
  *                 type: string
  *                 enum: [KHOA, TRUONG]
  *               facultyId:
- *                 type: string
+ *                 type: integer
  *     responses:
  *       201:
  *         description: Created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/CampaignOutput'
  *       400:
  *         description: Bad Request
  *       401:
@@ -91,7 +100,7 @@ campaignRouter.post(
  *       - in: query
  *         name: facultyId
  *         schema:
- *           type: string
+ *           type: integer
  *       - in: query
  *         name: page
  *         schema:
@@ -103,6 +112,15 @@ campaignRouter.post(
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/CampaignListOutput'
  *       401:
  *         description: Unauthorized
  */
@@ -133,6 +151,15 @@ campaignRouter.get(
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/CampaignListOutput'
  *       401:
  *         description: Unauthorized
  */
@@ -160,6 +187,15 @@ campaignRouter.get(
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/CampaignOutput'
  *       401:
  *         description: Unauthorized
  *       404:
@@ -170,6 +206,45 @@ campaignRouter.get(
     isAuth,
     validate(campaignIdSchema),
     campaignController.getCampaign
+)
+
+/**
+ * @openapi
+ * /campaigns/{id}/statistics:
+ *   get:
+ *     summary: Get campaign statistics
+ *     tags: [Campaign]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/CampaignOutput'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Not Found
+ */
+
+campaignRouter.get(
+    '/:id/statistics',
+    isAuth,
+    validate(campaignIdSchema),
+    campaignController.getCampaignStatistics
 )
 
 /**
@@ -233,6 +308,15 @@ campaignRouter.put(
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       nullable: true
  *       401:
  *         description: Unauthorized
  *       403:
@@ -264,6 +348,15 @@ campaignRouter.delete(
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/CampaignOutput'
  *       400:
  *         description: Bad Request
  *       401:
@@ -305,6 +398,15 @@ campaignRouter.post(
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/CampaignOutput'
  *       400:
  *         description: Bad Request
  *       401:
@@ -350,6 +452,15 @@ campaignRouter.post(
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/CampaignOutput'
  *       400:
  *         description: Bad Request
  *       401:
@@ -394,6 +505,15 @@ campaignRouter.post(
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/CampaignOutput'
  *       400:
  *         description: Bad Request
  *       401:
@@ -427,6 +547,15 @@ campaignRouter.post(
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/CampaignOutput'
  *       400:
  *         description: Bad Request
  *       401:
@@ -471,6 +600,15 @@ campaignRouter.post(
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/CampaignOutput'
  *       400:
  *         description: Bad Request
  *       401:

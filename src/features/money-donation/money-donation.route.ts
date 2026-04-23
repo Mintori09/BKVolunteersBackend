@@ -63,6 +63,15 @@ const moneyDonationRouter = Router()
  *     responses:
  *       201:
  *         description: Created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/MoneyPhaseWithCampaign'
  */
 moneyDonationRouter.post(
     '/',
@@ -94,6 +103,15 @@ moneyDonationRouter.post(
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/MoneyPhaseWithCampaign'
  */
 moneyDonationRouter.get(
     '/:phaseId',
@@ -144,6 +162,15 @@ moneyDonationRouter.get(
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/MoneyPhaseWithCampaign'
  */
 moneyDonationRouter.put(
     '/:phaseId',
@@ -175,6 +202,15 @@ moneyDonationRouter.put(
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       nullable: true
  */
 moneyDonationRouter.delete(
     '/:phaseId',
@@ -206,6 +242,15 @@ moneyDonationRouter.delete(
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/DonationListOutput'
  */
 moneyDonationRouter.get(
     '/:phaseId/progress',

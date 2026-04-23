@@ -50,6 +50,15 @@ const donationRouter = Router()
  *     responses:
  *       201:
  *         description: Created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/DonationOutput'
  */
 donationRouter.post(
     '/money',
@@ -87,6 +96,15 @@ donationRouter.post(
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/DonationOutput'
  */
 donationRouter.post(
     '/:id/reject',
@@ -124,6 +142,15 @@ donationRouter.post(
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/DonationOutput'
  */
 donationRouter.put(
     '/:id',
@@ -158,6 +185,15 @@ donationRouter.put(
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/DonationListOutput'
  */
 donationRouter.get(
     '/me',
@@ -174,5 +210,54 @@ donationRouter.get(
     validate(adminDonationsSchema),
     donationController.getDonationsForAdmin
 )
+
+/**
+ * @openapi
+ * /donations/admin:
+ *   get:
+ *     summary: Get donations for admin review
+ *     tags: [Donation]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [PENDING, VERIFIED, REJECTED]
+ *       - in: query
+ *         name: phaseType
+ *         schema:
+ *           type: string
+ *           enum: [money, item]
+ *       - in: query
+ *         name: studentId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/DonationListOutput'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
 
 export default donationRouter

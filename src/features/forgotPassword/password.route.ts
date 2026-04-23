@@ -36,6 +36,15 @@ const passwordRouter = Router()
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       nullable: true
  *       400:
  *         description: Bad Request
  */
@@ -73,6 +82,15 @@ passwordRouter.post(
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       nullable: true
  *       400:
  *         description: Bad Request
  *       404:

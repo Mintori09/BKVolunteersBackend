@@ -5,6 +5,7 @@ import {
     createItemPhaseSchema,
     updateItemPhaseSchema,
     deleteItemPhaseSchema,
+    getItemPhaseByCampaignSchema,
 } from './item-phase.validation'
 import * as itemPhaseController from './item-phase.controller'
 
@@ -55,6 +56,15 @@ const itemPhaseRouter = Router()
  *     responses:
  *       201:
  *         description: Created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/ItemPhaseOutput'
  *       400:
  *         description: Bad Request
  *       401:
@@ -72,6 +82,13 @@ itemPhaseRouter.post(
     isCreator,
     validate(createItemPhaseSchema),
     itemPhaseController.createItemPhase
+)
+
+itemPhaseRouter.get(
+    '/',
+    isAuth,
+    validate(getItemPhaseByCampaignSchema),
+    itemPhaseController.getItemPhaseByCampaignId
 )
 
 /**
@@ -114,6 +131,15 @@ itemPhaseRouter.post(
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/ItemPhaseOutput'
  *       400:
  *         description: Bad Request
  *       401:

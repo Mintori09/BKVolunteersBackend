@@ -27,10 +27,10 @@ const authRouter = Router()
  *           schema:
  *             type: object
  *             required:
- *               - mssv
+ *               - username
  *               - password
  *             properties:
- *               email:
+ *               username:
  *                 type: string
  *                 format: string
  *               password:
@@ -39,6 +39,15 @@ const authRouter = Router()
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/LoginOutput'
  *       401:
  *         description: Unauthorized
  */
@@ -69,6 +78,15 @@ authRouter.post('/logout', isAuth, authController.handleLogout)
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/LoginOutput'
  *       401:
  *         description: Unauthorized
  *       403:
@@ -87,6 +105,15 @@ authRouter.post('/refresh', authController.handleRefresh)
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       nullable: true
  *       401:
  *         description: Unauthorized
  */
@@ -123,6 +150,15 @@ authRouter.get('/me', isAuth, authController.getMe)
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       nullable: true
  *       400:
  *         description: Bad Request
  *       401:

@@ -1,222 +1,133 @@
-# Donation API Documentation
+# Donation API
 
-This document outlines the API endpoints for the Donation module.
+> Base URL: `/api/v1/donations`
 
-## General Information
+## Overview
 
-- **Base URL**: `/donations`
-- **Authentication**: Most endpoints require a Bearer Token in the Authorization header.
-- **Content-Type**: `application/json`
-
----
+This module handles money donation submissions and the admin review workflow.
 
 ## Endpoints
 
-### 1. Submit Money Donation
+| Method | Path | Auth | Permission | Description |
+| --- | --- | --- | --- | --- |
+| `POST` | `/money` | Yes | `SINHVIEN` | Submit a money donation |
+| `POST` | `/:id/reject` | Yes | `CLB`, `LCD`, `DOANTRUONG` | Reject a donation |
+| `PUT` | `/:id` | Yes | `CLB`, `LCD`, `DOANTRUONG` | Verify a donation |
+| `GET` | `/me` | Yes | `SINHVIEN` | List the current student's donations |
+| `GET` | `/admin` | Yes | `CLB`, `LCD`, `DOANTRUONG` | List donations for admin review |
 
-Submits a new money donation with proof. Restricted to students (`SINHVIEN`).
+## Common Errors
 
-- **URL**: `/money`
-- **Method**: `POST`
-- **Auth Required**: Yes (`SINHVIEN`)
+- `400 Bad Request` when the payload or filter is invalid.
+- `401 Unauthorized` when the caller is not authenticated.
+- `403 Forbidden` when the caller does not have the required role.
+- `404 Not Found` when the donation or donation phase does not exist.
+- `409 Conflict` when the donation is not in a reviewable state.
 
-**Request Body**
+## Submit Money Donation
 
-| Field           | Type   | Description                         | Constraints        |
-| --------------- | ------ | ----------------------------------- | ------------------ |
-| `moneyPhaseId`  | number | The ID of the money donation phase. | Integer, positive. |
-| `amount`        | number | The amount of money donated.        | Number, positive.  |
-| `proofImageUrl` | string | URL of the proof image.             | Valid URL string.  |
+`POST /api/v1/donations/money`
 
-**Success Response**
+Input
 
-- **Code**: `201 CREATED`
-- **Content**:
-    ```json
-    {
-      "statusCode": 201,
-      "message": "Đóng góp đã được ghi nhận, chờ xác thực",
-      "data": { ...donationObject }
-    }
-    ```
+```json
+{
+  "moneyPhaseId": 1,
+  "amount": 100000,
+  "proofImageUrl": "https://example.com/proof.jpg"
+}
+```
 
-**Error Response**
+Output
 
-- `401 Unauthorized`: User not authenticated.
-- `403 Forbidden`: User does not have permission (e.g., not a student).
-- `404 Not Found`: Money phase not found.
-- `400 Bad Request`: Validation error or Campaign not active.
+- The created donation record with its initial status.
 
----
+Errors
 
-### 2. Reject Donation
+- `400` if required fields are missing or invalid.
+- `401` if the caller is not authenticated.
+- `403` if the caller is not `SINHVIEN`.
 
-Rejects a pending donation. Restricted to `CLB`, `LCD`, `DOANTRUONG`.
+## Reject Donation
 
-- **URL**: `/:id/reject`
-- **Method**: `POST`
-- **Auth Required**: Yes (`CLB`, `LCD`, `DOANTRUONG`)
+`POST /api/v1/donations/:id/reject`
 
-**URL Parameters**
+Input
 
-| Field | Type   | Description      |
-| ----- | ------ | ---------------- |
-| `id`  | string | The donation ID. |
+```json
+{
+  "reason": "string"
+}
+```
 
-**Request Body**
+Output
 
-| Field    | Type   | Description           | Constraints                    |
-| -------- | ------ | --------------------- | ------------------------------ |
-| `reason` | string | Reason for rejection. | Required, min 1 char, max 500. |
+- The updated donation record.
 
-**Success Response**
+Errors
 
-- **Code**: `200 OK`
-- **Content**:
-    ```json
-    {
-      "statusCode": 200,
-      "message": "Đã từ chối đóng góp",
-      "data": { ...updatedDonationObject }
-    }
-    ```
+- `403` if the caller is not allowed to review donations.
+- `404` if the donation does not exist.
 
-**Error Response**
+Notes
 
-- `400 Bad Request`: Donation is not in `PENDING` status.
-- `403 Forbidden`: User does not have permission to process this donation.
-- `404 Not Found`: Donation or Campaign not found.
+- Rejecting a donation creates a notification for the donor.
 
----
+## Verify Donation
 
-### 3. Verify Donation
+`PUT /api/v1/donations/:id`
 
-Verifies a pending donation with an actual amount. Restricted to `CLB`, `LCD`, `DOANTRUONG`.
+Input
 
-- **URL**: `/:id`
-- **Method**: `PUT`
-- **Auth Required**: Yes (`CLB`, `LCD`, `DOANTRUONG`)
+```json
+{
+  "verifiedAmount": 100000
+}
+```
 
-**URL Parameters**
+Output
 
-| Field | Type   | Description      |
-| ----- | ------ | ---------------- |
-| `id`  | string | The donation ID. |
+- The updated donation record.
 
-**Request Body**
+Errors
 
-| Field            | Type   | Description                           | Constraints           |
-| ---------------- | ------ | ------------------------------------- | --------------------- |
-| `verifiedAmount` | number | The actual verified amount.           | Optional, min 0.      |
-| `points`         | number | Points to award (for item donations). | Optional, int, min 0. |
+- `403` if the caller is not allowed to review donations.
+- `404` if the donation does not exist.
 
-**Success Response**
+Notes
 
-- **Code**: `200 OK`
-- **Content**:
-    ```json
-    {
-      "statusCode": 200,
-      "message": "Đã xác thực đóng góp",
-      "data": { ...updatedDonationObject }
-    }
-    ```
+- Verifying a donation creates a notification for the donor.
 
-**Logic Details**
+## My Donations
 
-- If the donation is a money donation, points are calculated as `verifiedAmount / 10000`.
-- If the donation is an item donation, points default to 5 or use the provided `points` value.
-- Updates the campaign's current amount if it's a money donation.
+`GET /api/v1/donations/me`
 
-**Error Response**
+Input
 
-- `400 Bad Request`: Donation is not in `PENDING` status.
-- `403 Forbidden`: User does not have permission.
-- `404 Not Found`: Donation or Campaign not found.
+| Name | Type | Description |
+| --- | --- | --- |
+| `status` | string | Filter by `PENDING`, `VERIFIED`, or `REJECTED` |
+| `page` | string | Page number |
+| `limit` | string | Items per page |
 
----
+Output
 
-### 4. Get My Donations
+- Paginated donation list: `{ donations: DonationWithPhase[], meta: { total, page, limit, totalPages } }`.
 
-Retrieves the donation history for the logged-in student. Restricted to `SINHVIEN`.
+## Admin Donations
 
-- **URL**: `/me`
-- **Method**: `GET`
-- **Auth Required**: Yes (`SINHVIEN`)
+`GET /api/v1/donations/admin`
 
-**Query Parameters**
+Input
 
-| Field    | Type   | Description                                          |
-| -------- | ------ | ---------------------------------------------------- |
-| `status` | string | Filter by status: `PENDING`, `VERIFIED`, `REJECTED`. |
-| `page`   | string | Page number (default: 1).                            |
-| `limit`  | string | Items per page (default: 10).                        |
+| Name | Type | Description |
+| --- | --- | --- |
+| `status` | string | Filter by donation status |
+| `phaseType` | string | Filter by `money` or `item` |
+| `studentId` | string | Filter by student ID |
+| `page` | string | Page number |
+| `limit` | string | Items per page |
 
-**Success Response**
+Output
 
-- **Code**: `200 OK`
-- **Content**:
-    ```json
-    {
-      "statusCode": 200,
-      "data": {
-        "donations": [
-          {
-            "id": "uuid",
-            "amount": "string",
-            "verifiedAmount": "string | null",
-            "status": "PENDING | VERIFIED | REJECTED",
-            ...
-          }
-        ],
-        "meta": {
-          "total": 100,
-          "page": 1,
-          "limit": 10,
-          "totalPages": 10
-        }
-      }
-    }
-    ```
-
----
-
-### 5. Get Donations for Admin
-
-Retrieves a list of donations for administrative view. Restricted to `CLB`, `LCD`, `DOANTRUONG`.
-
-- **URL**: `/admin`
-- **Method**: `GET`
-- **Auth Required**: Yes (`CLB`, `LCD`, `DOANTRUONG`)
-
-**Query Parameters**
-
-| Field       | Type   | Description                                          |
-| ----------- | ------ | ---------------------------------------------------- |
-| `status`    | string | Filter by status: `PENDING`, `VERIFIED`, `REJECTED`. |
-| `phaseType` | string | Filter by type: `money`, `item`.                     |
-| `studentId` | string | Filter by specific student ID.                       |
-| `page`      | string | Page number (default: 1).                            |
-| `limit`     | string | Items per page (default: 20).                        |
-
-**Success Response**
-
-- **Code**: `200 OK`
-- **Content**:
-    ```json
-    {
-      "statusCode": 200,
-      "data": {
-        "donations": [
-          {
-            "id": "uuid",
-            "student": { "id": "...", "mssv": "...", "fullName": "..." },
-            "moneyPhase": { ... },
-            "itemPhase": { ... },
-            ...
-          }
-        ],
-        "meta": { ... }
-      }
-    }
-    ```
+- Paginated donation list for administrative review.

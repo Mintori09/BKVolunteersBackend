@@ -1,142 +1,118 @@
-# Club API Documentation
+# Club API
 
-This document outlines the API endpoints for managing Clubs (Câu lạc bộ).
+> Base URL: `/api/v1/clubs`
+
+## Overview
+
+Clubs are managed by `DOANTRUONG` and can be listed or retrieved by authenticated users.
 
 ## Endpoints
 
-### 1. Create Club
+| Method | Path | Auth | Permission | Description |
+| --- | --- | --- | --- | --- |
+| `POST` | `/` | Yes | `DOANTRUONG` | Create a club |
+| `PUT` | `/:id` | Yes | `DOANTRUONG` | Update a club |
+| `DELETE` | `/:id` | Yes | `DOANTRUONG` | Delete a club |
+| `GET` | `/` | Yes | Authenticated | List clubs |
+| `GET` | `/:id` | Yes | Authenticated | Get one club |
 
-Creates a new club.
+## Common Errors
 
-- **URL**: `/`
-- **Method**: `POST`
-- **Auth Required**: Yes (Bearer Token)
-- **Permissions Required**: `DOANTRUONG`
+- `400 Bad Request` when the payload is invalid.
+- `401 Unauthorized` when the caller is not authenticated.
+- `403 Forbidden` when the caller is not `DOANTRUONG` for mutations.
+- `404 Not Found` when the club or referenced leader does not exist.
 
-**Request Body**
+## Create Club
 
-| Field       | Type   | Required | Constraints       | Description             |
-| ----------- | ------ | -------- | ----------------- | ----------------------- |
-| `name`      | string | Yes      | min: 1, max: 255  | Name of the club        |
-| `facultyId` | number | No       | integer, positive | ID of the faculty       |
-| `leaderId`  | string | No       | min: 1            | ID of the user (leader) |
+`POST /api/v1/clubs`
 
-**Success Response**
+Input
 
-- **Code**: `201 CREATED`
-- **Content**: The created club object.
+```json
+{
+  "name": "string",
+  "facultyId": 1,
+  "leaderId": "string"
+}
+```
 
-**Error Responses**
+Output
 
-- **Code**: `404 NOT FOUND` - Leader user not found.
-- **Code**: `400 BAD REQUEST` - Validation error.
+- The created club object, including any resolved faculty or leader relation.
 
----
+Errors
 
-### 2. Update Club
+- `403` if the caller is not `DOANTRUONG`.
+- `404` if `leaderId` is provided but the user does not exist.
 
-Updates an existing club by ID.
+## Update Club
 
-- **URL**: `/:id`
-- **Method**: `PUT`
-- **Auth Required**: Yes (Bearer Token)
-- **Permissions Required**: `DOANTRUONG`
+`PUT /api/v1/clubs/:id`
 
-**URL Parameters**
+Input
 
-| Field | Type   | Description        |
-| ----- | ------ | ------------------ |
-| `id`  | string | The ID of the club |
+```json
+{
+  "name": "string",
+  "facultyId": 1,
+  "leaderId": "string"
+}
+```
 
-**Request Body**
+Output
 
-| Field       | Type   | Required | Constraints                 | Description             |
-| ----------- | ------ | -------- | --------------------------- | ----------------------- |
-| `name`      | string | No       | min: 1, max: 255            | Name of the club        |
-| `facultyId` | number | No       | integer, positive, nullable | ID of the faculty       |
-| `leaderId`  | string | No       | min: 1, nullable            | ID of the user (leader) |
+- The updated club object.
 
-**Success Response**
+Errors
 
-- **Code**: `200 OK`
-- **Content**: The updated club object.
+- `403` if the caller is not `DOANTRUONG`.
+- `404` if the club does not exist.
 
-**Error Responses**
+## Delete Club
 
-- **Code**: `404 NOT FOUND` - Club not found.
+`DELETE /api/v1/clubs/:id`
 
----
+Output
 
-### 3. Delete Club
+- `success: true` with a null payload.
 
-Soft deletes a club by ID.
+Errors
 
-- **URL**: `/:id`
-- **Method**: `DELETE`
-- **Auth Required**: Yes (Bearer Token)
-- **Permissions Required**: `DOANTRUONG`
+- `403` if the caller is not `DOANTRUONG`.
+- `404` if the club does not exist.
 
-**URL Parameters**
+## List Clubs
 
-| Field | Type   | Description        |
-| ----- | ------ | ------------------ |
-| `id`  | string | The ID of the club |
+`GET /api/v1/clubs`
 
-**Success Response**
+Input
 
-- **Code**: `200 OK`
-- **Content**: `null`
-- **Message**: "Xóa CLB thành công"
+| Name | Type | Default | Description |
+| --- | --- | --- | --- |
+| `page` | number | `1` | Page number |
+| `limit` | number | `20` | Items per page |
+| `facultyId` | number | - | Filter by faculty |
+| `search` | string | - | Search by club name |
 
-**Error Responses**
+Output
 
-- **Code**: `404 NOT FOUND` - Club not found.
+- Paginated club list: `{ data: ClubDetail[], meta: { total, page, limit, totalPages } }`.
 
----
+## Club Detail
 
-### 4. Get All Clubs
+`GET /api/v1/clubs/:id`
 
-Retrieves a paginated list of clubs.
+Input
 
-- **URL**: `/`
-- **Method**: `GET`
-- **Auth Required**: Yes (Bearer Token)
+| Name | Type | Description |
+| --- | --- | --- |
+| `id` | string | Club ID |
 
-**Query Parameters**
+Output
 
-| Field       | Type   | Default | Constraints              | Description          |
-| ----------- | ------ | ------- | ------------------------ | -------------------- |
-| `page`      | number | 1       | integer, min: 1          | Page number          |
-| `limit`     | number | 20      | integer, min: 1, max: 50 | Items per page       |
-| `facultyId` | number | -       | integer, positive        | Filter by faculty ID |
-| `search`    | string | -       | max: 100                 | Search by club name  |
+- A single club object. The response may include nested `faculty` and `leader` data.
 
-**Success Response**
+Errors
 
-- **Code**: `200 OK`
-- **Content**: Paginated list of clubs.
-
----
-
-### 5. Get Club By ID
-
-Retrieves a specific club by ID.
-
-- **URL**: `/:id`
-- **Method**: `GET`
-- **Auth Required**: Yes (Bearer Token)
-
-**URL Parameters**
-
-| Field | Type   | Description        |
-| ----- | ------ | ------------------ |
-| `id`  | string | The ID of the club |
-
-**Success Response**
-
-- **Code**: `200 OK`
-- **Content**: The club object including faculty and leader details.
-
-**Error Responses**
-
-- **Code**: `404 NOT FOUND` - Club not found.
+- `404` if the club does not exist.
