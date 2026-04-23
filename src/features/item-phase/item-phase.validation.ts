@@ -42,6 +42,12 @@ export const updateItemPhaseSchema: RequestValidationSchema = {
     }),
 }
 
+export const getItemPhaseByCampaignSchema: RequestValidationSchema = {
+    params: z.object({
+        campaignId: z.string().min(1, 'Campaign ID là bắt buộc'),
+    }),
+}
+
 export const deleteItemPhaseSchema: RequestValidationSchema = {
     params: z.object({
         campaignId: z.string().min(1, 'Campaign ID là bắt buộc'),

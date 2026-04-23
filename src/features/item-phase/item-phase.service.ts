@@ -40,6 +40,20 @@ export const createItemPhase = async (
     return itemPhaseRepository.createItemPhase(campaignId, data)
 }
 
+export const getItemPhaseByCampaignId = async (campaignId: string) => {
+    const itemPhase =
+        await itemPhaseRepository.findItemPhaseByCampaignId(campaignId)
+
+    if (!itemPhase) {
+        throw new ApiError(
+            HttpStatus.NOT_FOUND,
+            'Không tìm thấy giai đoạn quyên góp hiện vật'
+        )
+    }
+
+    return itemPhase
+}
+
 export const updateItemPhase = async (
     campaignId: string,
     phaseId: number,

@@ -76,6 +76,21 @@ export const updateItemPhase = catchAsync(
     }
 )
 
+export const getItemPhaseByCampaignId = catchAsync(
+    async (req: Request, res: Response) => {
+        const campaignId = getParam(req.params.campaignId)
+        const itemPhase =
+            await itemPhaseService.getItemPhaseByCampaignId(campaignId)
+
+        const responseData = {
+            ...itemPhase,
+            acceptedItems: JSON.parse(itemPhase.acceptedItems),
+        }
+
+        return ApiResponse.success(res, responseData)
+    }
+)
+
 export const deleteItemPhase = catchAsync(
     async (req: Request, res: Response) => {
         const userId = req.payload?.userId as string | undefined
