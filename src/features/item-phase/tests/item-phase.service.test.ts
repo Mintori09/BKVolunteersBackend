@@ -142,6 +142,37 @@ describe('ItemPhase Service', () => {
         })
     })
 
+    describe('getItemPhaseByCampaignId', () => {
+        it('should return item phase by campaign id', async () => {
+            ;(itemPhaseRepository.findItemPhaseByCampaignId as jest.Mock).mockResolvedValue({
+                id: 1,
+                campaignId: 'campaign-1',
+                acceptedItems: JSON.stringify(['Book']),
+            })
+
+            const result =
+                await itemPhaseService.getItemPhaseByCampaignId('campaign-1')
+
+            expect(itemPhaseRepository.findItemPhaseByCampaignId).toHaveBeenCalledWith(
+                'campaign-1'
+            )
+            expect(result.id).toBe(1)
+        })
+
+        it('should throw NOT_FOUND when item phase does not exist', async () => {
+            ;(itemPhaseRepository.findItemPhaseByCampaignId as jest.Mock).mockResolvedValue(
+                null
+            )
+
+            await expect(
+                itemPhaseService.getItemPhaseByCampaignId('campaign-1')
+            ).rejects.toThrow(ApiError)
+            await expect(
+                itemPhaseService.getItemPhaseByCampaignId('campaign-1')
+            ).rejects.toHaveProperty('statusCode', HttpStatus.NOT_FOUND)
+        })
+    })
+
     describe('updateItemPhase', () => {
         it('should throw NOT_FOUND if campaign not found', async () => {
             ;(itemPhaseRepository.findCampaignById as jest.Mock).mockResolvedValue(null)

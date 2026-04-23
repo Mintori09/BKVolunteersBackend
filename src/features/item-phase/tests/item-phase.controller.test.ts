@@ -157,6 +157,34 @@ describe('ItemPhase Controller', () => {
         })
     })
 
+    describe('getItemPhaseByCampaignId', () => {
+        it('should return item phase by campaign id', async () => {
+            req.params = { campaignId: 'campaign-1' }
+            const mockItemPhase = {
+                id: 1,
+                campaignId: 'campaign-1',
+                acceptedItems: JSON.stringify(['Book']),
+            }
+            ;(itemPhaseService.getItemPhaseByCampaignId as jest.Mock).mockResolvedValue(
+                mockItemPhase
+            )
+            ;(ApiResponse.success as jest.Mock).mockReturnValue({})
+
+            await itemPhaseController.getItemPhaseByCampaignId(req, res, next)
+
+            expect(itemPhaseService.getItemPhaseByCampaignId).toHaveBeenCalledWith(
+                'campaign-1'
+            )
+            expect(ApiResponse.success).toHaveBeenCalledWith(
+                res,
+                expect.objectContaining({
+                    id: 1,
+                    acceptedItems: ['Book'],
+                })
+            )
+        })
+    })
+
     describe('deleteItemPhase', () => {
         it('should return UNAUTHORIZED error if no userId in payload', async () => {
             req.payload = undefined
