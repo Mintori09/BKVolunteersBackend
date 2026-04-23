@@ -322,6 +322,16 @@ export const getCampaigns = catchAsync(async (req: Request, res: Response) => {
     return ApiResponse.success(res, result)
 })
 
+export const getCampaignStatistics = catchAsync(
+    async (req: Request, res: Response) => {
+        const id = req.params.id as string
+
+        const result = await campaignService.getCampaignStatistics(id)
+
+        return ApiResponse.success(res, result)
+    }
+)
+
 export const getAvailableCampaigns = catchAsync(
     async (req: Request, res: Response) => {
         const userRole = req.payload?.role as UserRole

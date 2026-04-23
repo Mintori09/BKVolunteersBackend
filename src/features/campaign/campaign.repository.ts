@@ -242,3 +242,118 @@ export const softDeleteCampaign = async (id: string) => {
         data: { deletedAt: new Date() },
     })
 }
+
+export const getCampaignStatistics = async (campaignId: string) => {
+    const [
+        verifiedMoneyAggregate,
+        pendingMoneyDonations,
+        verifiedMoneyDonations,
+        rejectedMoneyDonations,
+        pendingItemDonations,
+        verifiedItemDonations,
+        rejectedItemDonations,
+        pendingParticipants,
+        approvedParticipants,
+        rejectedParticipants,
+        checkedInParticipants,
+        totalEvents,
+    ] = await Promise.all([
+        prismaClient.donation.aggregate({
+            where: {
+                status: 'VERIFIED',
+                moneyPhase: {
+                    is: {
+                        campaignId,
+                    },
+                },
+            },
+            _sum: {
+                verifiedAmount: true,
+            },
+        }),
+        prismaClient.donation.count({
+            where: {
+                status: 'PENDING',
+                moneyPhase: { is: { campaignId } },
+            },
+        }),
+        prismaClient.donation.count({
+            where: {
+                status: 'VERIFIED',
+                moneyPhase: { is: { campaignId } },
+            },
+        }),
+        prismaClient.donation.count({
+            where: {
+                status: 'REJECTED',
+                moneyPhase: { is: { campaignId } },
+            },
+        }),
+        prismaClient.donation.count({
+            where: {
+                status: 'PENDING',
+                itemPhase: { is: { campaignId } },
+            },
+        }),
+        prismaClient.donation.count({
+            where: {
+                status: 'VERIFIED',
+                itemPhase: { is: { campaignId } },
+            },
+        }),
+        prismaClient.donation.count({
+            where: {
+                status: 'REJECTED',
+                itemPhase: { is: { campaignId } },
+            },
+        }),
+        prismaClient.participant.count({
+            where: {
+                status: 'PENDING',
+                event: { is: { campaignId } },
+            },
+        }),
+        prismaClient.participant.count({
+            where: {
+                status: 'APPROVED',
+                event: { is: { campaignId } },
+            },
+        }),
+        prismaClient.participant.count({
+            where: {
+                status: 'REJECTED',
+                event: { is: { campaignId } },
+            },
+        }),
+        prismaClient.participant.count({
+            where: {
+                isCheckedIn: true,
+                event: { is: { campaignId } },
+            },
+        }),
+        prismaClient.eventCampaign.count({
+            where: { campaignId },
+        }),
+    ])
+
+    return {
+        totalVerifiedAmount: Number(verifiedMoneyAggregate._sum.verifiedAmount || 0),
+        moneyDonations: {
+            pending: pendingMoneyDonations,
+            verified: verifiedMoneyDonations,
+            rejected: rejectedMoneyDonations,
+        },
+        itemDonations: {
+            pending: pendingItemDonations,
+            verified: verifiedItemDonations,
+            rejected: rejectedItemDonations,
+        },
+        participants: {
+            pending: pendingParticipants,
+            approved: approvedParticipants,
+            rejected: rejectedParticipants,
+            checkedIn: checkedInParticipants,
+        },
+        totalEvents,
+    }
+}

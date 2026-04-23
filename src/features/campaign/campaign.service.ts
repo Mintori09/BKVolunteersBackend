@@ -10,6 +10,7 @@ import {
     canCancelCampaign,
     canUploadFile,
 } from './campaign.permission'
+import * as notificationService from 'src/features/notification/notification.service'
 import {
     validateStatusTransition,
     isCampaignApprovable,
@@ -57,6 +58,12 @@ export const getCampaignById = async (id: string) => {
     }
 
     return campaign
+}
+
+export const getCampaignStatistics = async (id: string) => {
+    await getCampaignById(id)
+
+    return campaignRepository.getCampaignStatistics(id)
 }
 
 export const updateCampaign = async (
@@ -150,10 +157,21 @@ export const approveCampaign = async (
         throw new ApiError(HttpStatus.BAD_REQUEST, statusCheck.message!)
     }
 
-    return campaignRepository.updateCampaignStatus(id, 'ACTIVE', {
+    const updatedCampaign = await campaignRepository.updateCampaignStatus(id, 'ACTIVE', {
         approverId: userId,
         adminComment: comment,
     })
+
+    await notificationService.createForUser({
+        userId: campaign.creatorId,
+        title: 'Chiến dịch được phê duyệt',
+        message: `Chiến dịch "${campaign.title}" đã được phê duyệt`,
+        type: 'CAMPAIGN_APPROVED',
+        relatedEntityType: 'campaign',
+        relatedEntityId: campaign.id,
+    })
+
+    return updatedCampaign
 }
 
 export const rejectCampaign = async (
@@ -185,10 +203,21 @@ export const rejectCampaign = async (
         throw new ApiError(HttpStatus.BAD_REQUEST, statusCheck.message!)
     }
 
-    return campaignRepository.updateCampaignStatus(id, 'REJECTED', {
+    const updatedCampaign = await campaignRepository.updateCampaignStatus(id, 'REJECTED', {
         approverId: userId,
         adminComment: comment,
     })
+
+    await notificationService.createForUser({
+        userId: campaign.creatorId,
+        title: 'Chiến dịch bị từ chối',
+        message: `Chiến dịch "${campaign.title}" bị từ chối. Lý do: ${comment}`,
+        type: 'CAMPAIGN_REJECTED',
+        relatedEntityType: 'campaign',
+        relatedEntityId: campaign.id,
+    })
+
+    return updatedCampaign
 }
 
 export const completeCampaign = async (
