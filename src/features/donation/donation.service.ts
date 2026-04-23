@@ -16,6 +16,7 @@ import {
 } from './donation.types'
 import { ApiError } from 'src/utils/ApiError'
 import { HttpStatus } from 'src/common/constants'
+import * as notificationService from 'src/features/notification/notification.service'
 
 export const submitDonation = async (
     studentId: string,
@@ -80,6 +81,15 @@ export const rejectDonation = async (
         data.reason
     )
 
+    await notificationService.createForStudent({
+        studentId: donation.studentId,
+        title: 'Đóng góp bị từ chối',
+        message: `Đóng góp của bạn cho chiến dịch "${campaign.title}" bị từ chối. Lý do: ${data.reason}`,
+        type: 'DONATION_REJECTED',
+        relatedEntityType: 'donation',
+        relatedEntityId: donationId,
+    })
+
     return updatedDonation
 }
 
@@ -141,6 +151,15 @@ export const verifyDonation = async (
             awardedBy: userId,
         })
     }
+
+    await notificationService.createForStudent({
+        studentId: donation.studentId,
+        title: 'Đóng góp đã được xác thực',
+        message: `Đóng góp của bạn cho chiến dịch "${campaign.title}" đã được xác thực`,
+        type: 'DONATION_VERIFIED',
+        relatedEntityType: 'donation',
+        relatedEntityId: donationId,
+    })
 
     return updatedDonation
 }

@@ -4,10 +4,12 @@ import * as donationRepository from '../donation.repository'
 import * as gamificationService from '../../gamification/gamification.service'
 import { canSubmitDonation, canRejectDonation, canVerifyDonation } from '../donation.permission'
 import * as donationService from '../donation.service'
+import * as notificationService from 'src/features/notification/notification.service'
 
 jest.mock('../donation.repository')
 jest.mock('../../gamification/gamification.service')
 jest.mock('../donation.permission')
+jest.mock('src/features/notification/notification.service')
 
 describe('Donation Service', () => {
     beforeEach(() => {
@@ -141,6 +143,39 @@ describe('Donation Service', () => {
             expect(result).toEqual(mockDonation)
             expect(donationRepository.rejectDonation).toHaveBeenCalledWith('don-1', 'Invalid')
         })
+
+        it('should create notification when donation is rejected', async () => {
+            ;(donationRepository.findDonationById as jest.Mock).mockResolvedValue({
+                id: 'don-1',
+                studentId: 'student-1',
+                status: 'PENDING',
+                moneyPhase: {
+                    campaign: { id: 'campaign-1', title: 'Campaign A', creatorId: 'user-1' },
+                },
+                itemPhase: null,
+            })
+            ;(canRejectDonation as jest.Mock).mockReturnValue({ allowed: true })
+            ;(donationRepository.rejectDonation as jest.Mock).mockResolvedValue({
+                id: 'don-1',
+                status: 'REJECTED',
+            })
+
+            await donationService.rejectDonation(
+                'don-1',
+                { reason: 'Sai minh chứng' },
+                'user-1',
+                'CLB'
+            )
+
+            expect(notificationService.createForStudent).toHaveBeenCalledWith({
+                studentId: 'student-1',
+                title: 'Đóng góp bị từ chối',
+                message: 'Đóng góp của bạn cho chiến dịch "Campaign A" bị từ chối. Lý do: Sai minh chứng',
+                type: 'DONATION_REJECTED',
+                relatedEntityType: 'donation',
+                relatedEntityId: 'don-1',
+            })
+        })
     })
 
     describe('verifyDonation', () => {
@@ -268,6 +303,41 @@ describe('Donation Service', () => {
             await donationService.verifyDonation('don-1', { verifiedAmount: 0 }, 'user-1', 'CLB')
 
             expect(gamificationService.awardPoints).not.toHaveBeenCalled()
+        })
+
+        it('should create notification when donation is verified', async () => {
+            ;(donationRepository.findDonationById as jest.Mock).mockResolvedValue({
+                id: 'don-1',
+                studentId: 'student-1',
+                status: 'PENDING',
+                moneyPhaseId: 1,
+                moneyPhase: {
+                    campaign: { id: 'campaign-1', title: 'Campaign A', creatorId: 'user-1' },
+                },
+                itemPhase: null,
+            })
+            ;(canVerifyDonation as jest.Mock).mockReturnValue({ allowed: true })
+            ;(donationRepository.verifyDonation as jest.Mock).mockResolvedValue({
+                id: 'don-1',
+                status: 'VERIFIED',
+            })
+            ;(gamificationService.awardPoints as jest.Mock).mockResolvedValue([])
+
+            await donationService.verifyDonation(
+                'don-1',
+                { verifiedAmount: 50000 },
+                'user-1',
+                'CLB'
+            )
+
+            expect(notificationService.createForStudent).toHaveBeenCalledWith({
+                studentId: 'student-1',
+                title: 'Đóng góp đã được xác thực',
+                message: 'Đóng góp của bạn cho chiến dịch "Campaign A" đã được xác thực',
+                type: 'DONATION_VERIFIED',
+                relatedEntityType: 'donation',
+                relatedEntityId: 'don-1',
+            })
         })
     })
 
