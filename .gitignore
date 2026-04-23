@@ -13,3 +13,6 @@ generated/
 prisma/migrations
 students.json
 session.json
+.codex
+docs/.codex
+docs/superpowers/
