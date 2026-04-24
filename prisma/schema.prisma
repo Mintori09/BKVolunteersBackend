@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,265 +6,433 @@ datasource db {
   provider = "mysql"
 }
 
-// ============================================
+//////////////////////////////////////////////////////
 // ENUMS
-// ============================================
+//////////////////////////////////////////////////////
 
-enum UserRole {
-  CLB // Câu lạc bộ
-  LCD // Liên chi đoàn
-  DOANTRUONG // Đoàn trường
+enum UserAccountType {
+  STUDENT
+  MANAGER
 }
 
-enum CampaignScope {
-  KHOA // Cấp khoa
-  TRUONG // Cấp trường
+enum UserAccountStatus {
+  ACTIVE
+  LOCKED
+  DISABLED
+}
+
+enum ManagerRoleType {
+  CLB_MANAGER
+  LCD_MANAGER
+  DOANTRUONG_ADMIN
+}
+
+enum ClubStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ClubMembershipStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REMOVED
+}
+
+enum OrganizerType {
+  CLB
+  LCD
+  DOANTRUONG
+}
+
+enum ParticipationScopeType {
+  FACULTY_INTERNAL
+  CLUB_INTERNAL
+  SCHOOL_WIDE
 }
 
 enum CampaignStatus {
   DRAFT
-  PENDING
-  ACTIVE
-  REJECTED
-  COMPLETED
+  READY_FOR_REVIEW
+  SUBMITTED
+  REVISION_REQUIRED
+  APPROVED
+  PUBLISHED
+  ONGOING
+  PAUSED
+  ENDED
+  ARCHIVED
   CANCELLED
 }
 
-enum DonationStatus {
+enum CampaignDocumentType {
+  MASTER_PLAN
+  REGULATION
+  BUDGET
+  REPORT
+  GUIDELINE
+  OTHER
+}
+
+enum ReviewStatus {
+  SUBMITTED
+  UNDER_PRE_REVIEW
+  REVISION_REQUIRED
+  PRE_APPROVED
+  FINAL_APPROVED
+  REJECTED
+}
+
+enum ReviewCommentScopeType {
+  CAMPAIGN
+  MODULE
+  DOCUMENT
+}
+
+enum CampaignModuleType {
+  VOLUNTEER_RECRUITMENT
+  FUNDRAISING_MONEY
+  ITEM_DONATION
+  EVENT
+}
+
+enum CampaignModuleStatus {
+  DRAFT
+  READY
+  ACTIVE
+  PAUSED
+  ENDED
+  CANCELLED
+}
+
+enum ModuleVisibilityStatus {
+  INTERNAL
+  PUBLIC
+}
+
+enum ModuleParticipationScope {
+  INHERIT_CAMPAIGN_SCOPE
+  FACULTY_ONLY
+  CLUB_MEMBERS_ONLY
+  SCHOOL_WIDE
+}
+
+enum ModuleRegistrationType {
+  VOLUNTEER
+  EVENT
+  ITEM_PRE_REGISTRATION
+}
+
+enum ModuleRegistrationStatus {
+  PENDING
+  APPROVED
+  WAITLISTED
+  REJECTED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum CheckinMethod {
+  MANUAL
+  QR
+}
+
+enum ContributionStatus {
   PENDING
   VERIFIED
   REJECTED
 }
 
-enum ParticipantStatus {
-  PENDING
-  APPROVED
+enum ItemContributionStatus {
+  PLEDGED
+  RECEIVED
   REJECTED
-  WAITLISTED
 }
 
-enum PointSourceType {
-  EVENT_PARTICIPATION
-  MONEY_DONATION
-  ITEM_DONATION
-  MANUAL_ADJUSTMENT
-  BONUS
+enum HandoverConfirmationMethod {
+  MANUAL_CONFIRM
+  QR_CHECKIN
+  SIGNATURE
 }
 
-// ============================================
-// CORE MODELS
-// ============================================
+enum PaymentMethodType {
+  PAYOS
+  MANUAL_TRANSFER
+}
 
-/// Danh mục khoa
+enum PaymentProviderName {
+  PAYOS
+}
+
+enum PaymentAccountVerificationStatus {
+  PENDING
+  ACTIVE
+  DISABLED
+}
+
+enum EventFormat {
+  OFFLINE
+  ONLINE
+  HYBRID
+}
+
+enum CampaignMediaType {
+  GALLERY
+  COVERAGE
+  EVIDENCE
+}
+
+enum NotificationType {
+  CAMPAIGN
+  REGISTRATION
+  CONTRIBUTION
+  CERTIFICATE
+  REVIEW
+  SYSTEM
+}
+
+enum NotificationTargetType {
+  CAMPAIGN
+  MODULE
+  REGISTRATION
+  CONTRIBUTION
+  CERTIFICATE
+  REVIEW_REQUEST
+  PAYMENT_ACCOUNT
+}
+
+enum CertificateType {
+  VOLUNTEER_COMPLETION
+  DONOR_CERTIFICATE
+  ORGANIZER_CERTIFICATE
+  PARTNER_CERTIFICATE
+}
+
+enum CertificateRecipientType {
+  STUDENT
+  DONOR
+  ORGANIZER
+  PARTNER
+}
+
+enum CertificateStatus {
+  PENDING
+  SNAPSHOT_LOCKED
+  RENDERING
+  READY
+  SIGNED
+  SENT
+  FAILED
+  REVOKED
+}
+
+enum CertificateDeliveryStatus {
+  NOT_SENT
+  SENT
+  FAILED
+}
+
+enum CertificateTemplateSourceType {
+  HTML
+  DOCX_LAYOUT
+  PDF_BACKGROUND
+}
+
+enum CertificateSigningLevel {
+  LEVEL_1_INTERNAL_MARK
+  LEVEL_2_PDF_SIGN
+  LEVEL_3_REMOTE_CA
+}
+
+enum CertificateRuleEngineType {
+  REGISTRATION_STATUS
+  CONTRIBUTION_VERIFIED
+  ITEM_RECEIVED
+  MANUAL_APPROVAL
+  CUSTOM
+}
+
+enum CertificateJobType {
+  RENDER
+  SIGN
+  RENDER_AND_SIGN
+}
+
+enum CertificateJobStatus {
+  PENDING
+  PROCESSING
+  SUCCESS
+  FAILED
+}
+
+enum CertificateAuditAction {
+  CREATED
+  SNAPSHOT_LOCKED
+  RENDER_REQUESTED
+  RENDER_SUCCESS
+  SIGN_SUCCESS
+  EMAIL_SENT
+  REVOKED
+  REISSUED
+}
+
+enum CertificateVerifyResultStatus {
+  VALID
+  REVOKED
+  NOT_FOUND
+  BROKEN_FILE
+}
+
+enum CertificateDigitalSignatureStatus {
+  PENDING
+  SIGNED
+  FAILED
+  REVOKED
+}
+
+//////////////////////////////////////////////////////
+// CORE FOUNDATION
+//////////////////////////////////////////////////////
+
 model Faculty {
-  id        Int       @id @default(autoincrement())
-code      String    @unique @db.Char(3)
-  name      String    @db.VarChar(255)
-  users     User[]
-  students  Student[]
-  clubs     Club[]
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  id        Int      @id @default(autoincrement())
+  code      String   @unique @db.VarChar(20)
+  name      String   @db.VarChar(255)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  managers        ManagerAccount[]          @relation("FacultyManagers")
+  students        Student[]
+  clubs           Club[]
+  campaigns       Campaign[]
+  paymentAccounts OrganizerPaymentAccount[] @relation("FacultyPaymentAccounts")
+
+  @@index([code])
   @@map("faculties")
 }
 
-/// Tài khoản quản lý (Admin, Đoàn trường, Liên chi đoàn, Trưởng CLB)
 model User {
-  id        String    @id @default(cuid())
-  username  String    @unique @db.VarChar(50)
-  email     String    @unique @db.VarChar(255)
-  password  String    @db.VarChar(255)
-  role      UserRole  @default(LCD)
-  facultyId Int?      @map("faculty_id")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
+  id           String            @id @default(uuid()) @db.Char(36)
+  username     String            @unique @db.VarChar(50)
+  email        String            @unique @db.VarChar(255)
+  passwordHash String            @db.VarChar(255)
+  accountType  UserAccountType
+  status       UserAccountStatus @default(ACTIVE)
+  avatarFileId String?           @db.Char(36)
+  lastLoginAt  DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  deletedAt    DateTime?
 
-  faculty             Faculty?             @relation(fields: [facultyId], references: [id], onDelete: SetNull)
-  clubs               Club[]
-  campaignsAsCreator  Campaign[]           @relation("CampaignCreator")
-  campaignsAsApprover Campaign[]           @relation("CampaignApprover")
-  accounts            Account[]
-  resetTokens         ResetToken[]
-  refreshTokens       RefreshToken[]
+  avatarFile File? @relation("UserAvatarFile", fields: [avatarFileId], references: [id], onDelete: SetNull)
+
+  studentProfile Student?
+  managerProfile ManagerAccount?
+
+  oauthAccounts     UserOAuthAccount[]
+  refreshTokens     UserRefreshToken[]
+  resetTokens       UserResetToken[]
+  emailVerifyTokens UserEmailVerificationToken[]
 
   @@index([email])
   @@index([username])
-  @@index([facultyId])
+  @@index([accountType])
+  @@index([status])
   @@map("users")
 }
 
-/// Sinh viên - người tham gia hoạt động tình nguyện
-model Student {
-  id          String    @id @default(cuid())
-  mssv        String    @unique @db.VarChar(9)
-  fullName    String    @map("full_name") @db.VarChar(255)
-  email       String    @unique @db.VarChar(255)
-  password    String    @db.VarChar(255)
-facultyId String?  @map("faculty_id") @db.Char(3)
-  className   String?   @map("class_name") @db.VarChar(50)
-  phone       String?   @db.VarChar(15)
-  totalPoints Int       @default(0) @map("total_points")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  deletedAt   DateTime? @map("deleted_at")
+model ManagerAccount {
+  id            String          @id @default(uuid()) @db.Char(36)
+  userId        String          @unique @db.Char(36)
+  roleType      ManagerRoleType
+  facultyId     Int?
+  managedClubId String?         @db.Char(36)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  deletedAt     DateTime?
 
-  faculty           Faculty?            @relation(fields: [facultyId], references: [code], onDelete: SetNull)
-  titles            StudentTitle[]
-  pointTransactions PointTransaction[]
-  donations         Donation[]
-  participants      Participant[]
-  refreshTokens     StudentRefreshToken[]
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  faculty     Faculty? @relation("FacultyManagers", fields: [facultyId], references: [id], onDelete: SetNull)
+  managedClub Club?    @relation("ClubManagedBy", fields: [managedClubId], references: [id], onDelete: SetNull)
 
-  @@index([mssv])
-  @@index([email])
+  leaderForClub Club? @relation("ClubLeader")
+
+  createdCampaigns           Campaign[]                @relation("CampaignCreator")
+  submittedReviewRequests    CampaignReviewRequest[]   @relation("ReviewRequestSubmitter")
+  reviewingReviewRequests    CampaignReviewRequest[]   @relation("ReviewRequestReviewer")
+  reviewComments             CampaignReviewComment[]   @relation("ReviewCommentAuthor")
+  campaignStatusHistories    CampaignStatusHistory[]   @relation("CampaignStatusActor")
+  reviewedRegistrations      ModuleRegistration[]      @relation("RegistrationReviewer")
+  verifiedMoneyContributions MoneyContribution[]       @relation("MoneyContributionVerifier")
+  confirmedItemContributions ItemContribution[]        @relation("ItemContributionConfirmer")
+  checkins                   Checkin[]                 @relation("CheckinActor")
+  approvedMemberships        ClubMembership[]          @relation("ClubMembershipApprover")
+  uploadedCampaignDocuments  CampaignDocument[]        @relation("CampaignDocumentUploader")
+  uploadedFiles              File[]                    @relation("ManagerUploadedFiles")
+  paymentAccounts            OrganizerPaymentAccount[] @relation("ManagerPaymentAccounts")
+  ownedCertificateTemplates  CertificateTemplate[]     @relation("CertificateTemplateOwner")
+  createdCertificates        Certificate[]             @relation("CertificateCreator")
+  managerNotifications       ManagerNotification[]
+
+  @@index([userId])
   @@index([facultyId])
+  @@index([managedClubId])
+  @@index([roleType])
+  @@map("manager_accounts")
+}
+
+model Student {
+  id          String    @id @default(uuid()) @db.Char(36)
+  userId      String    @unique @db.Char(36)
+  mssv        String    @unique @db.VarChar(20)
+  fullName    String    @db.VarChar(255)
+  facultyId   Int
+  className   String?   @db.VarChar(50)
+  phone       String?   @db.VarChar(20)
+  totalPoints Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  faculty Faculty @relation(fields: [facultyId], references: [id], onDelete: Restrict)
+
+  titles               StudentTitle[]
+  clubMemberships      ClubMembership[]
+  moduleRegistrations  ModuleRegistration[]
+  moneyContributions   MoneyContribution[]
+  itemContributions    ItemContribution[]
+  certificates         Certificate[]         @relation("StudentCertificates")
+  uploadedFiles        File[]                @relation("StudentUploadedFiles")
+  studentNotifications StudentNotification[]
+
+  @@index([userId])
+  @@index([mssv])
+  @@index([facultyId])
+  @@index([totalPoints])
   @@map("students")
 }
 
-// ============================================
-// CLUB SYSTEM
-// ============================================
-
-model Club {
-  id        String    @id @default(cuid())
-  name      String    @db.VarChar(255)
-  facultyId Int?      @map("faculty_id") // NULL = cấp trường
-  leaderId  String?   @map("leader_id")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
-
-  faculty Faculty? @relation(fields: [facultyId], references: [id], onDelete: SetNull)
-  leader  User?    @relation(fields: [leaderId], references: [id], onDelete: SetNull)
-
-  @@index([facultyId])
-  @@map("clubs")
-}
-
-// ============================================
-// CAMPAIGN SYSTEM (STI Pattern)
-// ============================================
-
-/// Chiến dịch tổng - quản lý trạng thái và phê duyệt
-model Campaign {
-  id            String         @id @default(cuid())
-  title         String         @db.VarChar(255)
-  description   String?        @db.Text
-  scope         CampaignScope
-  status        CampaignStatus @default(DRAFT)
-  planFileUrl   String?        @map("plan_file_url")
-  budgetFileUrl String?        @map("budget_file_url")
-  adminComment  String?        @map("admin_comment") @db.Text
-  approverId    String?        @map("approver_id")
-  creatorId     String         @map("creator_id")
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt @map("updated_at")
-  deletedAt     DateTime?      @map("deleted_at")
-
-  approver   User?                  @relation("CampaignApprover", fields: [approverId], references: [id])
-  creator    User                   @relation("CampaignCreator", fields: [creatorId], references: [id])
-  moneyPhase MoneyDonationCampaign?
-  itemPhase  ItemDonationCampaign?
-  eventPhase EventCampaign?
-
-  @@index([creatorId])
-  @@index([approverId])
-  @@index([status])
-  @@index([scope])
-  @@map("campaigns")
-}
-
-/// Chiến dịch quyên góp tiền
-model MoneyDonationCampaign {
-  id              Int       @id @default(autoincrement())
-  campaignId      String    @unique @map("campaign_id")
-  targetAmount    Decimal   @default(0) @map("target_amount") @db.Decimal(15, 0)
-  currentAmount   Decimal   @default(0) @map("current_amount") @db.Decimal(15, 0)
-  qrImageUrl      String?   @map("qr_image_url")
-  bankAccountNo   String?   @map("bank_account_no") @db.VarChar(20)
-  bankAccountName String?   @map("bank_account_name") @db.VarChar(100)
-  bankCode        String?   @map("bank_code") @db.VarChar(10)
-  startDate       DateTime? @map("start_date")
-  endDate         DateTime? @map("end_date")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  deletedAt       DateTime? @map("deleted_at")
-
-  campaign  Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  donations Donation[]
-
-  @@index([campaignId])
-  @@map("money_donation_campaigns")
-}
-
-/// Chiến dịch quyên góp vật phẩm
-model ItemDonationCampaign {
-  id                Int       @id @default(autoincrement())
-  campaignId        String    @unique @map("campaign_id")
-  acceptedItems     String    @map("accepted_items") @db.Text // JSON array
-  collectionAddress String?   @map("collection_address")
-  startDate         DateTime? @map("start_date")
-  endDate           DateTime? @map("end_date")
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
-
-  campaign  Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  donations Donation[]
-
-  @@index([campaignId])
-  @@map("item_donation_campaigns")
-}
-
-/// Chiến dịch sự kiện / tình nguyện
-model EventCampaign {
-  id                Int      @id @default(autoincrement())
-  campaignId        String   @unique @map("campaign_id")
-  location          String   @db.VarChar(255)
-  maxParticipants   Int      @default(0) @map("max_participants")
-  registrationStart DateTime @map("registration_start")
-  registrationEnd   DateTime @map("registration_end")
-  eventStart        DateTime @map("event_start")
-  eventEnd          DateTime @map("event_end")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
-
-  campaign     Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  participants Participant[]
-
-  @@index([campaignId])
-  @@index([registrationStart])
-  @@index([eventStart])
-  @@map("event_campaigns")
-}
-
-// ============================================
-// GAMIFICATION SYSTEM
-// ============================================
-
-/// Hệ thống danh hiệu
 model Title {
   id          Int      @id @default(autoincrement())
   name        String   @db.VarChar(100)
   description String?  @db.Text
-  minPoints   Int      @default(0) @map("min_points")
-  iconUrl     String?  @map("icon_url")
-  badgeColor  String?  @map("badge_color") @db.VarChar(7)
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  minPoints   Int      @default(0)
+  iconUrl     String?  @db.VarChar(500)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  students StudentTitle[]
+  studentTitles StudentTitle[]
 
+  @@index([minPoints])
   @@map("titles")
 }
 
-/// Bảng theo dõi danh hiệu sinh viên
 model StudentTitle {
-  studentId  String   @map("student_id")
-  titleId    Int      @map("title_id")
-  unlockedAt DateTime @default(now()) @map("unlocked_at")
+  studentId  String   @db.Char(36)
+  titleId    Int
+  unlockedAt DateTime @default(now())
 
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   title   Title   @relation(fields: [titleId], references: [id], onDelete: Cascade)
@@ -276,125 +441,968 @@ model StudentTitle {
   @@map("student_titles")
 }
 
-/// Lịch sử tích điểm - điểm danh cho mọi nguồn
-model PointTransaction {
-  id         String          @id @default(cuid())
-  studentId  String          @map("student_id")
-  points     Int
-  reason     String          @db.VarChar(255)
-  sourceType PointSourceType @map("source_type")
-  sourceId   String?         @map("source_id")
-  awardedBy  String?         @map("awarded_by")
-  createdAt  DateTime        @default(now()) @map("created_at")
+model Club {
+  id              String     @id @default(uuid()) @db.Char(36)
+  name            String     @db.VarChar(255)
+  facultyId       Int?
+  leaderManagerId String?    @unique @db.Char(36)
+  isSchoolLevel   Boolean    @default(false)
+  status          ClubStatus @default(ACTIVE)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  deletedAt       DateTime?
+
+  faculty         Faculty?                  @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+  leaderManager   ManagerAccount?           @relation("ClubLeader", fields: [leaderManagerId], references: [id], onDelete: SetNull)
+  managers        ManagerAccount[]          @relation("ClubManagedBy")
+  memberships     ClubMembership[]
+  campaigns       Campaign[]
+  paymentAccounts OrganizerPaymentAccount[] @relation("ClubPaymentAccounts")
+
+  @@index([facultyId])
+  @@index([status])
+  @@map("clubs")
+}
+
+model ClubMembership {
+  id           String               @id @default(uuid()) @db.Char(36)
+  clubId       String               @db.Char(36)
+  studentId    String               @db.Char(36)
+  status       ClubMembershipStatus @default(PENDING)
+  note         String?              @db.Text
+  joinedAt     DateTime             @default(now())
+  approvedAt   DateTime?
+  approvedById String?              @db.Char(36)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  club       Club            @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  student    Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  approvedBy ManagerAccount? @relation("ClubMembershipApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  @@unique([clubId, studentId])
+  @@index([studentId])
+  @@index([status])
+  @@map("club_memberships")
+}
+
+model File {
+  id                  String    @id @default(uuid()) @db.Char(36)
+  storageKey          String    @unique @db.VarChar(500)
+  storageProvider     String?   @db.VarChar(50)
+  bucketName          String?   @db.VarChar(100)
+  originalName        String    @db.VarChar(255)
+  mimeType            String    @db.VarChar(100)
+  fileSize            BigInt
+  checksumSha256      String?   @db.VarChar(128)
+  publicUrl           String?   @db.VarChar(500)
+  uploadedByManagerId String?   @db.Char(36)
+  uploadedByStudentId String?   @db.Char(36)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime?
+
+  uploadedByManager ManagerAccount? @relation("ManagerUploadedFiles", fields: [uploadedByManagerId], references: [id], onDelete: SetNull)
+  uploadedByStudent Student?        @relation("StudentUploadedFiles", fields: [uploadedByStudentId], references: [id], onDelete: SetNull)
+
+  userAvatars                        User[]                       @relation("UserAvatarFile")
+  campaignCovers                     Campaign[]                   @relation("CampaignCoverFile")
+  campaignLogos                      Campaign[]                   @relation("CampaignLogoFile")
+  campaignDocumentFiles              CampaignDocument[]           @relation("CampaignDocumentFile")
+  fundraisingQrFiles                 FundraisingModuleConfig[]    @relation("FundraisingQrFile")
+  moneyContributionProofFiles        MoneyContribution[]          @relation("MoneyContributionProofFile")
+  campaignMediaFiles                 CampaignMedia[]              @relation("CampaignMediaFile")
+  certificateTemplateSourceFiles     CertificateTemplateVersion[] @relation("CertificateTemplateSourceFile")
+  certificateTemplateBackgroundFiles CertificateTemplateVersion[] @relation("CertificateTemplateBackgroundFile")
+  certificateGeneratedFiles          Certificate[]                @relation("CertificateGeneratedFile")
+  certificateSignedFiles             Certificate[]                @relation("CertificateSignedFile")
+  certificatePreviewFiles            Certificate[]                @relation("CertificatePreviewImageFile")
+  signingProfileVisualAssets         CertificateSigningProfile[]  @relation("SigningProfileVisualAsset")
+
+  @@index([uploadedByManagerId])
+  @@index([uploadedByStudentId])
+  @@map("files")
+}
+
+//////////////////////////////////////////////////////
+// CAMPAIGN AS CONTAINER
+//////////////////////////////////////////////////////
+
+model Campaign {
+  id                     String                 @id @default(uuid()) @db.Char(36)
+  title                  String                 @db.VarChar(255)
+  organizerManagerId     String                 @db.Char(36)
+  organizerType          OrganizerType
+  facultyId              Int?
+  clubId                 String?                @db.Char(36)
+  shortDescription       String?                @db.VarChar(500)
+  overallObjective       String?                @db.Text
+  beneficiaryDescription String?                @db.Text
+  coverFileId            String?                @db.Char(36)
+  logoFileId             String?                @db.Char(36)
+  campaignStartAt        DateTime
+  campaignEndAt          DateTime
+  participationScopeType ParticipationScopeType
+  status                 CampaignStatus         @default(DRAFT)
+  submittedAt            DateTime?
+  publishedAt            DateTime?
+  endedAt                DateTime?
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  deletedAt              DateTime?
+
+  creator   ManagerAccount @relation("CampaignCreator", fields: [organizerManagerId], references: [id], onDelete: Restrict)
+  faculty   Faculty?       @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+  club      Club?          @relation(fields: [clubId], references: [id], onDelete: SetNull)
+  coverFile File?          @relation("CampaignCoverFile", fields: [coverFileId], references: [id], onDelete: SetNull)
+  logoFile  File?          @relation("CampaignLogoFile", fields: [logoFileId], references: [id], onDelete: SetNull)
+
+  documents           CampaignDocument[]
+  modules             CampaignModule[]
+  reviewRequests      CampaignReviewRequest[]
+  statusHistory       CampaignStatusHistory[]
+  media               CampaignMedia[]
+  tags                Tag[]
+  certificatePolicies CertificateIssuancePolicy[]
+  certificates        Certificate[]
+
+  @@index([organizerManagerId])
+  @@index([facultyId])
+  @@index([clubId])
+  @@index([organizerType])
+  @@index([status])
+  @@index([campaignStartAt, campaignEndAt])
+  @@map("campaigns")
+}
+
+model Tag {
+  id         String   @id @default(uuid()) @db.Char(36)
+  campaignId String   @db.Char(36)
+  name       String   @db.VarChar(100)
+  color      String   @db.VarChar(20)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, name])
+  @@index([campaignId])
+  @@map("tags")
+}
+
+model CampaignDocument {
+  id           String               @id @default(uuid()) @db.Char(36)
+  campaignId   String               @db.Char(36)
+  fileId       String               @db.Char(36)
+  documentType CampaignDocumentType
+  isPublic     Boolean              @default(false)
+  uploadedById String?              @db.Char(36)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  campaign   Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  file       File            @relation("CampaignDocumentFile", fields: [fileId], references: [id], onDelete: Restrict)
+  uploadedBy ManagerAccount? @relation("CampaignDocumentUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  reviewComments CampaignReviewComment[] @relation("DocumentReviewComments")
+
+  @@index([campaignId])
+  @@index([documentType])
+  @@map("campaign_documents")
+}
+
+model CampaignReviewRequest {
+  id                String       @id @default(uuid()) @db.Char(36)
+  campaignId        String       @db.Char(36)
+  submittedById     String       @db.Char(36)
+  submittedAt       DateTime     @default(now())
+  reviewStatus      ReviewStatus @default(SUBMITTED)
+  currentReviewerId String?      @db.Char(36)
+  reviewedAt        DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  campaign        Campaign                @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  submittedBy     ManagerAccount          @relation("ReviewRequestSubmitter", fields: [submittedById], references: [id], onDelete: Restrict)
+  currentReviewer ManagerAccount?         @relation("ReviewRequestReviewer", fields: [currentReviewerId], references: [id], onDelete: SetNull)
+  comments        CampaignReviewComment[]
+
+  @@index([campaignId])
+  @@index([reviewStatus])
+  @@index([currentReviewerId])
+  @@map("campaign_review_requests")
+}
+
+model CampaignReviewComment {
+  id              String                 @id @default(uuid()) @db.Char(36)
+  reviewRequestId String                 @db.Char(36)
+  scopeType       ReviewCommentScopeType
+  moduleId        String?                @db.Char(36)
+  documentId      String?                @db.Char(36)
+  commentText     String                 @db.Text
+  authorId        String                 @db.Char(36)
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  reviewRequest CampaignReviewRequest @relation(fields: [reviewRequestId], references: [id], onDelete: Cascade)
+  module        CampaignModule?       @relation("ModuleReviewComments", fields: [moduleId], references: [id], onDelete: SetNull)
+  document      CampaignDocument?     @relation("DocumentReviewComments", fields: [documentId], references: [id], onDelete: SetNull)
+  author        ManagerAccount        @relation("ReviewCommentAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([reviewRequestId])
+  @@index([scopeType])
+  @@index([moduleId])
+  @@index([documentId])
+  @@map("campaign_review_comments")
+}
+
+model CampaignStatusHistory {
+  id          String          @id @default(uuid()) @db.Char(36)
+  campaignId  String          @db.Char(36)
+  fromStatus  CampaignStatus?
+  toStatus    CampaignStatus
+  changedById String          @db.Char(36)
+  note        String?         @db.Text
+  createdAt   DateTime        @default(now())
+
+  campaign  Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  changedBy ManagerAccount @relation("CampaignStatusActor", fields: [changedById], references: [id], onDelete: Restrict)
+
+  @@index([campaignId, createdAt])
+  @@index([toStatus])
+  @@map("campaign_status_history")
+}
+
+//////////////////////////////////////////////////////
+// CAMPAIGN MODULES
+//////////////////////////////////////////////////////
+
+model CampaignModule {
+  id                  String                 @id @default(uuid()) @db.Char(36)
+  campaignId          String                 @db.Char(36)
+  moduleType          CampaignModuleType
+  title               String                 @db.VarChar(255)
+  shortDescription    String?                @db.VarChar(500)
+  displayOrder        Int                    @default(1)
+  moduleStartAt       DateTime
+  moduleEndAt         DateTime
+  registrationStartAt DateTime?
+  registrationEndAt   DateTime?
+  status              CampaignModuleStatus   @default(DRAFT)
+  visibilityStatus    ModuleVisibilityStatus @default(INTERNAL)
+  dependsOnModuleId   String?                @db.Char(36)
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  deletedAt           DateTime?
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  dependsOn        CampaignModule?  @relation("ModuleDependency", fields: [dependsOnModuleId], references: [id], onDelete: SetNull)
+  dependentModules CampaignModule[] @relation("ModuleDependency")
+
+  volunteerConfig    VolunteerModuleConfig?
+  fundraisingConfig  FundraisingModuleConfig?
+  itemDonationConfig ItemDonationModuleConfig?
+  eventConfig        EventModuleConfig?
+
+  registrations       ModuleRegistration[]
+  moneyContributions  MoneyContribution[]
+  itemContributions   ItemContribution[]
+  reviewComments      CampaignReviewComment[]     @relation("ModuleReviewComments")
+  media               CampaignMedia[]
+  certificatePolicies CertificateIssuancePolicy[]
+  certificates        Certificate[]
+
+  @@index([campaignId])
+  @@index([moduleType])
+  @@index([status])
+  @@index([displayOrder])
+  @@index([moduleStartAt, moduleEndAt])
+  @@map("campaign_modules")
+}
+
+model VolunteerModuleConfig {
+  moduleId                   String                   @id @db.Char(36)
+  jobDescription             String?                  @db.Text
+  requiredQuantity           Int?
+  requirementsText           String?                  @db.Text
+  activityLocation           String?                  @db.VarChar(255)
+  participationScopeOverride ModuleParticipationScope @default(INHERIT_CAMPAIGN_SCOPE)
+  autoCertificateEnabled     Boolean                  @default(false)
+  checkinRequired            Boolean                  @default(false)
+  createdAt                  DateTime                 @default(now())
+  updatedAt                  DateTime                 @updatedAt
+
+  module CampaignModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@map("campaign_module_volunteer")
+}
+
+model FundraisingModuleConfig {
+  moduleId                    String            @id @db.Char(36)
+  fundraisingGoalAmount       Decimal           @default(0) @db.Decimal(15, 0)
+  minimumContributionAmount   Decimal?          @db.Decimal(15, 0)
+  paymentMethodType           PaymentMethodType @default(MANUAL_TRANSFER)
+  organizerPaymentAccountId   String            @db.Char(36)
+  qrFileId                    String?           @db.Char(36)
+  displayPublicProgress       Boolean           @default(true)
+  allowAnonymousPublicDisplay Boolean           @default(false)
+  createdAt                   DateTime          @default(now())
+  updatedAt                   DateTime          @updatedAt
+
+  module         CampaignModule          @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  paymentAccount OrganizerPaymentAccount @relation(fields: [organizerPaymentAccountId], references: [id], onDelete: Restrict)
+  qrFile         File?                   @relation("FundraisingQrFile", fields: [qrFileId], references: [id], onDelete: SetNull)
+
+  @@index([organizerPaymentAccountId])
+  @@map("campaign_module_fundraising")
+}
+
+model ItemDonationModuleConfig {
+  moduleId                   String                     @id @db.Char(36)
+  receiveLocation            String                     @db.VarChar(255)
+  receiverContactName        String?                    @db.VarChar(255)
+  receiverContactPhone       String?                    @db.VarChar(20)
+  handoverConfirmationMethod HandoverConfirmationMethod @default(MANUAL_CONFIRM)
+  allowPreRegistration       Boolean                    @default(true)
+  createdAt                  DateTime                   @default(now())
+  updatedAt                  DateTime                   @updatedAt
+
+  module  CampaignModule       @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  targets ItemDonationTarget[]
+
+  @@map("campaign_module_item_donation")
+}
+
+model ItemDonationTarget {
+  id                 String   @id @default(uuid()) @db.Char(36)
+  moduleId           String   @db.Char(36)
+  itemName           String   @db.VarChar(255)
+  unitName           String   @db.VarChar(50)
+  targetQuantity     Int
+  qualityDescription String?  @db.Text
+  notes              String?  @db.Text
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  module            ItemDonationModuleConfig @relation(fields: [moduleId], references: [moduleId], onDelete: Cascade)
+  contributionLines ItemContributionLine[]
+
+  @@index([moduleId])
+  @@map("campaign_module_item_targets")
+}
+
+model EventModuleConfig {
+  moduleId       String      @id @db.Char(36)
+  eventFormat    EventFormat @default(OFFLINE)
+  eventLocation  String?     @db.VarChar(255)
+  maxAttendees   Int?
+  eventAgenda    String?     @db.Text
+  checkinEnabled Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  module CampaignModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@map("campaign_module_event")
+}
+
+//////////////////////////////////////////////////////
+// PAYMENT
+//////////////////////////////////////////////////////
+
+model OrganizerPaymentAccount {
+  id                    String                           @id @default(uuid()) @db.Char(36)
+  ownerType             OrganizerType
+  ownerManagerAccountId String                           @db.Char(36)
+  ownerFacultyId        Int?
+  ownerClubId           String?                          @db.Char(36)
+  displayName           String?                          @db.VarChar(255)
+  bankName              String                           @db.VarChar(100)
+  accountNumber         String                           @db.VarChar(50)
+  accountHolderName     String                           @db.VarChar(255)
+  branchName            String?                          @db.VarChar(255)
+  isDefault             Boolean                          @default(false)
+  verificationStatus    PaymentAccountVerificationStatus @default(PENDING)
+  paymentMethodType     PaymentMethodType                @default(MANUAL_TRANSFER)
+  createdAt             DateTime                         @default(now())
+  updatedAt             DateTime                         @updatedAt
+  deletedAt             DateTime?
+
+  ownerManager ManagerAccount @relation("ManagerPaymentAccounts", fields: [ownerManagerAccountId], references: [id], onDelete: Restrict)
+  ownerFaculty Faculty?       @relation("FacultyPaymentAccounts", fields: [ownerFacultyId], references: [id], onDelete: SetNull)
+  ownerClub    Club?          @relation("ClubPaymentAccounts", fields: [ownerClubId], references: [id], onDelete: SetNull)
+
+  providerConfigs    PaymentProviderConfig[]
+  fundraisingModules FundraisingModuleConfig[]
+
+  @@index([ownerManagerAccountId])
+  @@index([ownerFacultyId])
+  @@index([ownerClubId])
+  @@index([ownerType])
+  @@index([verificationStatus])
+  @@map("organizer_payment_accounts")
+}
+
+model PaymentProviderConfig {
+  id                        String              @id @default(uuid()) @db.Char(36)
+  organizerPaymentAccountId String              @db.Char(36)
+  providerName              PaymentProviderName
+  merchantCode              String?             @db.VarChar(255)
+  clientId                  String?             @db.VarChar(255)
+  apiKeyEncrypted           String?             @db.Text
+  checksumKeyEncrypted      String?             @db.Text
+  webhookUrl                String?             @db.VarChar(500)
+  isActive                  Boolean             @default(true)
+  lastVerifiedAt            DateTime?
+  createdAt                 DateTime            @default(now())
+  updatedAt                 DateTime            @updatedAt
+
+  organizerPaymentAccount OrganizerPaymentAccount @relation(fields: [organizerPaymentAccountId], references: [id], onDelete: Cascade)
+
+  @@index([organizerPaymentAccountId])
+  @@index([providerName, isActive])
+  @@map("payment_provider_configs")
+}
+
+//////////////////////////////////////////////////////
+// OPERATIONAL DATA BY MODULE
+//////////////////////////////////////////////////////
+
+model ModuleRegistration {
+  id               String                   @id @default(uuid()) @db.Char(36)
+  moduleId         String                   @db.Char(36)
+  studentId        String                   @db.Char(36)
+  registrationType ModuleRegistrationType
+  status           ModuleRegistrationStatus @default(PENDING)
+  submittedAt      DateTime                 @default(now())
+  reviewedById     String?                  @db.Char(36)
+  reviewedAt       DateTime?
+  rejectionReason  String?                  @db.Text
+  completionNote   String?                  @db.Text
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  module     CampaignModule  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  student    Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  reviewedBy ManagerAccount? @relation("RegistrationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  checkins     Checkin[]
+  certificates Certificate[] @relation("RegistrationCertificate")
+
+  @@unique([moduleId, studentId, registrationType])
+  @@index([studentId])
+  @@index([status])
+  @@map("module_registrations")
+}
+
+model Checkin {
+  id             String        @id @default(uuid()) @db.Char(36)
+  registrationId String        @db.Char(36)
+  checkedById    String        @db.Char(36)
+  method         CheckinMethod
+  checkedInAt    DateTime      @default(now())
+  checkedOutAt   DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  registration ModuleRegistration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  checkedBy    ManagerAccount     @relation("CheckinActor", fields: [checkedById], references: [id], onDelete: Restrict)
+
+  @@index([registrationId])
+  @@map("checkins")
+}
+
+model MoneyContribution {
+  id                           String             @id @default(uuid()) @db.Char(36)
+  moduleId                     String             @db.Char(36)
+  studentId                    String             @db.Char(36)
+  amount                       Decimal            @default(0) @db.Decimal(15, 0)
+  contributionStatus           ContributionStatus @default(PENDING)
+  paymentMethodType            PaymentMethodType  @default(MANUAL_TRANSFER)
+  proofFileId                  String?            @db.Char(36)
+  paymentProviderTransactionId String?            @db.VarChar(255)
+  verifiedById                 String?            @db.Char(36)
+  verifiedAt                   DateTime?
+  rejectionReason              String?            @db.Text
+  isPublicVisible              Boolean            @default(true)
+  createdAt                    DateTime           @default(now())
+  updatedAt                    DateTime           @updatedAt
+
+  module     CampaignModule  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  student    Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  proofFile  File?           @relation("MoneyContributionProofFile", fields: [proofFileId], references: [id], onDelete: SetNull)
+  verifiedBy ManagerAccount? @relation("MoneyContributionVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+
+  providerTransactions MoneyContributionTransaction[]
+  certificates         Certificate[]                  @relation("MoneyContributionCertificate")
+
+  @@index([moduleId])
+  @@index([studentId])
+  @@index([contributionStatus])
+  @@map("money_contributions")
+}
+
+model MoneyContributionTransaction {
+  id                       String              @id @default(uuid()) @db.Char(36)
+  moneyContributionId      String              @db.Char(36)
+  providerName             PaymentProviderName
+  providerOrderCode        String?             @unique @db.VarChar(255)
+  providerTransactionId    String?             @unique @db.VarChar(255)
+  providerStatus           String?             @db.VarChar(100)
+  providerPayloadJson      Json?
+  realtimeStatementMatched Boolean             @default(false)
+  webhookReceivedAt        DateTime?
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+
+  moneyContribution MoneyContribution @relation(fields: [moneyContributionId], references: [id], onDelete: Cascade)
+
+  @@index([moneyContributionId])
+  @@map("money_contribution_transactions")
+}
+
+model ItemContribution {
+  id                    String                 @id @default(uuid()) @db.Char(36)
+  moduleId              String                 @db.Char(36)
+  studentId             String                 @db.Char(36)
+  contributionStatus    ItemContributionStatus @default(PLEDGED)
+  handoverConfirmedById String?                @db.Char(36)
+  handoverConfirmedAt   DateTime?
+  notes                 String?                @db.Text
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  module      CampaignModule  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  student     Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  confirmedBy ManagerAccount? @relation("ItemContributionConfirmer", fields: [handoverConfirmedById], references: [id], onDelete: SetNull)
+
+  lines        ItemContributionLine[]
+  certificates Certificate[]          @relation("ItemContributionCertificate")
+
+  @@index([moduleId])
+  @@index([studentId])
+  @@index([contributionStatus])
+  @@map("item_contributions")
+}
+
+model ItemContributionLine {
+  id                 String   @id @default(uuid()) @db.Char(36)
+  itemContributionId String   @db.Char(36)
+  itemTargetId       String   @db.Char(36)
+  actualQuantity     Int
+  itemConditionNote  String?  @db.Text
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  itemContribution ItemContribution   @relation(fields: [itemContributionId], references: [id], onDelete: Cascade)
+  itemTarget       ItemDonationTarget @relation(fields: [itemTargetId], references: [id], onDelete: Restrict)
+
+  @@unique([itemContributionId, itemTargetId])
+  @@index([itemTargetId])
+  @@map("item_contribution_lines")
+}
+
+//////////////////////////////////////////////////////
+// CERTIFICATE SUBSYSTEM
+//////////////////////////////////////////////////////
+
+model CertificateTemplate {
+  id                    String          @id @default(uuid()) @db.Char(36)
+  name                  String          @db.VarChar(255)
+  certificateType       CertificateType
+  ownerType             OrganizerType
+  ownerManagerAccountId String?         @db.Char(36)
+  description           String?         @db.Text
+  isActive              Boolean         @default(true)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  ownerManagerAccount ManagerAccount? @relation("CertificateTemplateOwner", fields: [ownerManagerAccountId], references: [id], onDelete: SetNull)
+
+  versions     CertificateTemplateVersion[]
+  policies     CertificateIssuancePolicy[]
+  certificates Certificate[]
+
+  @@index([certificateType, isActive])
+  @@index([ownerManagerAccountId])
+  @@map("certificate_templates")
+}
+
+model CertificateTemplateVersion {
+  id                       String                        @id @default(uuid()) @db.Char(36)
+  templateId               String                        @db.Char(36)
+  versionNumber            Int
+  templateSourceType       CertificateTemplateSourceType
+  sourceFileId             String?                       @db.Char(36)
+  htmlContent              String?                       @db.LongText
+  cssContent               String?                       @db.LongText
+  backgroundFileId         String?                       @db.Char(36)
+  placeholderWhitelistJson Json
+  renderConfigJson         Json?
+  digitalSignatureEnabled  Boolean                       @default(false)
+  signatureLevel           CertificateSigningLevel?
+  defaultSigningProfileId  String?                       @db.Char(36)
+  isActive                 Boolean                       @default(true)
+  createdAt                DateTime                      @default(now())
+  updatedAt                DateTime                      @updatedAt
+
+  template              CertificateTemplate        @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  sourceFile            File?                      @relation("CertificateTemplateSourceFile", fields: [sourceFileId], references: [id], onDelete: SetNull)
+  backgroundFile        File?                      @relation("CertificateTemplateBackgroundFile", fields: [backgroundFileId], references: [id], onDelete: SetNull)
+  defaultSigningProfile CertificateSigningProfile? @relation("TemplateVersionDefaultSigningProfile", fields: [defaultSigningProfileId], references: [id], onDelete: SetNull)
+
+  certificates Certificate[]
+
+  @@unique([templateId, versionNumber])
+  @@index([templateId, isActive])
+  @@index([defaultSigningProfileId])
+  @@map("certificate_template_versions")
+}
+
+model CertificateIssuancePolicy {
+  id               String                    @id @default(uuid()) @db.Char(36)
+  templateId       String                    @db.Char(36)
+  campaignId       String?                   @db.Char(36)
+  moduleId         String?                   @db.Char(36)
+  certificateType  CertificateType
+  recipientType    CertificateRecipientType
+  ruleEngineType   CertificateRuleEngineType
+  ruleConfigJson   Json
+  autoIssueEnabled Boolean                   @default(false)
+  isActive         Boolean                   @default(true)
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+
+  template CertificateTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  campaign Campaign?           @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  module   CampaignModule?     @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+
+  certificates Certificate[]
+
+  @@index([templateId])
+  @@index([campaignId])
+  @@index([moduleId])
+  @@index([certificateType, recipientType])
+  @@map("certificate_issuance_policies")
+}
+
+model Certificate {
+  id           String @id @default(uuid()) @db.Char(36)
+  publicId     String @unique @db.VarChar(64)
+  serialNumber String @unique @db.VarChar(100)
+
+  templateId        String  @db.Char(36)
+  templateVersionId String  @db.Char(36)
+  policyId          String? @db.Char(36)
+
+  campaignId String? @db.Char(36)
+  moduleId   String? @db.Char(36)
+
+  recipientStudentId String?                  @db.Char(36)
+  recipientName      String                   @db.VarChar(255)
+  certificateType    CertificateType
+  recipientType      CertificateRecipientType
+
+  registrationId      String? @db.Char(36)
+  moneyContributionId String? @db.Char(36)
+  itemContributionId  String? @db.Char(36)
+
+  status         CertificateStatus         @default(PENDING)
+  deliveryStatus CertificateDeliveryStatus @default(NOT_SENT)
+
+  generatedFileId    String? @db.Char(36)
+  signedFileId       String? @db.Char(36)
+  previewImageFileId String? @db.Char(36)
+
+  checksumSha256 String? @db.VarChar(128)
+
+  issuedAt       DateTime?
+  emailSentAt    DateTime?
+  lastEmailError String?   @db.Text
+
+  revokedAt        DateTime?
+  revocationReason String?   @db.Text
+
+  reissuedFromCertificateId String? @db.Char(36)
+  createdById               String? @db.Char(36)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  template        CertificateTemplate        @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  templateVersion CertificateTemplateVersion @relation(fields: [templateVersionId], references: [id], onDelete: Restrict)
+  policy          CertificateIssuancePolicy? @relation(fields: [policyId], references: [id], onDelete: SetNull)
+
+  campaign         Campaign?       @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  module           CampaignModule? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  recipientStudent Student?        @relation("StudentCertificates", fields: [recipientStudentId], references: [id], onDelete: SetNull)
+
+  registration      ModuleRegistration? @relation("RegistrationCertificate", fields: [registrationId], references: [id], onDelete: SetNull)
+  moneyContribution MoneyContribution?  @relation("MoneyContributionCertificate", fields: [moneyContributionId], references: [id], onDelete: SetNull)
+  itemContribution  ItemContribution?   @relation("ItemContributionCertificate", fields: [itemContributionId], references: [id], onDelete: SetNull)
+
+  generatedFile    File? @relation("CertificateGeneratedFile", fields: [generatedFileId], references: [id], onDelete: SetNull)
+  signedFile       File? @relation("CertificateSignedFile", fields: [signedFileId], references: [id], onDelete: SetNull)
+  previewImageFile File? @relation("CertificatePreviewImageFile", fields: [previewImageFileId], references: [id], onDelete: SetNull)
+
+  createdBy ManagerAccount? @relation("CertificateCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  reissuedFromCertificate Certificate?  @relation("CertificateReissue", fields: [reissuedFromCertificateId], references: [id], onDelete: SetNull)
+  reissuedCertificates    Certificate[] @relation("CertificateReissue")
+
+  snapshot         CertificateSnapshot?
+  renderJobs       CertificateRenderJob[]
+  auditLogs        CertificateAuditLog[]
+  verificationLogs CertificateVerificationLog[]
+  digitalSignature CertificateDigitalSignature?
+
+  @@index([templateId])
+  @@index([templateVersionId])
+  @@index([policyId])
+  @@index([campaignId])
+  @@index([moduleId])
+  @@index([recipientStudentId])
+  @@index([status])
+  @@index([deliveryStatus])
+  @@map("certificates")
+}
+
+model CertificateSnapshot {
+  id              String   @id @default(uuid()) @db.Char(36)
+  certificateId   String   @unique @db.Char(36)
+  snapshotVersion Int      @default(1)
+  dataJson        Json
+  createdAt       DateTime @default(now())
+
+  certificate Certificate @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+
+  @@map("certificate_snapshots")
+}
+
+model CertificateRenderJob {
+  id            String               @id @default(uuid()) @db.Char(36)
+  certificateId String               @db.Char(36)
+  jobType       CertificateJobType
+  status        CertificateJobStatus @default(PENDING)
+  attemptCount  Int                  @default(0)
+  queueName     String?              @db.VarChar(100)
+  payloadJson   Json?
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  failureReason String?              @db.Text
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  certificate Certificate @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+
+  @@index([certificateId])
+  @@index([status])
+  @@map("certificate_render_jobs")
+}
+
+model CertificateAuditLog {
+  id            String                 @id @default(uuid()) @db.Char(36)
+  certificateId String                 @db.Char(36)
+  action        CertificateAuditAction
+  actorType     String                 @db.VarChar(50)
+  actorId       String?                @db.Char(36)
+  note          String?                @db.Text
+  metadataJson  Json?
+  createdAt     DateTime               @default(now())
+
+  certificate Certificate @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+
+  @@index([certificateId, createdAt])
+  @@index([action])
+  @@map("certificate_audit_logs")
+}
+
+model CertificateVerificationLog {
+  id            String                        @id @default(uuid()) @db.Char(36)
+  certificateId String?                       @db.Char(36)
+  publicId      String                        @db.VarChar(64)
+  ipAddress     String?                       @db.VarChar(64)
+  userAgent     String?                       @db.Text
+  verifiedAt    DateTime                      @default(now())
+  resultStatus  CertificateVerifyResultStatus
+  referrer      String?                       @db.VarChar(500)
+
+  certificate Certificate? @relation(fields: [certificateId], references: [id], onDelete: SetNull)
+
+  @@index([publicId])
+  @@index([verifiedAt])
+  @@map("certificate_verification_logs")
+}
+
+model CertificateSigningProfile {
+  id                        String                  @id @default(uuid()) @db.Char(36)
+  name                      String                  @db.VarChar(255)
+  signingLevel              CertificateSigningLevel
+  providerName              String?                 @db.VarChar(100)
+  defaultSignerName         String?                 @db.VarChar(255)
+  defaultSignerTitle        String?                 @db.VarChar(255)
+  visualAssetFileId         String?                 @db.Char(36)
+  isActive                  Boolean                 @default(true)
+  signatureVisualConfigJson Json?
+  certificateRef            String?                 @db.VarChar(255)
+  privateKeyRef             String?                 @db.VarChar(255)
+  remoteCaConfigJson        Json?
+  createdAt                 DateTime                @default(now())
+  updatedAt                 DateTime                @updatedAt
+
+  visualAsset       File?                         @relation("SigningProfileVisualAsset", fields: [visualAssetFileId], references: [id], onDelete: SetNull)
+  templateVersions  CertificateTemplateVersion[]  @relation("TemplateVersionDefaultSigningProfile")
+  digitalSignatures CertificateDigitalSignature[]
+
+  @@index([signingLevel, isActive])
+  @@map("certificate_signing_profiles")
+}
+
+model CertificateDigitalSignature {
+  id               String  @id @default(uuid()) @db.Char(36)
+  certificateId    String  @unique @db.Char(36)
+  signingProfileId String? @db.Char(36)
+
+  status           CertificateDigitalSignatureStatus @default(PENDING)
+  provider         String?                           @db.VarChar(100)
+  signerName       String?                           @db.VarChar(255)
+  signerTitle      String?                           @db.VarChar(255)
+  signerIdentifier String?                           @db.VarChar(255)
+
+  certificateSerial   String?   @db.VarChar(255)
+  signatureValue      String?   @db.LongText
+  signedHash          String?   @db.VarChar(255)
+  signedAt            DateTime?
+  verificationPayload Json?
+  failureReason       String?   @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  certificate    Certificate                @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+  signingProfile CertificateSigningProfile? @relation(fields: [signingProfileId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@map("certificate_digital_signatures")
+}
+
+//////////////////////////////////////////////////////
+// MEDIA
+//////////////////////////////////////////////////////
+
+model CampaignMedia {
+  id         String            @id @default(uuid()) @db.Char(36)
+  campaignId String            @db.Char(36)
+  moduleId   String?           @db.Char(36)
+  fileId     String            @db.Char(36)
+  mediaType  CampaignMediaType
+  caption    String?           @db.VarChar(500)
+  isPublic   Boolean           @default(true)
+  sortOrder  Int               @default(0)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  campaign Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  module   CampaignModule? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  file     File            @relation("CampaignMediaFile", fields: [fileId], references: [id], onDelete: Restrict)
+
+  @@index([campaignId])
+  @@index([moduleId])
+  @@map("campaign_media")
+}
+
+//////////////////////////////////////////////////////
+// NOTIFICATIONS
+//////////////////////////////////////////////////////
+
+model ManagerNotification {
+  id         String                  @id @default(uuid()) @db.Char(36)
+  managerId  String                  @db.Char(36)
+  type       NotificationType
+  title      String                  @db.VarChar(255)
+  message    String                  @db.Text
+  targetType NotificationTargetType?
+  targetId   String?                 @db.Char(36)
+  isRead     Boolean                 @default(false)
+  createdAt  DateTime                @default(now())
+
+  manager ManagerAccount @relation(fields: [managerId], references: [id], onDelete: Cascade)
+
+  @@index([managerId, isRead])
+  @@map("manager_notifications")
+}
+
+model StudentNotification {
+  id         String                  @id @default(uuid()) @db.Char(36)
+  studentId  String                  @db.Char(36)
+  type       NotificationType
+  title      String                  @db.VarChar(255)
+  message    String                  @db.Text
+  targetType NotificationTargetType?
+  targetId   String?                 @db.Char(36)
+  isRead     Boolean                 @default(false)
+  createdAt  DateTime                @default(now())
 
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
-  @@index([studentId])
-  @@index([sourceType])
-  @@index([createdAt])
-  @@map("point_transactions")
+  @@index([studentId, isRead])
+  @@map("student_notifications")
 }
 
-// ============================================
-// DONATIONS & PARTICIPANTS
-// ============================================
+//////////////////////////////////////////////////////
+// AUTH (UNIFIED UNDER USERS)
+//////////////////////////////////////////////////////
 
-/// Chi tiết quyên góp (Lịch sử đóng góp của Sinh viên)
-model Donation {
-  id              String         @id @default(cuid())
-  studentId       String         @map("student_id")
-  moneyPhaseId    Int?           @map("money_phase_id")
-  itemPhaseId     Int?           @map("item_phase_id")
-  amount          Decimal        @default(0) @db.Decimal(15, 0)
-  verifiedAmount  Decimal?       @map("verified_amount") @db.Decimal(15, 0)
-  itemDescription String?        @map("item_description") @db.Text
-  proofImageUrl   String?        @map("proof_image_url")
-  rejectionReason String?        @map("rejection_reason") @db.Text
-  status          DonationStatus @default(PENDING)
-  createdAt       DateTime       @default(now()) @map("created_at")
-  updatedAt       DateTime       @updatedAt @map("updated_at")
-
-  student    Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  moneyPhase MoneyDonationCampaign? @relation(fields: [moneyPhaseId], references: [id])
-  itemPhase  ItemDonationCampaign?  @relation(fields: [itemPhaseId], references: [id])
-
-  @@index([studentId])
-  @@index([moneyPhaseId])
-  @@index([itemPhaseId])
-  @@index([status])
-  @@map("donations")
-}
-
-/// Đăng ký tham gia sự kiện & chứng nhận
-model Participant {
-  id             String            @id @default(cuid())
-  eventId        Int               @map("event_id")
-  studentId      String            @map("student_id")
-  status         ParticipantStatus @default(PENDING)
-  isCheckedIn    Boolean           @default(false) @map("is_checked_in")
-  certificateUrl String?           @map("certificate_url")
-  createdAt      DateTime          @default(now()) @map("created_at")
-  updatedAt      DateTime          @updatedAt @map("updated_at")
-
-  event   EventCampaign @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  student Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  @@unique([eventId, studentId])
-  @@index([studentId])
-  @@index([eventId])
-  @@index([status])
-  @@map("participants")
-}
-
-// ============================================
-// AUTH MODELS (Existing)
-// ============================================
-
-model Account {
-  id                String @id @default(cuid())
-  userId            String @map("user_id")
-  provider          String
-  providerAccountId String @map("provider_account_id")
+model UserOAuthAccount {
+  id                String   @id @default(uuid()) @db.Char(36)
+  userId            String   @db.Char(36)
+  provider          String   @db.VarChar(50)
+  providerAccountId String   @db.VarChar(255)
+  createdAt         DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
-  @@map("accounts")
+  @@index([userId])
+  @@map("user_oauth_accounts")
 }
 
-model RefreshToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  userId    String   @map("user_id")
-  createdAt DateTime @default(now()) @map("created_at")
+model UserRefreshToken {
+  id        String    @id @default(uuid()) @db.Char(36)
+  token     String    @unique @db.VarChar(255)
+  userId    String    @db.Char(36)
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([token])
-  @@map("refresh_tokens")
+  @@index([userId])
+  @@map("user_refresh_tokens")
 }
 
-model ResetToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  expiresAt DateTime @map("expires_at")
-  userId    String   @map("user_id")
-  createdAt DateTime @default(now()) @map("created_at")
+model UserResetToken {
+  id        String   @id @default(uuid()) @db.Char(36)
+  token     String   @unique @db.VarChar(255)
+  expiresAt DateTime
+  userId    String   @db.Char(36)
+  createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([token])
-  @@map("reset_tokens")
+  @@index([userId])
+  @@map("user_reset_tokens")
 }
 
-model StudentRefreshToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  studentId String   @map("student_id")
-  createdAt DateTime @default(now()) @map("created_at")
+model UserEmailVerificationToken {
+  id        String   @id @default(uuid()) @db.Char(36)
+  token     String   @unique @db.VarChar(255)
+  expiresAt DateTime
+  userId    String   @db.Char(36)
+  createdAt DateTime @default(now())
 
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([token])
-  @@map("student_refresh_tokens")
+  @@index([userId])
+  @@map("user_email_verification_tokens")
 }
