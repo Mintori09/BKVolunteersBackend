@@ -1,19 +1,5 @@
 import { Router } from 'express'
 import { authRouter } from 'src/features/auth'
-import { passwordRouter } from 'src/features/forgotPassword'
-import { facultyRouter } from 'src/features/faculty'
-import { clubRouter } from 'src/features/club'
-import { campaignRouter } from 'src/features/campaign'
-import { uploadRouter, filesRouter } from 'src/features/upload'
-import { eventRouter } from 'src/features/event'
-import { studentRouter } from 'src/features/student'
-import { titleRouter } from 'src/features/title'
-import { itemPhaseRouter } from 'src/features/item-phase'
-import { itemDonationRouter } from 'src/features/item-donation'
-import moneyDonationRouter, {
-    phaseDonationsRouter,
-} from 'src/features/money-donation/money-donation.route'
-import donationRouter from 'src/features/donation/donation.route'
 import { authLimiter } from 'src/common/middleware'
 import { config } from 'src/config'
 
@@ -25,78 +11,6 @@ const defaultRoutes = [
         route: authRouter,
         limiter: config.node_env === 'production' ? authLimiter : undefined,
     },
-    {
-        path: '/password',
-        route: passwordRouter,
-    },
-    {
-        path: '/faculties',
-        route: facultyRouter,
-    },
-    {
-        path: '/clubs',
-        route: clubRouter,
-    },
-    {
-        path: '/campaigns',
-        route: campaignRouter,
-    },
-    {
-        path: '/upload',
-        route: uploadRouter,
-    },
-    {
-        path: '/files',
-        route: filesRouter,
-    },
-    {
-        path: '/events',
-        route: eventRouter,
-    },
-    {
-        path: '/students',
-        route: studentRouter,
-    },
-    {
-        path: '/titles',
-        route: titleRouter,
-    },
-]
-
-const itemPhaseRoutes = [
-    {
-        path: '/campaigns/:campaignId/item-phases',
-        route: itemPhaseRouter,
-    },
-]
-
-const itemDonationRoutes = [
-    {
-        path: '/donations',
-        route: itemDonationRouter,
-    },
-    {
-        path: '/item-phases',
-        route: itemDonationRouter,
-    },
-]
-
-const moneyDonationRoutes = [
-    {
-        path: '/campaigns/:campaignId/money-phases',
-        route: moneyDonationRouter,
-    },
-    {
-        path: '/money-phases',
-        route: phaseDonationsRouter,
-    },
-]
-
-const donationRoutes = [
-    {
-        path: '/donations',
-        route: donationRouter,
-    },
 ]
 
 defaultRoutes.forEach((route) => {
@@ -105,22 +19,6 @@ defaultRoutes.forEach((route) => {
     } else {
         router.use(route.path, route.route)
     }
-})
-
-itemPhaseRoutes.forEach((route) => {
-    router.use(route.path, route.route)
-})
-
-itemDonationRoutes.forEach((route) => {
-    router.use(route.path, route.route)
-})
-
-moneyDonationRoutes.forEach((route) => {
-    router.use(route.path, route.route)
-})
-
-donationRoutes.forEach((route) => {
-    router.use(route.path, route.route)
 })
 
 export default router
