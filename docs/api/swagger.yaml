@@ -1,0 +1,2069 @@
+openapi: 3.0.3
+info:
+  title: BK Volunteers API
+  version: 2.0.0
+  description: |
+    OpenAPI 3.0 specification converted from API_SPEC (v2).
+    Domain: thiện nguyện, công tác Đoàn, phong trào Thanh niên.
+servers:
+  - url: /api/v2
+    description: API v2 base path
+tags:
+  - name: Auth
+  - name: Me
+  - name: PublicDiscovery
+  - name: ActivityHub
+  - name: Campaigns
+  - name: Modules
+  - name: Registrations
+  - name: MoneyContributions
+  - name: ItemContributions
+  - name: Reviews
+  - name: Certificates
+  - name: Files
+  - name: Notifications
+  - name: Reports
+  - name: Student
+  - name: Organizer
+  - name: Settings
+  - name: Integrations
+security:
+  - bearerAuth: []
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Đăng nhập
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Làm mới token
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Đăng xuất
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Lấy identity hiện tại
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /users/me:
+    patch:
+      tags: [Me]
+      summary: Cập nhật thông tin identity chung
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /students/me/profile:
+    patch:
+      tags: [Me, Student]
+      summary: Cập nhật hồ sơ sinh viên
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentProfileUpdate'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /organizers/me/profile:
+    patch:
+      tags: [Me, Organizer]
+      summary: Cập nhật hồ sơ đơn vị
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrganizerProfileUpdate'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /users/me/password:
+    patch:
+      tags: [Me]
+      summary: Đổi mật khẩu
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /users/me/avatar:
+    patch:
+      tags: [Me]
+      summary: Cập nhật avatar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fileId]
+              properties:
+                fileId:
+                  type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /public/home:
+    get:
+      tags: [PublicDiscovery]
+      summary: Dữ liệu trang chủ
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /public/campaigns:
+    get:
+      tags: [PublicDiscovery]
+      summary: Danh sách campaign công khai
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/q'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/sortBy'
+        - $ref: '#/components/parameters/sortOrder'
+        - $ref: '#/components/parameters/fromDate'
+        - $ref: '#/components/parameters/toDate'
+        - $ref: '#/components/parameters/status'
+        - name: moduleType
+          in: query
+          schema:
+            $ref: '#/components/schemas/ModuleType'
+        - name: organizerType
+          in: query
+          schema:
+            $ref: '#/components/schemas/OrganizerType'
+        - name: scope
+          in: query
+          schema:
+            $ref: '#/components/schemas/ParticipationScope'
+        - name: registrationOpen
+          in: query
+          schema:
+            type: string
+            enum: [OPEN_NOW, OPEN_SOON, CLOSED]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          items:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/CampaignCard'
+                      meta:
+                        $ref: '#/components/schemas/PaginationMeta'
+
+  /public/campaigns/{campaignId}:
+    get:
+      tags: [PublicDiscovery]
+      summary: Chi tiết campaign công khai
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/campaignId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /public/campaigns/{campaignId}/updates:
+    get:
+      tags: [PublicDiscovery]
+      summary: Feed cập nhật campaign
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/campaignId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /public/organizers/{organizerId}:
+    get:
+      tags: [PublicDiscovery]
+      summary: Hồ sơ đơn vị công khai
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/organizerId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /public/organizers/{organizerId}/campaigns:
+    get:
+      tags: [PublicDiscovery]
+      summary: Campaign công khai của đơn vị
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/organizerId'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /public/activities:
+    get:
+      tags: [ActivityHub]
+      summary: Dữ liệu trang Hoạt động chung (3 tab)
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/q'
+        - $ref: '#/components/parameters/fromDate'
+        - $ref: '#/components/parameters/toDate'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /public/activities/fundraising:
+    get:
+      tags: [ActivityHub]
+      summary: Danh sách module gây quỹ
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/q'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/sortBy'
+        - $ref: '#/components/parameters/sortOrder'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /public/activities/item-donation:
+    get:
+      tags: [ActivityHub]
+      summary: Danh sách module hiện vật
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/q'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /public/activities/volunteer:
+    get:
+      tags: [ActivityHub]
+      summary: Danh sách module tuyển TNV
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/q'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /public/modules/{moduleId}:
+    get:
+      tags: [ActivityHub]
+      summary: Chi tiết public theo module
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/moduleId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /campaigns:
+    post:
+      tags: [Campaigns]
+      summary: Tạo campaign container
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignCreateRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+    get:
+      tags: [Campaigns]
+      summary: Danh sách campaign theo quyền
+      parameters:
+        - $ref: '#/components/parameters/q'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/fromDate'
+        - $ref: '#/components/parameters/toDate'
+        - $ref: '#/components/parameters/status'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /campaigns/{campaignId}:
+    get:
+      tags: [Campaigns]
+      summary: Chi tiết campaign
+      parameters:
+        - $ref: '#/components/parameters/campaignId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+    patch:
+      tags: [Campaigns]
+      summary: Cập nhật campaign
+      parameters:
+        - $ref: '#/components/parameters/campaignId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignUpdateRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+    delete:
+      tags: [Campaigns]
+      summary: Xóa mềm campaign draft
+      parameters:
+        - $ref: '#/components/parameters/campaignId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /campaigns/{campaignId}/preview:
+    get:
+      tags: [Campaigns]
+      summary: Preview campaign page
+      parameters:
+        - $ref: '#/components/parameters/campaignId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /campaigns/{campaignId}/actions/{action}:
+    post:
+      tags: [Campaigns]
+      summary: Workflow action của campaign
+      parameters:
+        - $ref: '#/components/parameters/campaignId'
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - ready-for-review
+              - submit-review
+              - publish
+              - start
+              - pause
+              - resume
+              - end
+              - archive
+              - cancel
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /campaigns/{campaignId}/status-history:
+    get:
+      tags: [Campaigns]
+      summary: Lịch sử trạng thái campaign
+      parameters:
+        - $ref: '#/components/parameters/campaignId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /campaigns/{campaignId}/modules:
+    post:
+      tags: [Modules]
+      summary: Tạo module trong campaign
+      parameters:
+        - $ref: '#/components/parameters/campaignId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModuleCreateRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+    get:
+      tags: [Modules]
+      summary: Danh sách modules theo campaign
+      parameters:
+        - $ref: '#/components/parameters/campaignId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /campaigns/{campaignId}/modules/{moduleId}:
+    get:
+      tags: [Modules]
+      summary: Chi tiết module
+      parameters:
+        - $ref: '#/components/parameters/campaignId'
+        - $ref: '#/components/parameters/moduleId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+    patch:
+      tags: [Modules]
+      summary: Cập nhật module
+      parameters:
+        - $ref: '#/components/parameters/campaignId'
+        - $ref: '#/components/parameters/moduleId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModuleUpdateRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+    delete:
+      tags: [Modules]
+      summary: Xóa module
+      parameters:
+        - $ref: '#/components/parameters/campaignId'
+        - $ref: '#/components/parameters/moduleId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /campaigns/{campaignId}/modules/{moduleId}/actions/{action}:
+    post:
+      tags: [Modules]
+      summary: Workflow action của module
+      parameters:
+        - $ref: '#/components/parameters/campaignId'
+        - $ref: '#/components/parameters/moduleId'
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [activate, pause, end, cancel]
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /modules/{moduleId}/config:
+    get:
+      tags: [Modules]
+      summary: Lấy cấu hình module theo moduleType
+      parameters:
+        - $ref: '#/components/parameters/moduleId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+    put:
+      tags: [Modules]
+      summary: Cập nhật cấu hình module theo moduleType
+      parameters:
+        - $ref: '#/components/parameters/moduleId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /modules/{moduleId}/item-targets:
+    post:
+      tags: [Modules, ItemContributions]
+      summary: Tạo target hiện vật
+      parameters:
+        - $ref: '#/components/parameters/moduleId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemTargetCreateRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+    get:
+      tags: [Modules, ItemContributions]
+      summary: Danh sách target hiện vật
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/moduleId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /modules/{moduleId}/item-targets/{targetId}:
+    patch:
+      tags: [Modules, ItemContributions]
+      summary: Cập nhật target hiện vật
+      parameters:
+        - $ref: '#/components/parameters/moduleId'
+        - $ref: '#/components/parameters/targetId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+    delete:
+      tags: [Modules, ItemContributions]
+      summary: Xóa target hiện vật
+      parameters:
+        - $ref: '#/components/parameters/moduleId'
+        - $ref: '#/components/parameters/targetId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /modules/{moduleId}/registrations:
+    post:
+      tags: [Registrations]
+      summary: Sinh viên đăng ký tham gia module
+      parameters:
+        - $ref: '#/components/parameters/moduleId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note:
+                  type: string
+                answers:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+    get:
+      tags: [Registrations]
+      summary: Danh sách đăng ký theo module
+      parameters:
+        - $ref: '#/components/parameters/moduleId'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/RegistrationStatus'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /registrations/{registrationId}:
+    get:
+      tags: [Registrations]
+      summary: Chi tiết đăng ký
+      parameters:
+        - $ref: '#/components/parameters/registrationId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /registrations/{registrationId}/actions/{action}:
+    post:
+      tags: [Registrations]
+      summary: Workflow action cho registration
+      parameters:
+        - $ref: '#/components/parameters/registrationId'
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [approve, waitlist, reject, cancel, checkin, mark-no-show]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /registrations/bulk-actions:
+    post:
+      tags: [Registrations]
+      summary: Xử lý đăng ký hàng loạt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action, registrationIds]
+              properties:
+                action:
+                  type: string
+                  enum: [approve, waitlist, reject, checkin]
+                registrationIds:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /modules/{moduleId}/money-contributions/checkout:
+    post:
+      tags: [MoneyContributions]
+      summary: Tạo payment order/link realtime
+      parameters:
+        - $ref: '#/components/parameters/moduleId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                amount:
+                  type: number
+                note:
+                  type: string
+                returnUrl:
+                  type: string
+                  format: uri
+                cancelUrl:
+                  type: string
+                  format: uri
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+
+  /modules/{moduleId}/money-contributions:
+    get:
+      tags: [MoneyContributions]
+      summary: Danh sách money contributions theo module
+      parameters:
+        - $ref: '#/components/parameters/moduleId'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /modules/{moduleId}/money-contributions/manual:
+    post:
+      tags: [MoneyContributions]
+      summary: Khai báo chuyển khoản thủ công
+      parameters:
+        - $ref: '#/components/parameters/moduleId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                amount:
+                  type: number
+                note:
+                  type: string
+                proofFileId:
+                  type: string
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+
+  /money-contributions/{contributionId}:
+    get:
+      tags: [MoneyContributions]
+      summary: Chi tiết money contribution
+      parameters:
+        - $ref: '#/components/parameters/contributionId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /money-contributions/{contributionId}/actions/{action}:
+    post:
+      tags: [MoneyContributions]
+      summary: Xử lý money contribution thủ công
+      parameters:
+        - $ref: '#/components/parameters/contributionId'
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [verify, reject]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                verifiedAmount:
+                  type: number
+                reason:
+                  type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /integrations/payments/webhook:
+    post:
+      tags: [Integrations, MoneyContributions]
+      summary: Webhook payment provider realtime
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Webhook accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /modules/{moduleId}/item-contributions:
+    post:
+      tags: [ItemContributions]
+      summary: Đăng ký quyên góp hiện vật
+      parameters:
+        - $ref: '#/components/parameters/moduleId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemContributionCreateRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+    get:
+      tags: [ItemContributions]
+      summary: Danh sách item contributions theo module
+      parameters:
+        - $ref: '#/components/parameters/moduleId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /item-contributions/{contributionId}:
+    get:
+      tags: [ItemContributions]
+      summary: Chi tiết item contribution
+      parameters:
+        - $ref: '#/components/parameters/contributionId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /item-contributions/{contributionId}/actions/{action}:
+    post:
+      tags: [ItemContributions]
+      summary: Xử lý item contribution
+      parameters:
+        - $ref: '#/components/parameters/contributionId'
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [confirm-handover, reject]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                handoverMethod:
+                  type: string
+                  enum: [MANUAL_CONFIRM, QR_CHECKIN, SIGNATURE]
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /campaigns/{campaignId}/review-requests:
+    post:
+      tags: [Reviews]
+      summary: Tạo review request
+      parameters:
+        - $ref: '#/components/parameters/campaignId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+
+  /review-requests:
+    get:
+      tags: [Reviews]
+      summary: Danh sách review requests
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /review-requests/{reviewRequestId}:
+    get:
+      tags: [Reviews]
+      summary: Chi tiết review request
+      parameters:
+        - $ref: '#/components/parameters/reviewRequestId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /review-requests/{reviewRequestId}/comments:
+    post:
+      tags: [Reviews]
+      summary: Tạo comment review
+      parameters:
+        - $ref: '#/components/parameters/reviewRequestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewCommentCreateRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+
+  /review-comments/{commentId}:
+    patch:
+      tags: [Reviews]
+      summary: Cập nhật review comment
+      parameters:
+        - $ref: '#/components/parameters/commentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [commentText]
+              properties:
+                commentText:
+                  type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+    delete:
+      tags: [Reviews]
+      summary: Xóa review comment
+      parameters:
+        - $ref: '#/components/parameters/commentId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /review-requests/{reviewRequestId}/actions/{action}:
+    post:
+      tags: [Reviews]
+      summary: Workflow action review
+      parameters:
+        - $ref: '#/components/parameters/reviewRequestId'
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [pre-approve, final-approve, request-revision, reject]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note:
+                  type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /certificate-templates:
+    post:
+      tags: [Certificates]
+      summary: Tạo certificate template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, certificateType]
+              properties:
+                name:
+                  type: string
+                certificateType:
+                  $ref: '#/components/schemas/CertificateType'
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+    get:
+      tags: [Certificates]
+      summary: Danh sách certificate templates
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /certificate-templates/{templateId}/versions:
+    post:
+      tags: [Certificates]
+      summary: Tạo version cho template
+      parameters:
+        - $ref: '#/components/parameters/templateId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+    get:
+      tags: [Certificates]
+      summary: Danh sách versions của template
+      parameters:
+        - $ref: '#/components/parameters/templateId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /certificate-policies:
+    post:
+      tags: [Certificates]
+      summary: Tạo certificate policy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+    get:
+      tags: [Certificates]
+      summary: Danh sách certificate policies
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /certificate-policies/{policyId}:
+    patch:
+      tags: [Certificates]
+      summary: Cập nhật certificate policy
+      parameters:
+        - $ref: '#/components/parameters/policyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /certificates/issue:
+    post:
+      tags: [Certificates]
+      summary: Tạo certificate từ policy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [policyId, recipientIds]
+              properties:
+                policyId:
+                  type: string
+                campaignId:
+                  type: string
+                moduleId:
+                  type: string
+                recipientIds:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+
+  /certificates/{certificateId}:
+    get:
+      tags: [Certificates]
+      summary: Chi tiết certificate
+      parameters:
+        - $ref: '#/components/parameters/certificateId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /certificates/{certificateId}/download:
+    get:
+      tags: [Certificates]
+      summary: Tải file certificate
+      parameters:
+        - $ref: '#/components/parameters/certificateId'
+      responses:
+        '200':
+          description: File download URL or stream
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /certificates/{certificateId}/audits:
+    get:
+      tags: [Certificates]
+      summary: Audit logs của certificate
+      parameters:
+        - $ref: '#/components/parameters/certificateId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /certificates/{certificateId}/actions/{action}:
+    post:
+      tags: [Certificates]
+      summary: Workflow action certificate
+      parameters:
+        - $ref: '#/components/parameters/certificateId'
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [lock-snapshot, render, sign, send-email, revoke, reissue]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /public/certificates/verify/{publicId}:
+    get:
+      tags: [Certificates]
+      summary: Verify certificate công khai
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/publicId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /files/images:
+    post:
+      tags: [Files]
+      summary: Upload image
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+
+  /files/documents:
+    post:
+      tags: [Files]
+      summary: Upload document
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+
+  /files/templates:
+    post:
+      tags: [Files]
+      summary: Upload template file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+
+  /files/{fileId}:
+    get:
+      tags: [Files]
+      summary: Lấy metadata file
+      parameters:
+        - $ref: '#/components/parameters/fileId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /files/{fileId}/preview:
+    get:
+      tags: [Files]
+      summary: Lấy URL preview file
+      parameters:
+        - $ref: '#/components/parameters/fileId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: Danh sách notifications
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /notifications/unread-count:
+    get:
+      tags: [Notifications]
+      summary: Số notification chưa đọc
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /notifications/{notificationId}/read:
+    post:
+      tags: [Notifications]
+      summary: Đánh dấu notification đã đọc
+      parameters:
+        - $ref: '#/components/parameters/notificationId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /notifications/read-all:
+    post:
+      tags: [Notifications]
+      summary: Đánh dấu tất cả đã đọc
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /admin/dashboard/overview:
+    get:
+      tags: [Reports]
+      summary: Dashboard overview toàn trường
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /admin/dashboard/campaigns/pending:
+    get:
+      tags: [Reports]
+      summary: Campaigns chờ duyệt
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /admin/dashboard/campaigns/ongoing:
+    get:
+      tags: [Reports]
+      summary: Campaigns đang chạy
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /admin/dashboard/top-organizers:
+    get:
+      tags: [Reports]
+      summary: Top organizers
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /campaigns/{campaignId}/reports/summary:
+    get:
+      tags: [Reports]
+      summary: Tổng kết campaign
+      parameters:
+        - $ref: '#/components/parameters/campaignId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /admin/reports/school:
+    get:
+      tags: [Reports]
+      summary: Báo cáo toàn trường
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /admin/reports/by-organizer:
+    get:
+      tags: [Reports]
+      summary: Báo cáo theo đơn vị
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /admin/reports/by-campaign-type:
+    get:
+      tags: [Reports]
+      summary: Báo cáo theo loại campaign
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /exports:
+    post:
+      tags: [Reports]
+      summary: Tạo export job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type]
+              properties:
+                type:
+                  type: string
+                  enum: [CAMPAIGN_SUMMARY, SCHOOL_REPORT, ORGANIZER_REPORT, CAMPAIGN_TYPE_REPORT]
+                payload:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+
+  /exports/{exportJobId}:
+    get:
+      tags: [Reports]
+      summary: Trạng thái export job
+      parameters:
+        - $ref: '#/components/parameters/exportJobId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /exports/{exportJobId}/download:
+    get:
+      tags: [Reports]
+      summary: Tải file export
+      parameters:
+        - $ref: '#/components/parameters/exportJobId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /students/me/dashboard:
+    get:
+      tags: [Student]
+      summary: Dashboard cá nhân sinh viên
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /students/me/registrations:
+    get:
+      tags: [Student]
+      summary: Lịch sử đăng ký tham gia
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /students/me/contributions:
+    get:
+      tags: [Student]
+      summary: Lịch sử đóng góp
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /students/me/certificates:
+    get:
+      tags: [Student]
+      summary: Danh sách chứng nhận của tôi
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /students/me/watchlist:
+    get:
+      tags: [Student]
+      summary: Danh sách campaign theo dõi
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /students/me/watchlist/{campaignId}:
+    post:
+      tags: [Student]
+      summary: Theo dõi campaign
+      parameters:
+        - $ref: '#/components/parameters/campaignId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+    delete:
+      tags: [Student]
+      summary: Bỏ theo dõi campaign
+      parameters:
+        - $ref: '#/components/parameters/campaignId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /clubs/{clubId}/memberships:
+    post:
+      tags: [Organizer]
+      summary: Sinh viên yêu cầu tham gia CLB
+      parameters:
+        - $ref: '#/components/parameters/clubId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note:
+                  type: string
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+    get:
+      tags: [Organizer]
+      summary: Danh sách memberships của CLB
+      parameters:
+        - $ref: '#/components/parameters/clubId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /club-memberships/{membershipId}/actions/{action}:
+    post:
+      tags: [Organizer]
+      summary: Xử lý membership action
+      parameters:
+        - $ref: '#/components/parameters/membershipId'
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [approve, reject, remove]
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /organizer-payment-accounts:
+    post:
+      tags: [Organizer]
+      summary: Tạo tài khoản nhận tiền
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [accountName, accountNumber, bankName]
+              properties:
+                accountName:
+                  type: string
+                accountNumber:
+                  type: string
+                bankName:
+                  type: string
+                provider:
+                  type: string
+                  enum: [PAYOS, MANUAL_TRANSFER]
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+    get:
+      tags: [Organizer]
+      summary: Danh sách tài khoản nhận tiền
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /organizer-payment-accounts/{accountId}:
+    patch:
+      tags: [Organizer]
+      summary: Cập nhật tài khoản nhận tiền
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /organizer-payment-accounts/{accountId}/actions/{action}:
+    post:
+      tags: [Organizer]
+      summary: Action trạng thái tài khoản nhận tiền
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [verify, disable]
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /organizers/me/settings:
+    get:
+      tags: [Settings]
+      summary: Lấy cài đặt đơn vị
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+    put:
+      tags: [Settings]
+      summary: Cập nhật cài đặt đơn vị
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /students/me/settings:
+    get:
+      tags: [Settings]
+      summary: Lấy cài đặt cá nhân sinh viên
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+    put:
+      tags: [Settings]
+      summary: Cập nhật cài đặt cá nhân sinh viên
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /admin/settings:
+    get:
+      tags: [Settings]
+      summary: Lấy cài đặt toàn trường
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+    put:
+      tags: [Settings]
+      summary: Cập nhật cài đặt toàn trường
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+  /modules/{moduleId}/settings:
+    get:
+      tags: [Settings]
+      summary: Lấy cài đặt module
+      parameters:
+        - $ref: '#/components/parameters/moduleId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+    put:
+      tags: [Settings]
+      summary: Cập nhật cài đặt module
+      parameters:
+        - $ref: '#/components/parameters/moduleId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          $ref: '#/components/responses/Ok'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    q:
+      name: q
+      in: query
+      schema:
+        type: string
+    page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    sortBy:
+      name: sortBy
+      in: query
+      schema:
+        type: string
+    sortOrder:
+      name: sortOrder
+      in: query
+      schema:
+        type: string
+        enum: [asc, desc]
+    fromDate:
+      name: fromDate
+      in: query
+      schema:
+        type: string
+        format: date-time
+    toDate:
+      name: toDate
+      in: query
+      schema:
+        type: string
+        format: date-time
+    status:
+      name: status
+      in: query
+      schema:
+        type: string
+    campaignId:
+      name: campaignId
+      in: path
+      required: true
+      schema:
+        type: string
+    moduleId:
+      name: moduleId
+      in: path
+      required: true
+      schema:
+        type: string
+    organizerId:
+      name: organizerId
+      in: path
+      required: true
+      schema:
+        type: string
+    registrationId:
+      name: registrationId
+      in: path
+      required: true
+      schema:
+        type: string
+    contributionId:
+      name: contributionId
+      in: path
+      required: true
+      schema:
+        type: string
+    reviewRequestId:
+      name: reviewRequestId
+      in: path
+      required: true
+      schema:
+        type: string
+    commentId:
+      name: commentId
+      in: path
+      required: true
+      schema:
+        type: string
+    templateId:
+      name: templateId
+      in: path
+      required: true
+      schema:
+        type: string
+    policyId:
+      name: policyId
+      in: path
+      required: true
+      schema:
+        type: string
+    certificateId:
+      name: certificateId
+      in: path
+      required: true
+      schema:
+        type: string
+    publicId:
+      name: publicId
+      in: path
+      required: true
+      schema:
+        type: string
+    fileId:
+      name: fileId
+      in: path
+      required: true
+      schema:
+        type: string
+    notificationId:
+      name: notificationId
+      in: path
+      required: true
+      schema:
+        type: string
+    exportJobId:
+      name: exportJobId
+      in: path
+      required: true
+      schema:
+        type: string
+    clubId:
+      name: clubId
+      in: path
+      required: true
+      schema:
+        type: string
+    membershipId:
+      name: membershipId
+      in: path
+      required: true
+      schema:
+        type: string
+    accountId:
+      name: accountId
+      in: path
+      required: true
+      schema:
+        type: string
+    targetId:
+      name: targetId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    Ok:
+      description: Success
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SuccessResponse'
+    Created:
+      description: Created
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SuccessResponse'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          nullable: true
+        data:
+          type: object
+          additionalProperties: true
+        meta:
+          type: object
+          additionalProperties: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties: true
+
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+
+    LoginRequest:
+      type: object
+      required: [identifier, password]
+      properties:
+        identifier:
+          type: string
+          description: email | username | mssv
+        password:
+          type: string
+          format: password
+
+    ChangePasswordRequest:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword:
+          type: string
+          format: password
+        newPassword:
+          type: string
+          format: password
+
+    StudentProfileUpdate:
+      type: object
+      properties:
+        fullName:
+          type: string
+        phone:
+          type: string
+        className:
+          type: string
+        emergencyContact:
+          type: string
+
+    OrganizerProfileUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        shortName:
+          type: string
+        contactEmail:
+          type: string
+          format: email
+        contactPhone:
+          type: string
+        officeAddress:
+          type: string
+
+    CampaignCreateRequest:
+      type: object
+      required:
+        - title
+        - campaignStartAt
+        - campaignEndAt
+        - participationScopeType
+      properties:
+        title:
+          type: string
+        shortDescription:
+          type: string
+        overallObjective:
+          type: string
+        beneficiaryDescription:
+          type: string
+        campaignStartAt:
+          type: string
+          format: date-time
+        campaignEndAt:
+          type: string
+          format: date-time
+        participationScopeType:
+          $ref: '#/components/schemas/ParticipationScope'
+        coverFileId:
+          type: string
+        logoFileId:
+          type: string
+        facultyId:
+          type: integer
+
+    CampaignUpdateRequest:
+      type: object
+      additionalProperties: true
+
+    ModuleCreateRequest:
+      type: object
+      required: [moduleType, title, moduleStartAt, moduleEndAt]
+      properties:
+        moduleType:
+          $ref: '#/components/schemas/ModuleType'
+        title:
+          type: string
+        description:
+          type: string
+        moduleStartAt:
+          type: string
+          format: date-time
+        moduleEndAt:
+          type: string
+          format: date-time
+        visibilityStatus:
+          type: string
+          enum: [INTERNAL, PUBLIC]
+        participationScope:
+          $ref: '#/components/schemas/ParticipationScope'
+
+    ModuleUpdateRequest:
+      type: object
+      additionalProperties: true
+
+    ItemTargetCreateRequest:
+      type: object
+      required: [itemName, unit, targetQuantity]
+      properties:
+        itemName:
+          type: string
+        unit:
+          type: string
+        targetQuantity:
+          type: integer
+        description:
+          type: string
+        priority:
+          type: integer
+
+    ItemContributionCreateRequest:
+      type: object
+      required: [lines]
+      properties:
+        lines:
+          type: array
+          items:
+            type: object
+            required: [itemTargetId, quantity]
+            properties:
+              itemTargetId:
+                type: string
+              quantity:
+                type: integer
+              note:
+                type: string
+        handoverTimeExpected:
+          type: string
+          format: date-time
+        note:
+          type: string
+
+    ReviewCommentCreateRequest:
+      type: object
+      required: [scopeType, commentText]
+      properties:
+        scopeType:
+          type: string
+          enum: [CAMPAIGN, MODULE, DOCUMENT]
+        moduleId:
+          type: string
+        documentId:
+          type: string
+        commentText:
+          type: string
+
+    CampaignCard:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        shortDescription:
+          type: string
+        status:
+          type: string
+        organizerType:
+          $ref: '#/components/schemas/OrganizerType'
+        moduleTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModuleType'
+
+    ModuleType:
+      type: string
+      enum:
+        - VOLUNTEER_RECRUITMENT
+        - FUNDRAISING_MONEY
+        - ITEM_DONATION
+        - EVENT
+
+    OrganizerType:
+      type: string
+      enum: [CLB, LCD, DOANTRUONG]
+
+    ParticipationScope:
+      type: string
+      enum: [FACULTY_INTERNAL, CLUB_INTERNAL, SCHOOL_WIDE]
+
+    RegistrationStatus:
+      type: string
+      enum: [PENDING, APPROVED, WAITLISTED, REJECTED, CANCELLED, COMPLETED, NO_SHOW]
+
+    CertificateType:
+      type: string
+      enum:
+        - VOLUNTEER_COMPLETION
+        - DONOR_CERTIFICATE
+        - ORGANIZER_CERTIFICATE
+        - PARTNER_CERTIFICATE
