@@ -1,125 +1,50 @@
 import { Router } from 'express'
-import { authRouter } from 'src/features/auth'
-import { passwordRouter } from 'src/features/forgotPassword'
-import { facultyRouter } from 'src/features/faculty'
-import { clubRouter } from 'src/features/club'
-import { campaignRouter } from 'src/features/campaign'
-import { uploadRouter, filesRouter } from 'src/features/upload'
-import { eventRouter } from 'src/features/event'
-import { studentRouter } from 'src/features/student'
-import { titleRouter } from 'src/features/title'
-import { itemPhaseRouter } from 'src/features/item-phase'
-import { itemDonationRouter } from 'src/features/item-donation'
-import moneyDonationRouter, {
-    phaseDonationsRouter,
-} from 'src/features/money-donation/money-donation.route'
-import donationRouter from 'src/features/donation/donation.route'
-import { authLimiter } from 'src/common/middleware'
-import { config } from 'src/config'
+import {
+    adminRouter,
+    approvalsRouter,
+    authRouter,
+    campaignsRouter,
+    certificatesRouter,
+    eventsRouter,
+    fundraisingRouter,
+    itemDonationsRouter,
+    notificationsRouter,
+    organizationsRouter,
+    publicRouter,
+    reportsRouter,
+    studentsRouter,
+} from 'src/modules'
+import { ApiResponse } from 'src/utils/ApiResponse'
 
 const router = Router()
+const serviceName = 'express-starter-kit'
+const serviceVersion = '1.0.0'
+
+router.get('/health', (_req, res) =>
+    ApiResponse.success(res, {
+        status: 'ok',
+        service: serviceName,
+        version: serviceVersion,
+    })
+)
 
 const defaultRoutes = [
-    {
-        path: '/auth',
-        route: authRouter,
-        limiter: config.node_env === 'production' ? authLimiter : undefined,
-    },
-    {
-        path: '/password',
-        route: passwordRouter,
-    },
-    {
-        path: '/faculties',
-        route: facultyRouter,
-    },
-    {
-        path: '/clubs',
-        route: clubRouter,
-    },
-    {
-        path: '/campaigns',
-        route: campaignRouter,
-    },
-    {
-        path: '/upload',
-        route: uploadRouter,
-    },
-    {
-        path: '/files',
-        route: filesRouter,
-    },
-    {
-        path: '/events',
-        route: eventRouter,
-    },
-    {
-        path: '/students',
-        route: studentRouter,
-    },
-    {
-        path: '/titles',
-        route: titleRouter,
-    },
-]
-
-const itemPhaseRoutes = [
-    {
-        path: '/campaigns/:campaignId/item-phases',
-        route: itemPhaseRouter,
-    },
-]
-
-const itemDonationRoutes = [
-    {
-        path: '/donations',
-        route: itemDonationRouter,
-    },
-    {
-        path: '/item-phases',
-        route: itemDonationRouter,
-    },
-]
-
-const moneyDonationRoutes = [
-    {
-        path: '/campaigns/:campaignId/money-phases',
-        route: moneyDonationRouter,
-    },
-    {
-        path: '/money-phases',
-        route: phaseDonationsRouter,
-    },
-]
-
-const donationRoutes = [
-    {
-        path: '/donations',
-        route: donationRouter,
-    },
+    { path: '/auth', route: authRouter },
+    { path: '/public', route: publicRouter },
+    { path: '/students', route: studentsRouter },
+    { path: '/organizations', route: organizationsRouter },
+    { path: '/campaigns', route: campaignsRouter },
+    { path: '/approvals', route: approvalsRouter },
+    { path: '/fundraising', route: fundraisingRouter },
+    { path: '/item-donations', route: itemDonationsRouter },
+    { path: '/events', route: eventsRouter },
+    { path: '/certificates', route: certificatesRouter },
+    { path: '/notifications', route: notificationsRouter },
+    { path: '/reports', route: reportsRouter },
+    { path: '/admin', route: adminRouter },
 ]
 
 defaultRoutes.forEach((route) => {
-    if (route.limiter) {
-        router.use(route.path, route.limiter, route.route)
-    } else {
-        router.use(route.path, route.route)
-    }
-})
-
-itemPhaseRoutes.forEach((route) => {
-    router.use(route.path, route.route)
-})
-
-itemDonationRoutes.forEach((route) => {
-    router.use(route.path, route.route)
-})
-
-moneyDonationRoutes.forEach((route) => {
-    router.use(route.path, route.route)
-})
-
-donationRoutes.forEach((route) => {
     router.use(route.path, route.route)
 })
 

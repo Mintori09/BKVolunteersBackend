@@ -9,7 +9,7 @@ const isCreator = (req: Request, res: Response, next: NextFunction) => {
         throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chưa xác thực người dùng')
     }
 
-    if (role === 'SINHVIEN') {
+    if (role === 'STUDENT') {
         throw new ApiError(
             HttpStatus.FORBIDDEN,
             'Sinh viên không có quyền thực hiện thao tác này'

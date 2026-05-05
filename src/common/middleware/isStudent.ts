@@ -9,7 +9,7 @@ const isStudent = (req: Request, res: Response, next: NextFunction) => {
         throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chưa xác thực người dùng')
     }
 
-    if (role !== 'SINHVIEN') {
+    if (role !== 'STUDENT') {
         throw new ApiError(
             HttpStatus.FORBIDDEN,
             'Chỉ sinh viên mới có thể thực hiện thao tác này'

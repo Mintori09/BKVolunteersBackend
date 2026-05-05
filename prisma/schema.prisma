@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,392 +6,618 @@ datasource db {
   provider = "mysql"
 }
 
-// ============================================
-// ENUMS
-// ============================================
-
-enum UserRole {
-  CLB // Câu lạc bộ
-  LCD // Liên chi đoàn
-  DOANTRUONG // Đoàn trường
+enum AccountType {
+  STUDENT
+  OPERATOR
 }
 
-enum CampaignScope {
-  KHOA // Cấp khoa
-  TRUONG // Cấp trường
+enum OperatorRole {
+  ORG_ADMIN
+  ORG_MEMBER
+  SCHOOL_REVIEWER
+  SCHOOL_ADMIN
+  SYSTEM
+}
+
+enum OrganizationType {
+  FACULTY_UNION
+  CLUB
+  SCHOOL_UNION
+}
+
+enum RecordStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum CampaignScopeType {
+  FACULTY
+  SCHOOL
+  PUBLIC
 }
 
 enum CampaignStatus {
   DRAFT
-  PENDING
-  ACTIVE
+  SUBMITTED
+  PRE_APPROVED
+  APPROVED
+  REVISION_REQUIRED
   REJECTED
-  COMPLETED
+  PUBLISHED
+  ONGOING
+  ENDED
+  ARCHIVED
+}
+
+enum CampaignModuleType {
+  fundraising
+  item_donation
+  event
+}
+
+enum ModuleStatus {
+  DRAFT
+  READY_FOR_REVIEW
+  APPROVED
+  OPEN
+  CLOSED
   CANCELLED
 }
 
-enum DonationStatus {
+enum MoneyDonationStatus {
   PENDING
+  MATCHED
   VERIFIED
   REJECTED
+  REFUNDED
 }
 
-enum ParticipantStatus {
+enum TransactionMatchStatus {
+  UNMATCHED
+  MATCHED
+  IGNORED
+}
+
+enum ItemTargetStatus {
+  ACTIVE
+  CLOSED
+}
+
+enum ItemPledgeStatus {
+  PLEDGED
+  CONFIRMED
+  RECEIVED
+  REJECTED
+  CANCELLED
+}
+
+enum EventRegistrationStatus {
   PENDING
   APPROVED
   REJECTED
-  WAITLISTED
+  CANCELLED
+  CHECKED_IN
+  COMPLETED
 }
 
-enum PointSourceType {
-  EVENT_PARTICIPATION
-  MONEY_DONATION
-  ITEM_DONATION
-  MANUAL_ADJUSTMENT
-  BONUS
+enum CertificateTemplateStatus {
+  ACTIVE
+  INACTIVE
 }
 
-// ============================================
-// CORE MODELS
-// ============================================
+enum CertificateStatus {
+  PENDING
+  RENDERING
+  READY
+  SIGNED
+  REVOKED
+  FAILED
+}
 
-/// Danh mục khoa
+enum BackgroundJobStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
 model Faculty {
-  id        Int       @id @default(autoincrement())
-code      String    @unique @db.Char(3)
-  name      String    @db.VarChar(255)
-  users     User[]
-  students  Student[]
-  clubs     Club[]
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  code      String   @unique @db.VarChar(20)
+  name      String   @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  organizations Organization[]
+  operators     OperatorAccount[]
+  students      Student[]
+  campaigns     Campaign[]
 
   @@map("faculties")
 }
 
-/// Tài khoản quản lý (Admin, Đoàn trường, Liên chi đoàn, Trưởng CLB)
-model User {
-  id        String    @id @default(cuid())
-  username  String    @unique @db.VarChar(50)
-  email     String    @unique @db.VarChar(255)
-  password  String    @db.VarChar(255)
-  role      UserRole  @default(LCD)
-  facultyId Int?      @map("faculty_id")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
+model Organization {
+  id          BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
+  code        String           @unique @db.VarChar(50)
+  name        String           @db.VarChar(255)
+  type        OrganizationType
+  facultyId   BigInt?          @map("faculty_id") @db.UnsignedBigInt
+  logoUrl     String?          @map("logo_url") @db.VarChar(500)
+  description String?          @db.Text
+  status      RecordStatus     @default(ACTIVE)
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  deletedAt   DateTime?        @map("deleted_at")
 
-  faculty             Faculty?             @relation(fields: [facultyId], references: [id], onDelete: SetNull)
-  clubs               Club[]
-  campaignsAsCreator  Campaign[]           @relation("CampaignCreator")
-  campaignsAsApprover Campaign[]           @relation("CampaignApprover")
-  accounts            Account[]
-  resetTokens         ResetToken[]
-  refreshTokens       RefreshToken[]
+  faculty   Faculty?          @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+  operators OperatorAccount[]
+  campaigns Campaign[]
 
-  @@index([email])
-  @@index([username])
+  @@index([type])
   @@index([facultyId])
-  @@map("users")
+  @@map("organizations")
 }
 
-/// Sinh viên - người tham gia hoạt động tình nguyện
-model Student {
-  id          String    @id @default(cuid())
-  mssv        String    @unique @db.VarChar(9)
-  fullName    String    @map("full_name") @db.VarChar(255)
-  email       String    @unique @db.VarChar(255)
-  password    String    @db.VarChar(255)
-facultyId String?  @map("faculty_id") @db.Char(3)
-  className   String?   @map("class_name") @db.VarChar(50)
-  phone       String?   @db.VarChar(15)
-  totalPoints Int       @default(0) @map("total_points")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  deletedAt   DateTime? @map("deleted_at")
+model OperatorAccount {
+  id             BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
+  organizationId BigInt?      @map("organization_id") @db.UnsignedBigInt
+  facultyId      BigInt?      @map("faculty_id") @db.UnsignedBigInt
+  email          String       @unique @db.VarChar(255)
+  passwordHash   String       @map("password_hash") @db.VarChar(255)
+  fullName       String       @map("full_name") @db.VarChar(255)
+  phone          String?      @db.VarChar(30)
+  avatarUrl      String?      @map("avatar_url") @db.VarChar(500)
+  role           OperatorRole
+  status         RecordStatus @default(ACTIVE)
+  lastLoginAt    DateTime?    @map("last_login_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  deletedAt      DateTime?    @map("deleted_at")
 
-  faculty           Faculty?            @relation(fields: [facultyId], references: [code], onDelete: SetNull)
-  titles            StudentTitle[]
-  pointTransactions PointTransaction[]
-  donations         Donation[]
-  participants      Participant[]
-  refreshTokens     StudentRefreshToken[]
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  faculty      Faculty?      @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+  createdCampaigns Campaign[] @relation("CampaignCreatedBy")
+  approvedCampaigns Campaign[] @relation("CampaignApprovedBy")
+  verifiedMoneyDonations MoneyDonation[] @relation("MoneyDonationVerifiedBy")
+  receivedItemHandovers ItemHandoverRecord[] @relation("ItemHandoverReceivedBy")
+  reviewedEventRegistrations EventRegistration[] @relation("EventRegistrationReviewedBy")
+  createdCertificateTemplates CertificateTemplate[] @relation("CertificateTemplateCreatedBy")
+  revokedCertificates Certificate[] @relation("CertificateRevokedBy")
+  notifications Notification[]
+  refreshTokens RefreshToken[]
 
-  @@index([mssv])
-  @@index([email])
+  @@index([role])
+  @@index([organizationId])
   @@index([facultyId])
-  @@map("students")
+  @@map("operator_accounts")
 }
 
-// ============================================
-// CLUB SYSTEM
-// ============================================
-
-model Club {
-  id        String    @id @default(cuid())
-  name      String    @db.VarChar(255)
-  facultyId Int?      @map("faculty_id") // NULL = cấp trường
-  leaderId  String?   @map("leader_id")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
-
-  faculty Faculty? @relation(fields: [facultyId], references: [id], onDelete: SetNull)
-  leader  User?    @relation(fields: [leaderId], references: [id], onDelete: SetNull)
-
-  @@index([facultyId])
-  @@map("clubs")
-}
-
-// ============================================
-// CAMPAIGN SYSTEM (STI Pattern)
-// ============================================
-
-/// Chiến dịch tổng - quản lý trạng thái và phê duyệt
-model Campaign {
-  id            String         @id @default(cuid())
-  title         String         @db.VarChar(255)
-  description   String?        @db.Text
-  scope         CampaignScope
-  status        CampaignStatus @default(DRAFT)
-  planFileUrl   String?        @map("plan_file_url")
-  budgetFileUrl String?        @map("budget_file_url")
-  adminComment  String?        @map("admin_comment") @db.Text
-  approverId    String?        @map("approver_id")
-  creatorId     String         @map("creator_id")
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt @map("updated_at")
-  deletedAt     DateTime?      @map("deleted_at")
-
-  approver   User?                  @relation("CampaignApprover", fields: [approverId], references: [id])
-  creator    User                   @relation("CampaignCreator", fields: [creatorId], references: [id])
-  moneyPhase MoneyDonationCampaign?
-  itemPhase  ItemDonationCampaign?
-  eventPhase EventCampaign?
-
-  @@index([creatorId])
-  @@index([approverId])
-  @@index([status])
-  @@index([scope])
-  @@map("campaigns")
-}
-
-/// Chiến dịch quyên góp tiền
-model MoneyDonationCampaign {
-  id              Int       @id @default(autoincrement())
-  campaignId      String    @unique @map("campaign_id")
-  targetAmount    Decimal   @default(0) @map("target_amount") @db.Decimal(15, 0)
-  currentAmount   Decimal   @default(0) @map("current_amount") @db.Decimal(15, 0)
-  qrImageUrl      String?   @map("qr_image_url")
-  bankAccountNo   String?   @map("bank_account_no") @db.VarChar(20)
-  bankAccountName String?   @map("bank_account_name") @db.VarChar(100)
-  bankCode        String?   @map("bank_code") @db.VarChar(10)
-  startDate       DateTime? @map("start_date")
-  endDate         DateTime? @map("end_date")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  deletedAt       DateTime? @map("deleted_at")
-
-  campaign  Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  donations Donation[]
-
-  @@index([campaignId])
-  @@map("money_donation_campaigns")
-}
-
-/// Chiến dịch quyên góp vật phẩm
-model ItemDonationCampaign {
-  id                Int       @id @default(autoincrement())
-  campaignId        String    @unique @map("campaign_id")
-  acceptedItems     String    @map("accepted_items") @db.Text // JSON array
-  collectionAddress String?   @map("collection_address")
-  startDate         DateTime? @map("start_date")
-  endDate           DateTime? @map("end_date")
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
-
-  campaign  Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  donations Donation[]
-
-  @@index([campaignId])
-  @@map("item_donation_campaigns")
-}
-
-/// Chiến dịch sự kiện / tình nguyện
-model EventCampaign {
-  id                Int      @id @default(autoincrement())
-  campaignId        String   @unique @map("campaign_id")
-  location          String   @db.VarChar(255)
-  maxParticipants   Int      @default(0) @map("max_participants")
-  registrationStart DateTime @map("registration_start")
-  registrationEnd   DateTime @map("registration_end")
-  eventStart        DateTime @map("event_start")
-  eventEnd          DateTime @map("event_end")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
-
-  campaign     Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  participants Participant[]
-
-  @@index([campaignId])
-  @@index([registrationStart])
-  @@index([eventStart])
-  @@map("event_campaigns")
-}
-
-// ============================================
-// GAMIFICATION SYSTEM
-// ============================================
-
-/// Hệ thống danh hiệu
 model Title {
-  id          Int      @id @default(autoincrement())
-  name        String   @db.VarChar(100)
+  id          BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  name        String   @db.VarChar(120)
   description String?  @db.Text
   minPoints   Int      @default(0) @map("min_points")
-  iconUrl     String?  @map("icon_url")
-  badgeColor  String?  @map("badge_color") @db.VarChar(7)
-  isActive    Boolean  @default(true) @map("is_active")
+  iconUrl     String?  @map("icon_url") @db.VarChar(500)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  students StudentTitle[]
+  students Student[]
 
   @@map("titles")
 }
 
-/// Bảng theo dõi danh hiệu sinh viên
-model StudentTitle {
-  studentId  String   @map("student_id")
-  titleId    Int      @map("title_id")
-  unlockedAt DateTime @default(now()) @map("unlocked_at")
+model Student {
+  id             BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
+  facultyId      BigInt       @map("faculty_id") @db.UnsignedBigInt
+  currentTitleId BigInt?      @map("current_title_id") @db.UnsignedBigInt
+  studentCode    String       @unique @map("student_code") @db.VarChar(30)
+  email          String       @unique @db.VarChar(255)
+  passwordHash   String       @map("password_hash") @db.VarChar(255)
+  fullName       String       @map("full_name") @db.VarChar(255)
+  classCode      String?      @map("class_code") @db.VarChar(50)
+  major          String?      @db.VarChar(120)
+  year           Int?         @db.UnsignedSmallInt
+  phone          String?      @db.VarChar(30)
+  avatarUrl      String?      @map("avatar_url") @db.VarChar(500)
+  status         RecordStatus @default(ACTIVE)
+  totalPoints    Int          @default(0) @map("total_points")
+  lastLoginAt    DateTime?    @map("last_login_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  deletedAt      DateTime?    @map("deleted_at")
 
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  title   Title   @relation(fields: [titleId], references: [id], onDelete: Cascade)
+  faculty       Faculty @relation(fields: [facultyId], references: [id], onDelete: Restrict)
+  currentTitle  Title?  @relation(fields: [currentTitleId], references: [id], onDelete: SetNull)
+  refreshTokens RefreshToken[]
+  moneyDonations MoneyDonation[]
+  itemPledges ItemPledge[]
+  eventRegistrations EventRegistration[]
+  certificates Certificate[]
+  notifications Notification[]
 
-  @@id([studentId, titleId])
-  @@map("student_titles")
-}
-
-/// Lịch sử tích điểm - điểm danh cho mọi nguồn
-model PointTransaction {
-  id         String          @id @default(cuid())
-  studentId  String          @map("student_id")
-  points     Int
-  reason     String          @db.VarChar(255)
-  sourceType PointSourceType @map("source_type")
-  sourceId   String?         @map("source_id")
-  awardedBy  String?         @map("awarded_by")
-  createdAt  DateTime        @default(now()) @map("created_at")
-
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  @@index([studentId])
-  @@index([sourceType])
-  @@index([createdAt])
-  @@map("point_transactions")
-}
-
-// ============================================
-// DONATIONS & PARTICIPANTS
-// ============================================
-
-/// Chi tiết quyên góp (Lịch sử đóng góp của Sinh viên)
-model Donation {
-  id              String         @id @default(cuid())
-  studentId       String         @map("student_id")
-  moneyPhaseId    Int?           @map("money_phase_id")
-  itemPhaseId     Int?           @map("item_phase_id")
-  amount          Decimal        @default(0) @db.Decimal(15, 0)
-  verifiedAmount  Decimal?       @map("verified_amount") @db.Decimal(15, 0)
-  itemDescription String?        @map("item_description") @db.Text
-  proofImageUrl   String?        @map("proof_image_url")
-  rejectionReason String?        @map("rejection_reason") @db.Text
-  status          DonationStatus @default(PENDING)
-  createdAt       DateTime       @default(now()) @map("created_at")
-  updatedAt       DateTime       @updatedAt @map("updated_at")
-
-  student    Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  moneyPhase MoneyDonationCampaign? @relation(fields: [moneyPhaseId], references: [id])
-  itemPhase  ItemDonationCampaign?  @relation(fields: [itemPhaseId], references: [id])
-
-  @@index([studentId])
-  @@index([moneyPhaseId])
-  @@index([itemPhaseId])
-  @@index([status])
-  @@map("donations")
-}
-
-/// Đăng ký tham gia sự kiện & chứng nhận
-model Participant {
-  id             String            @id @default(cuid())
-  eventId        Int               @map("event_id")
-  studentId      String            @map("student_id")
-  status         ParticipantStatus @default(PENDING)
-  isCheckedIn    Boolean           @default(false) @map("is_checked_in")
-  certificateUrl String?           @map("certificate_url")
-  createdAt      DateTime          @default(now()) @map("created_at")
-  updatedAt      DateTime          @updatedAt @map("updated_at")
-
-  event   EventCampaign @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  student Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  @@unique([eventId, studentId])
-  @@index([studentId])
-  @@index([eventId])
-  @@index([status])
-  @@map("participants")
-}
-
-// ============================================
-// AUTH MODELS (Existing)
-// ============================================
-
-model Account {
-  id                String @id @default(cuid())
-  userId            String @map("user_id")
-  provider          String
-  providerAccountId String @map("provider_account_id")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-  @@map("accounts")
+  @@index([facultyId])
+  @@index([currentTitleId])
+  @@map("students")
 }
 
 model RefreshToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  userId    String   @map("user_id")
-  createdAt DateTime @default(now()) @map("created_at")
+  id                BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
+  accountType       AccountType @map("account_type")
+  operatorAccountId BigInt?     @map("operator_account_id") @db.UnsignedBigInt
+  studentId         BigInt?     @map("student_id") @db.UnsignedBigInt
+  tokenHash         String      @map("token_hash") @db.VarChar(255)
+  expiresAt         DateTime    @map("expires_at")
+  revokedAt         DateTime?   @map("revoked_at")
+  createdAt         DateTime    @default(now()) @map("created_at")
 
-  user User @relation(fields: [userId], references: [id])
+  operatorAccount OperatorAccount? @relation(fields: [operatorAccountId], references: [id], onDelete: Cascade)
+  student         Student?         @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
-  @@index([token])
+  @@unique([tokenHash])
+  @@index([accountType, operatorAccountId])
+  @@index([accountType, studentId])
   @@map("refresh_tokens")
 }
 
-model ResetToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  expiresAt DateTime @map("expires_at")
-  userId    String   @map("user_id")
-  createdAt DateTime @default(now()) @map("created_at")
+model Campaign {
+  id             BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  organizationId BigInt            @map("organization_id") @db.UnsignedBigInt
+  title          String            @db.VarChar(255)
+  slug           String            @unique @db.VarChar(255)
+  summary        String            @db.VarChar(500)
+  description    String?           @db.LongText
+  coverImageUrl  String?           @map("cover_image_url") @db.VarChar(500)
+  beneficiary    String?           @db.VarChar(255)
+  scopeType      CampaignScopeType @map("scope_type")
+  facultyId      BigInt?           @map("faculty_id") @db.UnsignedBigInt
+  startAt        DateTime          @map("start_at")
+  endAt          DateTime          @map("end_at")
+  status         CampaignStatus    @default(DRAFT)
+  publishedAt    DateTime?         @map("published_at")
+  createdBy      BigInt            @map("created_by") @db.UnsignedBigInt
+  approvedBy     BigInt?           @map("approved_by") @db.UnsignedBigInt
+  approvedAt     DateTime?         @map("approved_at")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+  deletedAt      DateTime?         @map("deleted_at")
 
-  user User @relation(fields: [userId], references: [id])
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  faculty      Faculty?         @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+  creator      OperatorAccount  @relation("CampaignCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  approver     OperatorAccount? @relation("CampaignApprovedBy", fields: [approvedBy], references: [id], onDelete: SetNull)
+  modules      CampaignModule[]
+  reviews      CampaignReview[]
+  moneyDonations MoneyDonation[]
+  paymentTransactions PaymentTransaction[]
+  itemTargets ItemTarget[]
+  itemPledges ItemPledge[]
+  itemHandoverRecords ItemHandoverRecord[]
+  eventRegistrations EventRegistration[]
+  certificates Certificate[]
 
-  @@index([token])
-  @@map("reset_tokens")
+  @@index([organizationId])
+  @@index([facultyId])
+  @@index([status])
+  @@index([scopeType])
+  @@map("campaigns")
 }
 
-model StudentRefreshToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  studentId String   @map("student_id")
-  createdAt DateTime @default(now()) @map("created_at")
+model CampaignModule {
+  id           BigInt             @id @default(autoincrement()) @db.UnsignedBigInt
+  campaignId   BigInt             @map("campaign_id") @db.UnsignedBigInt
+  type         CampaignModuleType
+  title        String             @db.VarChar(255)
+  description  String?            @db.Text
+  startAt      DateTime           @map("start_at")
+  endAt        DateTime           @map("end_at")
+  status       ModuleStatus       @default(DRAFT)
+  settingsJson Json               @map("settings_json")
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+  deletedAt    DateTime?          @map("deleted_at")
 
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  reviews CampaignReview[]
+  moneyDonations MoneyDonation[]
+  paymentTransactions PaymentTransaction[]
+  itemTargets ItemTarget[]
+  itemPledges ItemPledge[]
+  itemHandoverRecords ItemHandoverRecord[]
+  eventRegistrations EventRegistration[]
+  certificates Certificate[]
 
-  @@index([token])
-  @@map("student_refresh_tokens")
+  @@index([campaignId])
+  @@index([type])
+  @@map("campaign_modules")
+}
+
+model CampaignReview {
+  id            BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
+  campaignId    BigInt      @map("campaign_id") @db.UnsignedBigInt
+  moduleId      BigInt?     @map("module_id") @db.UnsignedBigInt
+  authorType    AccountType @map("author_type")
+  authorId      BigInt      @map("author_id") @db.UnsignedBigInt
+  body          String      @db.Text
+  visibility    String      @default("INTERNAL") @db.VarChar(20)
+  attachmentUrl String?     @map("attachment_url") @db.VarChar(500)
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  module   CampaignModule? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+
+  @@index([campaignId])
+  @@index([moduleId])
+  @@map("campaign_reviews")
+}
+
+model MoneyDonation {
+  id                   BigInt              @id @default(autoincrement()) @db.UnsignedBigInt
+  campaignId           BigInt              @map("campaign_id") @db.UnsignedBigInt
+  moduleId             BigInt              @map("module_id") @db.UnsignedBigInt
+  studentId            BigInt              @map("student_id") @db.UnsignedBigInt
+  donorName            String              @map("donor_name") @db.VarChar(255)
+  amount               Decimal             @db.Decimal(15, 2)
+  message              String?             @db.VarChar(500)
+  evidenceUrl          String?             @map("evidence_url") @db.VarChar(500)
+  status               MoneyDonationStatus @default(PENDING)
+  matchedTransactionId BigInt?             @map("matched_transaction_id") @db.UnsignedBigInt
+  verifiedBy           BigInt?             @map("verified_by") @db.UnsignedBigInt
+  verifiedAt           DateTime?           @map("verified_at")
+  rejectReason         String?             @map("reject_reason") @db.VarChar(500)
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  module CampaignModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  matchedTransaction PaymentTransaction? @relation(fields: [matchedTransactionId], references: [id], onDelete: SetNull)
+  verifier OperatorAccount? @relation("MoneyDonationVerifiedBy", fields: [verifiedBy], references: [id], onDelete: SetNull)
+
+  @@index([campaignId])
+  @@index([moduleId])
+  @@index([studentId])
+  @@index([status])
+  @@map("money_donations")
+}
+
+model PaymentTransaction {
+  id                    BigInt                 @id @default(autoincrement()) @db.UnsignedBigInt
+  campaignId            BigInt?                @map("campaign_id") @db.UnsignedBigInt
+  moduleId              BigInt?                @map("module_id") @db.UnsignedBigInt
+  provider              String                 @db.VarChar(40)
+  providerTransactionId String                 @map("provider_transaction_id") @db.VarChar(120)
+  amount                Decimal                @db.Decimal(15, 2)
+  content               String?                @db.VarChar(500)
+  transactionTime       DateTime               @map("transaction_time")
+  rawPayload            Json                   @map("raw_payload")
+  matchStatus           TransactionMatchStatus @default(UNMATCHED) @map("match_status")
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+
+  module CampaignModule? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  campaign Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  matchedDonations MoneyDonation[]
+
+  @@unique([provider, providerTransactionId])
+  @@index([campaignId])
+  @@index([moduleId])
+  @@map("payment_transactions")
+}
+
+model ItemTarget {
+  id               BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
+  campaignId       BigInt           @map("campaign_id") @db.UnsignedBigInt
+  moduleId         BigInt           @map("module_id") @db.UnsignedBigInt
+  name             String           @db.VarChar(255)
+  unit             String           @db.VarChar(50)
+  targetQuantity   Int              @map("target_quantity") @db.UnsignedInt
+  receivedQuantity Int              @default(0) @map("received_quantity") @db.UnsignedInt
+  description      String?          @db.Text
+  status           ItemTargetStatus @default(ACTIVE)
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  module CampaignModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  pledges ItemPledge[]
+  handoverRecords ItemHandoverRecord[]
+
+  @@index([campaignId])
+  @@index([moduleId])
+  @@map("item_targets")
+}
+
+model ItemPledge {
+  id                BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
+  campaignId        BigInt           @map("campaign_id") @db.UnsignedBigInt
+  moduleId          BigInt           @map("module_id") @db.UnsignedBigInt
+  itemTargetId      BigInt           @map("item_target_id") @db.UnsignedBigInt
+  studentId         BigInt           @map("student_id") @db.UnsignedBigInt
+  donorName         String           @map("donor_name") @db.VarChar(255)
+  quantity          Int              @db.UnsignedInt
+  expectedHandoverAt DateTime?       @map("expected_handover_at")
+  status            ItemPledgeStatus @default(PLEDGED)
+  note              String?          @db.VarChar(500)
+  receivedQuantity  Int?             @map("received_quantity") @db.UnsignedInt
+  receivedAt        DateTime?        @map("received_at")
+  evidenceUrl       String?          @map("evidence_url") @db.VarChar(500)
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  module CampaignModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  itemTarget ItemTarget @relation(fields: [itemTargetId], references: [id], onDelete: Restrict)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  handoverRecords ItemHandoverRecord[]
+
+  @@index([campaignId])
+  @@index([moduleId])
+  @@index([itemTargetId])
+  @@index([studentId])
+  @@index([status])
+  @@map("item_pledges")
+}
+
+model ItemHandoverRecord {
+  id           BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  campaignId   BigInt   @map("campaign_id") @db.UnsignedBigInt
+  moduleId     BigInt   @map("module_id") @db.UnsignedBigInt
+  itemPledgeId BigInt   @map("item_pledge_id") @db.UnsignedBigInt
+  itemTargetId BigInt   @map("item_target_id") @db.UnsignedBigInt
+  quantity     Int      @db.UnsignedInt
+  receivedBy   BigInt?  @map("received_by") @db.UnsignedBigInt
+  receivedAt   DateTime @default(now()) @map("received_at")
+  location     String?  @db.VarChar(255)
+  note         String?  @db.VarChar(500)
+  evidenceUrl  String?  @map("evidence_url") @db.VarChar(500)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  module CampaignModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  itemPledge ItemPledge @relation(fields: [itemPledgeId], references: [id], onDelete: Restrict)
+  itemTarget ItemTarget @relation(fields: [itemTargetId], references: [id], onDelete: Restrict)
+  receiver OperatorAccount? @relation("ItemHandoverReceivedBy", fields: [receivedBy], references: [id], onDelete: SetNull)
+
+  @@index([campaignId])
+  @@index([moduleId])
+  @@index([itemPledgeId])
+  @@index([itemTargetId])
+  @@map("item_handover_records")
+}
+
+model EventRegistration {
+  id           BigInt                  @id @default(autoincrement()) @db.UnsignedBigInt
+  campaignId   BigInt                  @map("campaign_id") @db.UnsignedBigInt
+  moduleId     BigInt                  @map("module_id") @db.UnsignedBigInt
+  studentId    BigInt                  @map("student_id") @db.UnsignedBigInt
+  status       EventRegistrationStatus @default(PENDING)
+  answersJson  Json?                   @map("answers_json")
+  registeredAt DateTime                @default(now()) @map("registered_at")
+  checkedInAt  DateTime?               @map("checked_in_at")
+  checkedOutAt DateTime?               @map("checked_out_at")
+  hours        Decimal?                @db.Decimal(5, 2)
+  reviewedBy   BigInt?                 @map("reviewed_by") @db.UnsignedBigInt
+  reviewedAt   DateTime?               @map("reviewed_at")
+  reviewNote   String?                 @map("review_note") @db.VarChar(500)
+  createdAt    DateTime                @default(now()) @map("created_at")
+  updatedAt    DateTime                @updatedAt @map("updated_at")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  module CampaignModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  reviewer OperatorAccount? @relation("EventRegistrationReviewedBy", fields: [reviewedBy], references: [id], onDelete: SetNull)
+
+  @@unique([moduleId, studentId])
+  @@index([campaignId])
+  @@index([studentId])
+  @@index([status])
+  @@map("event_registrations")
+}
+
+model CertificateTemplate {
+  id         BigInt                    @id @default(autoincrement()) @db.UnsignedBigInt
+  name       String                    @db.VarChar(255)
+  type       String                    @db.VarChar(40)
+  layoutJson Json                      @map("layout_json")
+  fileUrl    String?                   @map("file_url") @db.VarChar(500)
+  status     CertificateTemplateStatus @default(ACTIVE)
+  createdBy  BigInt                    @map("created_by") @db.UnsignedBigInt
+  createdAt  DateTime                  @default(now()) @map("created_at")
+  updatedAt  DateTime                  @updatedAt @map("updated_at")
+
+  creator OperatorAccount @relation("CertificateTemplateCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  certificates Certificate[]
+
+  @@map("certificate_templates")
+}
+
+model Certificate {
+  id                       BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  certificateNo            String            @unique @map("certificate_no") @db.VarChar(100)
+  campaignId               BigInt            @map("campaign_id") @db.UnsignedBigInt
+  moduleId                 BigInt?           @map("module_id") @db.UnsignedBigInt
+  studentId                BigInt            @map("student_id") @db.UnsignedBigInt
+  templateId               BigInt            @map("template_id") @db.UnsignedBigInt
+  status                   CertificateStatus @default(PENDING)
+  snapshotJson             Json              @map("snapshot_json")
+  fileUrl                  String?           @map("file_url") @db.VarChar(500)
+  fileHash                 String?           @map("file_hash") @db.VarChar(255)
+  issuedAt                 DateTime?         @map("issued_at")
+  revokedAt                DateTime?         @map("revoked_at")
+  revokedBy                BigInt?           @map("revoked_by") @db.UnsignedBigInt
+  revokeReason             String?           @map("revoke_reason") @db.VarChar(500)
+  replacementCertificateId BigInt?           @map("replacement_certificate_id") @db.UnsignedBigInt
+  createdAt                DateTime          @default(now()) @map("created_at")
+  updatedAt                DateTime          @updatedAt @map("updated_at")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  module CampaignModule? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  template CertificateTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  revoker OperatorAccount? @relation("CertificateRevokedBy", fields: [revokedBy], references: [id], onDelete: SetNull)
+  replacement Certificate? @relation("CertificateReplacement", fields: [replacementCertificateId], references: [id], onDelete: SetNull)
+  replacedCertificates Certificate[] @relation("CertificateReplacement")
+
+  @@index([campaignId])
+  @@index([moduleId])
+  @@index([studentId])
+  @@index([status])
+  @@map("certificates")
+}
+
+model Notification {
+  id                BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
+  accountType       AccountType @map("account_type")
+  operatorAccountId BigInt?     @map("operator_account_id") @db.UnsignedBigInt
+  studentId         BigInt?     @map("student_id") @db.UnsignedBigInt
+  type              String      @db.VarChar(80)
+  title             String      @db.VarChar(255)
+  body              String      @db.Text
+  dataJson          Json?       @map("data_json")
+  isEmailSent       Boolean     @default(false) @map("is_email_sent")
+  readAt            DateTime?   @map("read_at")
+  createdAt         DateTime    @default(now()) @map("created_at")
+
+  operatorAccount OperatorAccount? @relation(fields: [operatorAccountId], references: [id], onDelete: Cascade)
+  student Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([accountType, operatorAccountId])
+  @@index([accountType, studentId])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id         BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
+  actorType  AccountType @map("actor_type")
+  actorId    BigInt      @map("actor_id") @db.UnsignedBigInt
+  action     String      @db.VarChar(120)
+  entityType String      @map("entity_type") @db.VarChar(80)
+  entityId   BigInt?     @map("entity_id") @db.UnsignedBigInt
+  beforeJson Json?       @map("before_json")
+  afterJson  Json?       @map("after_json")
+  ipAddress  String?     @map("ip_address") @db.VarChar(80)
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  @@index([action])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+model BackgroundJob {
+  id          BigInt              @id @default(autoincrement()) @db.UnsignedBigInt
+  type        String              @db.VarChar(80)
+  status      BackgroundJobStatus @default(PENDING)
+  payloadJson Json                @map("payload_json")
+  attempts    Int                 @default(0) @db.UnsignedInt
+  lastError   String?             @map("last_error") @db.Text
+  runAt       DateTime            @map("run_at")
+  lockedAt    DateTime?           @map("locked_at")
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+
+  @@index([status, runAt])
+  @@map("background_jobs")
 }

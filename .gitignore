@@ -9,6 +9,5 @@ logs/
 .idea/
 generated/
 .aider*
-prisma/migrations
 students.json
 session.json

@@ -1,6 +1,12 @@
-import { prismaClient } from '../../src/config'
+import prismaClient from '../../src/config/prisma'
 import { seedFaculties } from './facultys.seed'
 import { seedStudents } from './students.seed'
+import { seedContractFixtures } from './contract.seed'
 
-await seedFaculties(prismaClient)
-await seedStudents(prismaClient)
+try {
+    await seedFaculties(prismaClient)
+    await seedStudents(prismaClient)
+    await seedContractFixtures(prismaClient)
+} finally {
+    await prismaClient.$disconnect()
+}

@@ -6,8 +6,10 @@
     "scripts": {
         "dev": "tsx watch src/server.ts",
         "build": "pnpm tsc",
-        "start": "node dist/server.ts",
+        "start": "tsx src/server.ts",
         "test": "jest",
+        "db:migrate": "prisma migrate deploy",
+        "db:seed": "tsx prisma/seed/index.ts",
         "prepare": "husky",
         "lint": "prettier --check ."
     },
