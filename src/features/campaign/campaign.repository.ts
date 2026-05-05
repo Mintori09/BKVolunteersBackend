@@ -1,4 +1,4 @@
-import { Prisma, CampaignStatus, CampaignScope } from '@prisma/client'
+import { Prisma, CampaignStatus } from '@prisma/client'
 import prismaClient from 'src/config/prisma'
 import {
     CreateCampaignInput,
@@ -337,7 +337,9 @@ export const getCampaignStatistics = async (campaignId: string) => {
     ])
 
     return {
-        totalVerifiedAmount: Number(verifiedMoneyAggregate._sum.verifiedAmount || 0),
+        totalVerifiedAmount: Number(
+            verifiedMoneyAggregate._sum.verifiedAmount || 0
+        ),
         moneyDonations: {
             pending: pendingMoneyDonations,
             verified: verifiedMoneyDonations,
