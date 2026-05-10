@@ -1,87 +1,58 @@
-import * as fs from 'fs'
-import * as path from 'path'
-import * as argon2 from 'argon2'
 import { PrismaClient } from '@prisma/client'
-
-interface StudentJson {
-    MSSV: string
-    Tên: string
-    'Lớp học phần': string
-    'Chương trình đào tạo': string
-}
-
-const FACULTY_CODE_MAP: Record<string, string> = {
-    '101': '101',
-    '102': '102',
-    '103': '103',
-    '104': '104',
-    '105': '105',
-    '106': '106',
-    '107': '107',
-    '109': '109',
-    '110': '110',
-    '111': '111',
-    '117': '117',
-    '118': '118',
-    '121': '121',
-    '123': '123',
-}
-
-function parseMSSV(mssv: string): {
-    facultyCode: string
-    admissionYear: string
-    sequence: string
-} {
-    const facultyCode = mssv.substring(0, 3)
-    const admissionYear = mssv.substring(3, 5)
-    const sequence = mssv.substring(5, 9)
-    return { facultyCode, admissionYear, sequence }
-}
-
-function getFacultyId(facultyCode: string): string {
-    const facultyId = FACULTY_CODE_MAP[facultyCode]
-    if (!facultyId) {
-        throw new Error(`Unknown faculty code: ${facultyCode}`)
-    }
-    return facultyCode
-}
-
-async function hashPassword(password: string): Promise<string> {
-    return await argon2.hash(password)
-}
+import * as argon2 from 'argon2'
 
 export async function seedStudents(prisma: PrismaClient): Promise<void> {
     console.log('Seeding students...')
+    const faculty = await prisma.faculty.findFirst({
+        orderBy: { id: 'asc' },
+    })
 
-    const jsonPath = path.join(import.meta.dirname, 'students.json')
-    const jsonData: StudentJson[] = JSON.parse(
-        fs.readFileSync(jsonPath, 'utf-8')
-    )
+    if (!faculty) {
+        throw new Error('Cannot seed students without at least one faculty')
+    }
 
-    for (const studentData of jsonData) {
-        const mssv = studentData.MSSV
-        const { facultyCode } = parseMSSV(mssv)
-        const facultyId = getFacultyId(facultyCode)
+    const title = await prisma.title.findFirst({
+        orderBy: { minPoints: 'asc' },
+    })
 
-        const email = `${mssv}@sv1.dut.udn.vn`
-        const hashedPassword = await hashPassword(mssv)
+    const students = [
+        {
+            studentCode: '102210001',
+            email: '102210001@sv1.dut.udn.vn',
+            fullName: 'Nguyen Van A',
+            classCode: '22TCLC1',
+            major: 'Computer Science',
+            year: 2,
+        },
+        {
+            studentCode: '102210002',
+            email: '102210002@sv1.dut.udn.vn',
+            fullName: 'Tran Thi B',
+            classCode: '22TCLC1',
+            major: 'Computer Science',
+            year: 2,
+        },
+    ]
 
+    for (const student of students) {
         await prisma.student.upsert({
-            where: { mssv },
+            where: { studentCode: student.studentCode },
             update: {},
             create: {
-                id: crypto.randomUUID(),
-                mssv,
-                fullName: studentData['Tên'],
-                email,
-                password: hashedPassword,
-                facultyId: facultyCode,
-                className: studentData['Lớp học phần'],
-                phone: null,
+                facultyId: faculty.id,
+                currentTitleId: title?.id,
+                studentCode: student.studentCode,
+                email: student.email,
+                passwordHash: await argon2.hash(student.studentCode),
+                fullName: student.fullName,
+                classCode: student.classCode,
+                major: student.major,
+                year: student.year,
                 totalPoints: 0,
+                status: 'ACTIVE',
             },
         })
     }
 
-    console.log(`Seeded ${jsonData.length} students`)
+    console.log(`Seeded ${students.length} students`)
 }

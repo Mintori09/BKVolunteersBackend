@@ -1,0 +1,85 @@
+import { serializeId, serializePagination } from 'src/common/serializers'
+import * as adminRepository from './admin.repository'
+import {
+    AdminAuditLogListOutput,
+    AdminAuditLogsQuery,
+    AdminBackgroundJobListOutput,
+    AdminBackgroundJobsQuery,
+} from './types'
+
+export const listAuditLogs = async (
+    query: AdminAuditLogsQuery
+): Promise<AdminAuditLogListOutput> => {
+    const page = query.page ?? 1
+    const limit = query.limit ?? 20
+    const where = {
+        ...(query.action ? { action: query.action } : {}),
+        ...(query.entity_type ? { entityType: query.entity_type } : {}),
+        ...(query.entity_id ? { entityId: BigInt(query.entity_id) } : {}),
+        ...(query.actor_type ? { actorType: query.actor_type } : {}),
+        ...(query.actor_id ? { actorId: BigInt(query.actor_id) } : {}),
+    }
+    const [total, items] = await adminRepository.findAuditLogs({
+        page,
+        limit,
+        where,
+    })
+
+    return serializePagination(
+        items.map((item) => ({
+            id: serializeId(item.id)!,
+            actor_type: item.actorType,
+            actor_id: serializeId(item.actorId)!,
+            action: item.action,
+            entity_type: item.entityType,
+            entity_id: serializeId(item.entityId)!,
+            before_json: item.beforeJson,
+            after_json: item.afterJson,
+            ip_address: item.ipAddress,
+            created_at: item.createdAt,
+        })),
+        {
+            page,
+            limit,
+            total,
+            totalPages: Math.max(1, Math.ceil(total / limit)),
+        }
+    )
+}
+
+export const listBackgroundJobs = async (
+    query: AdminBackgroundJobsQuery
+): Promise<AdminBackgroundJobListOutput> => {
+    const page = query.page ?? 1
+    const limit = query.limit ?? 20
+    const where = {
+        ...(query.type ? { type: query.type } : {}),
+        ...(query.status ? { status: query.status } : {}),
+    }
+    const [total, items] = await adminRepository.findBackgroundJobs({
+        page,
+        limit,
+        where,
+    })
+
+    return serializePagination(
+        items.map((item) => ({
+            id: serializeId(item.id)!,
+            type: item.type,
+            status: item.status,
+            payload_json: item.payloadJson,
+            attempts: item.attempts,
+            last_error: item.lastError,
+            run_at: item.runAt,
+            locked_at: item.lockedAt,
+            created_at: item.createdAt,
+            updated_at: item.updatedAt,
+        })),
+        {
+            page,
+            limit,
+            total,
+            totalPages: Math.max(1, Math.ceil(total / limit)),
+        }
+    )
+}

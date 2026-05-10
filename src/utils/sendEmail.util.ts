@@ -2,7 +2,7 @@ import { logger } from 'src/common/middleware'
 import { transporter, config } from 'src/config'
 
 export const sendResetEmail = (email: string, token: string) => {
-    const resetLink = `${config.server.url}/api/v1/password/reset-password/${token}`
+    const resetLink = `${config.server.url}/reset-password?token=${encodeURIComponent(token)}`
     const mailOptions = {
         from: config.email.from,
         to: email,
@@ -31,7 +31,7 @@ export const sendResetEmail = (email: string, token: string) => {
 }
 
 export const sendVerifyEmail = (email: string | undefined, token: string) => {
-    const verifyLink = `${config.server.url}/api/v1/verify-email/${token}`
+    const verifyLink = `${config.server.url}/verify-email?token=${encodeURIComponent(token)}`
     const mailOptions = {
         from: config.email.from,
         to: email,

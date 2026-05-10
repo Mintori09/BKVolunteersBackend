@@ -1,23 +1,24 @@
-import {
-    PaginatedResult,
-    PaginationQuery,
-    PointTransactionFilter,
-} from '../gamification/types'
-import { Student, StudentTitle, Title, PointTransaction } from '@prisma/client'
+import { PaginatedResult } from 'src/common/types'
 
 export interface UpdateProfileInput {
     phone?: string
-    className?: string
+    classCode?: string
+    avatarUrl?: string
+    major?: string
+    year?: number
 }
 
 export interface StudentProfile {
     id: string
-    mssv: string
+    studentCode: string
     fullName: string
     email: string
-    facultyId: string | null
-    className: string | null
+    facultyId: string
+    classCode: string | null
     phone: string | null
+    avatarUrl: string | null
+    major: string | null
+    year: number | null
     totalPoints: number
     titles: StudentTitleDetail[]
     createdAt: Date
@@ -25,13 +26,13 @@ export interface StudentProfile {
 }
 
 export interface StudentTitleDetail {
-    titleId: number
+    titleId: string
     name: string
     description: string | null
     minPoints: number
     iconUrl: string | null
     badgeColor: string | null
-    unlockedAt: Date
+    unlockedAt: Date | null
 }
 
 export interface PointHistoryItem {

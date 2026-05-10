@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 import { prismaClient } from 'src/config'
 import {
     CreateNotificationInput,
@@ -7,7 +8,7 @@ import {
 
 export const create = async (data: CreateNotificationInput) => {
     return prismaClient.notification.create({
-        data,
+        data: data as Prisma.NotificationUncheckedCreateInput,
     })
 }
 
@@ -19,9 +20,12 @@ export const findMine = async (
     const limit = Math.max(query.limit || 10, 1)
     const skip = (page - 1) * limit
 
-    const where = recipient.studentId
-        ? { recipientStudentId: recipient.studentId }
-        : { recipientUserId: recipient.userId }
+    const where = recipient.accountType === 'STUDENT'
+        ? { accountType: 'STUDENT' as const, studentId: BigInt(recipient.studentId!) }
+        : {
+              accountType: 'OPERATOR' as const,
+              operatorAccountId: BigInt(recipient.operatorAccountId!),
+          }
 
     const [items, total] = await Promise.all([
         prismaClient.notification.findMany({
@@ -46,24 +50,32 @@ export const findMine = async (
 
 export const findById = async (id: string) => {
     return prismaClient.notification.findUnique({
-        where: { id },
+        where: { id: BigInt(id) },
     })
 }
 
 export const markAsRead = async (id: string) => {
     return prismaClient.notification.update({
-        where: { id },
-        data: { isRead: true },
+        where: { id: BigInt(id) },
+        data: { readAt: new Date() },
     })
 }
 
 export const markAllAsRead = async (recipient: NotificationRecipient) => {
-    const where = recipient.studentId
-        ? { recipientStudentId: recipient.studentId, isRead: false }
-        : { recipientUserId: recipient.userId, isRead: false }
+    const where = recipient.accountType === 'STUDENT'
+        ? {
+              accountType: 'STUDENT' as const,
+              studentId: BigInt(recipient.studentId!),
+              readAt: null,
+          }
+        : {
+              accountType: 'OPERATOR' as const,
+              operatorAccountId: BigInt(recipient.operatorAccountId!),
+              readAt: null,
+          }
 
     return prismaClient.notification.updateMany({
         where,
-        data: { isRead: true },
+        data: { readAt: new Date() },
     })
 }

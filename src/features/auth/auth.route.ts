@@ -1,6 +1,11 @@
 import { Router } from 'express'
 import validate from 'src/common/middleware/validate'
-import { changePasswordSchema, loginSchema } from './auth.validation'
+import {
+    changePasswordSchema,
+    loginSchema,
+    logoutSchema,
+    refreshSchema,
+} from './auth.validation'
 
 import * as authController from './auth.controller'
 import isAuth from 'src/common/middleware/isAuth'
@@ -67,7 +72,11 @@ authRouter.post('/login', validate(loginSchema), authController.handleLogin)
  *       401:
  *         description: Unauthorized
  */
-authRouter.post('/logout', isAuth, authController.handleLogout)
+authRouter.post(
+    '/logout',
+    validate(logoutSchema),
+    authController.handleLogout
+)
 
 /**
  * @openapi
@@ -92,7 +101,7 @@ authRouter.post('/logout', isAuth, authController.handleLogout)
  *       403:
  *         description: Forbidden
  */
-authRouter.post('/refresh', authController.handleRefresh)
+authRouter.post('/refresh', validate(refreshSchema), authController.handleRefresh)
 
 /**
  * @openapi
@@ -121,7 +130,7 @@ authRouter.get('/me', isAuth, authController.getMe)
 
 /**
  * @openapi
- * /auth/change-password:
+ * /auth/me/password:
  *   patch:
  *     summary: Change password
  *     tags: [Auth]
@@ -165,7 +174,7 @@ authRouter.get('/me', isAuth, authController.getMe)
  *         description: Unauthorized
  */
 authRouter.patch(
-    '/change-password',
+    '/me/password',
     isAuth,
     validate(changePasswordSchema),
     authController.handleChangePassword

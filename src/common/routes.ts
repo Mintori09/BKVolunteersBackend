@@ -1,24 +1,19 @@
 import { Router } from 'express'
 import { authRouter } from 'src/features/auth'
-import { passwordRouter } from 'src/features/forgotPassword'
-import { facultyRouter } from 'src/features/faculty'
-import { clubRouter } from 'src/features/club'
 import { campaignRouter } from 'src/features/campaign'
-import { uploadRouter, filesRouter } from 'src/features/upload'
-import { eventRouter } from 'src/features/event'
 import { studentRouter } from 'src/features/student'
-import { titleRouter } from 'src/features/title'
-import { itemPhaseRouter } from 'src/features/item-phase'
-import { itemDonationRouter } from 'src/features/item-donation'
-import moneyDonationRouter, {
-    phaseDonationsRouter,
-} from 'src/features/money-donation/money-donation.route'
-import donationRouter from 'src/features/donation/donation.route'
 import { notificationRouter } from 'src/features/notification'
-import { userRouter } from 'src/features/user'
-import { statisticsRouter } from 'src/features/statistics'
 import { authLimiter } from 'src/common/middleware'
 import { config } from 'src/config'
+import { publicRouter } from 'src/features/public'
+import { organizationsRouter } from 'src/features/organizations'
+import { approvalsRouter } from 'src/features/approvals'
+import { fundraisingRouter } from 'src/features/fundraising'
+import { certificatesRouter } from 'src/features/certificates'
+import { reportsRouter } from 'src/features/reports'
+import { adminRouter } from 'src/features/admin'
+import { itemDonationsRouter } from 'src/features/item-donations'
+import { eventsRouter } from 'src/features/events'
 
 const router = Router()
 
@@ -28,90 +23,27 @@ const defaultRoutes = [
         route: authRouter,
         limiter: config.node_env === 'production' ? authLimiter : undefined,
     },
-    {
-        path: '/password',
-        route: passwordRouter,
-    },
-    {
-        path: '/faculties',
-        route: facultyRouter,
-    },
-    {
-        path: '/clubs',
-        route: clubRouter,
-    },
+    { path: '/public', route: publicRouter },
+    { path: '/organizations', route: organizationsRouter },
     {
         path: '/campaigns',
         route: campaignRouter,
     },
-    {
-        path: '/upload',
-        route: uploadRouter,
-    },
-    {
-        path: '/files',
-        route: filesRouter,
-    },
-    {
-        path: '/events',
-        route: eventRouter,
-    },
+    { path: '/approvals', route: approvalsRouter },
+    { path: '/fundraising', route: fundraisingRouter },
+    { path: '/item-donations', route: itemDonationsRouter },
+    { path: '/events', route: eventsRouter },
     {
         path: '/students',
         route: studentRouter,
     },
-    {
-        path: '/titles',
-        route: titleRouter,
-    },
+    { path: '/certificates', route: certificatesRouter },
     {
         path: '/notifications',
         route: notificationRouter,
     },
-    {
-        path: '/users',
-        route: userRouter,
-    },
-    {
-        path: '/statistics',
-        route: statisticsRouter,
-    },
-]
-
-const itemPhaseRoutes = [
-    {
-        path: '/campaigns/:campaignId/item-phases',
-        route: itemPhaseRouter,
-    },
-]
-
-const itemDonationRoutes = [
-    {
-        path: '/donations',
-        route: itemDonationRouter,
-    },
-    {
-        path: '/item-phases',
-        route: itemDonationRouter,
-    },
-]
-
-const moneyDonationRoutes = [
-    {
-        path: '/campaigns/:campaignId/money-phases',
-        route: moneyDonationRouter,
-    },
-    {
-        path: '/money-phases',
-        route: phaseDonationsRouter,
-    },
-]
-
-const donationRoutes = [
-    {
-        path: '/donations',
-        route: donationRouter,
-    },
+    { path: '/reports', route: reportsRouter },
+    { path: '/admin', route: adminRouter },
 ]
 
 defaultRoutes.forEach((route) => {
@@ -120,22 +52,6 @@ defaultRoutes.forEach((route) => {
     } else {
         router.use(route.path, route.route)
     }
-})
-
-itemPhaseRoutes.forEach((route) => {
-    router.use(route.path, route.route)
-})
-
-itemDonationRoutes.forEach((route) => {
-    router.use(route.path, route.route)
-})
-
-moneyDonationRoutes.forEach((route) => {
-    router.use(route.path, route.route)
-})
-
-donationRoutes.forEach((route) => {
-    router.use(route.path, route.route)
 })
 
 export default router

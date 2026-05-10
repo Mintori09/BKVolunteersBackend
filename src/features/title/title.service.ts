@@ -40,7 +40,6 @@ export const getAllTitles = async (query: TitleFilter) => {
     return titleRepo.findMany({
         page: query.page,
         limit: query.limit,
-        isActive: query.isActive,
     })
 }
 

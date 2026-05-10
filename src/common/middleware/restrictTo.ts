@@ -8,7 +8,19 @@ import { ApiError } from 'src/utils/ApiError'
  */
 export const restrictTo = (...roles: string[]) => {
     return (req: Request, res: Response, next: NextFunction) => {
-        if (!req.payload || !roles.includes(req.payload.role)) {
+        const role = req.payload?.role
+        const accountType = req.payload?.accountType
+        const hasAccess =
+            !!req.payload &&
+            roles.some(
+                (allowed) =>
+                    allowed === role ||
+                    allowed === accountType ||
+                    (allowed === 'STUDENT' && accountType === 'STUDENT') ||
+                    (allowed === 'OPERATOR' && accountType === 'OPERATOR')
+            )
+
+        if (!hasAccess) {
             return next(
                 new ApiError(
                     HttpStatus.FORBIDDEN,

@@ -5,11 +5,14 @@ import * as notificationService from './notification.service'
 import { NotificationQuery, NotificationRecipient } from './types'
 
 const getRecipient = (req: Request): NotificationRecipient => {
-    if (req.payload?.role === 'SINHVIEN') {
-        return { studentId: req.payload.userId }
+    if (req.payload?.accountType === 'STUDENT') {
+        return { accountType: 'STUDENT', studentId: req.payload.userId }
     }
 
-    return { userId: req.payload?.userId }
+    return {
+        accountType: 'OPERATOR',
+        operatorAccountId: req.payload?.userId,
+    }
 }
 
 export const getMyNotifications = catchAsync(

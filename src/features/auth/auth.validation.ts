@@ -12,14 +12,26 @@ import { RequestValidationSchema } from 'src/types/request'
  */
 export const loginSchema: RequestValidationSchema = {
     body: z.object({
-        username: z
+        email: z
             .string()
-            .min(9, 'Username phải có ít nhất 9 ký tự')
-            .max(40, 'Username không được quá 40 ký tự'),
+            .email('Email không hợp lệ')
+            .max(255, 'Email không được quá 255 ký tự'),
         password: z
             .string()
             .min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
             .max(50, 'Mật khẩu không được quá 50 ký tự'),
+    }),
+}
+
+export const refreshSchema: RequestValidationSchema = {
+    body: z.object({
+        refresh_token: z.string().min(1, 'Refresh token là bắt buộc'),
+    }),
+}
+
+export const logoutSchema: RequestValidationSchema = {
+    body: z.object({
+        refresh_token: z.string().min(1, 'Refresh token là bắt buộc'),
     }),
 }
 

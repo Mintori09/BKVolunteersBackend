@@ -3,44 +3,36 @@ import isAuth from 'src/common/middleware/isAuth'
 import { restrictTo } from 'src/common/middleware'
 import validate from 'src/common/middleware/validate'
 import * as studentController from './student.controller'
-import { pointsHistorySchema, updateProfileSchema } from './student.validation'
+import { updateProfileSchema } from './student.validation'
 
 const studentRouter = Router()
 
 studentRouter.get(
-    '/me',
+    '/me/dashboard',
     isAuth,
-    restrictTo('SINHVIEN'),
+    restrictTo('STUDENT'),
     studentController.getMe
 )
 
-studentRouter.put(
-    '/me',
+studentRouter.patch(
+    '/me/profile',
     isAuth,
-    restrictTo('SINHVIEN'),
+    restrictTo('STUDENT'),
     validate(updateProfileSchema),
     studentController.updateMe
 )
 
 studentRouter.get(
-    '/me/points',
-    isAuth,
-    restrictTo('SINHVIEN'),
-    validate(pointsHistorySchema),
-    studentController.getPointsHistory
-)
-
-studentRouter.get(
     '/me/titles',
     isAuth,
-    restrictTo('SINHVIEN'),
+    restrictTo('STUDENT'),
     studentController.getMyTitles
 )
 
 studentRouter.get(
     '/:id',
     isAuth,
-    restrictTo('CLB', 'LCD', 'DOANTRUONG'),
+    restrictTo('OPERATOR'),
     studentController.getStudentById
 )
 

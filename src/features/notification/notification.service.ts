@@ -8,23 +8,29 @@ import {
 } from './types'
 
 const ensureRecipient = (recipient: NotificationRecipient) => {
-    if (!recipient.userId && !recipient.studentId) {
-        throw new ApiError(HttpStatus.UNAUTHORIZED, 'Không xác định được người nhận')
+    if (!recipient.operatorAccountId && !recipient.studentId) {
+        throw new ApiError(
+            HttpStatus.UNAUTHORIZED,
+            'Không xác định được người nhận'
+        )
     }
 }
 
 const isSameRecipient = (
     recipient: NotificationRecipient,
     notification: {
-        recipientUserId?: string | null
-        recipientStudentId?: string | null
+        operatorAccountId?: bigint | null
+        studentId?: bigint | null
     }
 ) => {
     if (recipient.studentId) {
-        return notification.recipientStudentId === recipient.studentId
+        return notification.studentId?.toString() === recipient.studentId
     }
 
-    return notification.recipientUserId === recipient.userId
+    return (
+        notification.operatorAccountId?.toString() ===
+        recipient.operatorAccountId
+    )
 }
 
 export const createNotification = async (data: CreateNotificationInput) => {
@@ -32,28 +38,46 @@ export const createNotification = async (data: CreateNotificationInput) => {
 }
 
 export const createForUser = async (
-    data: Omit<CreateNotificationInput, 'recipientUserId'> & {
+    data: {
         userId: string
+        title: string
+        type: CreateNotificationInput['type']
+        message?: string
+        dataJson?: CreateNotificationInput['dataJson']
+        [key: string]: unknown
     }
 ) => {
-    const { userId, ...rest } = data
+    const { userId, message, title, type, dataJson } = data
 
     return createNotification({
-        ...rest,
-        recipientUserId: userId,
+        title,
+        type,
+        dataJson: dataJson ?? null,
+        accountType: 'OPERATOR',
+        operatorAccountId: userId,
+        body: message ?? title,
     })
 }
 
 export const createForStudent = async (
-    data: Omit<CreateNotificationInput, 'recipientStudentId'> & {
+    data: {
         studentId: string
+        title: string
+        type: CreateNotificationInput['type']
+        message?: string
+        dataJson?: CreateNotificationInput['dataJson']
+        [key: string]: unknown
     }
 ) => {
-    const { studentId, ...rest } = data
+    const { studentId, message, title, type, dataJson } = data
 
     return createNotification({
-        ...rest,
-        recipientStudentId: studentId,
+        title,
+        type,
+        dataJson: dataJson ?? null,
+        accountType: 'STUDENT',
+        studentId,
+        body: message ?? title,
     })
 }
 

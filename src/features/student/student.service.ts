@@ -1,15 +1,11 @@
 import * as studentRepo from './student.repository'
-import * as pointTransactionRepo from '../gamification/pointTransaction.repository'
 import { ApiError } from 'src/utils/ApiError'
 import { HttpStatus } from 'src/common/constants'
 import {
     StudentProfile,
     UpdateProfileInput,
     StudentTitleDetail,
-    PointsHistoryOutput,
-    PointHistoryItem,
 } from './types'
-import { PaginationQuery, PointTransactionFilter } from '../gamification/types'
 
 export const getMyProfile = async (
     studentId: string
@@ -21,25 +17,30 @@ export const getMyProfile = async (
     }
 
     return {
-        id: student.id,
-        mssv: student.mssv,
+        id: student.id.toString(),
+        studentCode: student.studentCode,
         fullName: student.fullName,
         email: student.email,
-        facultyId: student.facultyId,
-        className: student.className,
+        facultyId: student.facultyId.toString(),
+        classCode: student.classCode,
         phone: student.phone,
+        avatarUrl: student.avatarUrl,
+        major: student.major,
+        year: student.year,
         totalPoints: student.totalPoints,
-        titles: student.titles.map(
-            (st): StudentTitleDetail => ({
-                titleId: st.title.id,
-                name: st.title.name,
-                description: st.title.description,
-                minPoints: st.title.minPoints,
-                iconUrl: st.title.iconUrl,
-                badgeColor: st.title.badgeColor,
-                unlockedAt: st.unlockedAt,
-            })
-        ),
+        titles: student.currentTitle
+            ? [
+                  {
+                      titleId: student.currentTitle.id.toString(),
+                      name: student.currentTitle.name,
+                      description: student.currentTitle.description,
+                      minPoints: student.currentTitle.minPoints,
+                      iconUrl: student.currentTitle.iconUrl,
+                      badgeColor: null,
+                      unlockedAt: null,
+                  },
+              ]
+            : [],
         createdAt: student.createdAt,
         updatedAt: student.updatedAt,
     }
@@ -57,39 +58,6 @@ export const updateMyProfile = async (
     return studentRepo.updateProfile(studentId, data)
 }
 
-export const getPointsHistory = async (
-    studentId: string,
-    query: PaginationQuery & PointTransactionFilter
-): Promise<PointsHistoryOutput> => {
-    const page = query.page ?? 1
-    const limit = query.limit ?? 10
-
-    const result = await pointTransactionRepo.findManyByStudentId(
-        studentId,
-        {
-            sourceType: query.sourceType,
-            fromDate: query.fromDate,
-            toDate: query.toDate,
-        },
-        page,
-        limit
-    )
-
-    return {
-        items: result.items.map(
-            (pt): PointHistoryItem => ({
-                id: pt.id,
-                points: pt.points,
-                reason: pt.reason,
-                sourceType: pt.sourceType,
-                sourceId: pt.sourceId,
-                createdAt: pt.createdAt,
-            })
-        ),
-        meta: result.meta,
-    }
-}
-
 export const getMyTitles = async (
     studentId: string
 ): Promise<StudentTitleDetail[]> => {
@@ -99,17 +67,21 @@ export const getMyTitles = async (
         throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy sinh viên')
     }
 
-    return student.titles.map(
-        (st): StudentTitleDetail => ({
-            titleId: st.title.id,
-            name: st.title.name,
-            description: st.title.description,
-            minPoints: st.title.minPoints,
-            iconUrl: st.title.iconUrl,
-            badgeColor: st.title.badgeColor,
-            unlockedAt: st.unlockedAt,
-        })
-    )
+    if (!student.currentTitle) {
+        return []
+    }
+
+    return [
+        {
+            titleId: student.currentTitle.id.toString(),
+            name: student.currentTitle.name,
+            description: student.currentTitle.description,
+            minPoints: student.currentTitle.minPoints,
+            iconUrl: student.currentTitle.iconUrl,
+            badgeColor: null,
+            unlockedAt: null,
+        },
+    ]
 }
 
 export const getStudentById = async (studentId: string) => {
@@ -120,19 +92,23 @@ export const getStudentById = async (studentId: string) => {
     }
 
     return {
-        id: student.id,
-        mssv: student.mssv,
+        id: student.id.toString(),
+        studentCode: student.studentCode,
         fullName: student.fullName,
         email: student.email,
-        facultyId: student.facultyId,
-        className: student.className,
+        facultyId: student.facultyId.toString(),
+        classCode: student.classCode,
         totalPoints: student.totalPoints,
-        titles: student.titles.map((st) => ({
-            titleId: st.title.id,
-            name: st.title.name,
-            minPoints: st.title.minPoints,
-            iconUrl: st.title.iconUrl,
-            unlockedAt: st.unlockedAt,
-        })),
+        titles: student.currentTitle
+            ? [
+                  {
+                      titleId: student.currentTitle.id.toString(),
+                      name: student.currentTitle.name,
+                      minPoints: student.currentTitle.minPoints,
+                      iconUrl: student.currentTitle.iconUrl,
+                      unlockedAt: null,
+                  },
+              ]
+            : [],
     }
 }

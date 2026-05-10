@@ -54,6 +54,9 @@ describe('sendEmail.util', () => {
                 subject: 'Reset Your Password',
             })
             expect(mailOptions.html).toContain('reset-token-123')
+            expect(mailOptions.html).toContain(
+                'http://localhost:3000/reset-password?token=reset-token-123'
+            )
         })
 
         it('should log error when sendMail fails', () => {
@@ -120,6 +123,9 @@ describe('sendEmail.util', () => {
                 subject: 'Verify Your Email Address',
             })
             expect(mailOptions.html).toContain('verify-token-456')
+            expect(mailOptions.html).toContain(
+                'http://localhost:3000/verify-email?token=verify-token-456'
+            )
         })
 
         it('should log error when sendMail fails', () => {

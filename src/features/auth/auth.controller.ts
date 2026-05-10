@@ -3,6 +3,8 @@ import {
     LoginInput,
     LoginOutput,
     ChangePasswordInput,
+    RefreshInput,
+    LogoutInput,
     UserRole,
     MeOutput,
 } from './types'
@@ -22,16 +24,16 @@ import { ApiResponse } from 'src/utils/ApiResponse'
 export const handleLogin = catchAsync(
     async (req: TypedRequest<LoginInput>, res: Response) => {
         const cookies = req.cookies
-        const { username, password } = req.body
+        const { email, password } = req.body
 
-        if (!username || !password) {
+        if (!email || !password) {
             throw new ApiError(
                 HttpStatus.BAD_REQUEST,
                 'Email và mật khẩu là bắt buộc!'
             )
         }
 
-        const user = await authService.getUserbyUsernameOrMssv(username)
+        const user = await authService.getUserByEmail(email)
 
         if (!user) {
             throw new ApiError(
@@ -49,7 +51,8 @@ export const handleLogin = catchAsync(
             )
         }
 
-        const userRole: UserRole = 'mssv' in user ? 'SINHVIEN' : user.role
+        const userRole: UserRole =
+            'studentCode' in user ? 'SINHVIEN' : user.role
 
         if (cookies?.[config.jwt.refresh_token.cookie_name]) {
             const refreshToken = cookies[config.jwt.refresh_token.cookie_name]
@@ -94,14 +97,15 @@ export const handleLogin = catchAsync(
     }
 )
 
-export const handleLogout = catchAsync(async (req: Request, res: Response) => {
-    const cookies = req.cookies
+export const handleLogout = catchAsync(async (req: TypedRequest<LogoutInput>, res: Response) => {
+    const refreshToken =
+        req.body.refresh_token ??
+        req.cookies?.[config.jwt.refresh_token.cookie_name]
 
-    if (!cookies[config.jwt.refresh_token.cookie_name]) {
+    if (!refreshToken) {
         return res.sendStatus(HttpStatus.NO_CONTENT)
     }
 
-    const refreshToken = cookies[config.jwt.refresh_token.cookie_name]
     const foundRft = await authService.getRefreshTokenByToken(refreshToken)
 
     if (!foundRft) {
@@ -122,9 +126,10 @@ export const handleLogout = catchAsync(async (req: Request, res: Response) => {
     return res.sendStatus(HttpStatus.NO_CONTENT)
 })
 
-export const handleRefresh = catchAsync(async (req: Request, res: Response) => {
+export const handleRefresh = catchAsync(async (req: TypedRequest<RefreshInput>, res: Response) => {
     const refreshToken: string | undefined =
-        req.cookies[config.jwt.refresh_token.cookie_name]
+        req.body.refresh_token ??
+        req.cookies?.[config.jwt.refresh_token.cookie_name]
 
     if (!refreshToken)
         throw new ApiError(
@@ -137,7 +142,7 @@ export const handleRefresh = catchAsync(async (req: Request, res: Response) => {
         clearRefreshTokenCookieConfig
     )
 
-    const foundRefreshToken =
+        const foundRefreshToken =
         await authService.getRefreshTokenByToken(refreshToken)
 
     if (!foundRefreshToken) {
@@ -173,7 +178,10 @@ export const handleRefresh = catchAsync(async (req: Request, res: Response) => {
             throw new ApiError(HttpStatus.FORBIDDEN, 'Không khớp người dùng')
         }
 
-        const user = await authService.getUserById(payload.userId, payload.role)
+        const user = await authService.getUserByPrincipal(
+            payload.userId,
+            payload.accountType
+        )
 
         if (!user) {
             throw new ApiError(
@@ -191,7 +199,10 @@ export const handleRefresh = catchAsync(async (req: Request, res: Response) => {
             refreshTokenCookieConfig
         )
 
-        return ApiResponse.success<LoginOutput>(res, { accessToken })
+        return ApiResponse.success<LoginOutput>(res, {
+            accessToken,
+            refreshToken: newRefreshToken,
+        })
     } catch {
         throw new ApiError(HttpStatus.FORBIDDEN, 'Refresh token không hợp lệ')
     }
@@ -200,24 +211,59 @@ export const handleRefresh = catchAsync(async (req: Request, res: Response) => {
 export const getMe = catchAsync(async (req: Request, res: Response) => {
     const userId = req.payload?.userId
     const role = req.payload?.role
+    const accountType = req.payload?.accountType
 
     if (!userId) {
         throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chưa xác thực người dùng!')
     }
 
-    if (!role) {
-        throw new ApiError(HttpStatus.UNAUTHORIZED, 'Không có role!')
+    if (!role || !accountType) {
+        throw new ApiError(HttpStatus.UNAUTHORIZED, 'Thiếu principal!')
     }
 
-    const user = await authService.getUserById(userId, role)
+    const user = await authService.getUserByPrincipal(userId, accountType)
 
     if (!user) {
         throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy người dùng!')
     }
 
-    const { password: _password, ...userWithoutPassword } = user
+    const anyUser = user as any
+    const isStudent = 'studentCode' in anyUser
 
-    return ApiResponse.success<MeOutput>(res, userWithoutPassword)
+    return ApiResponse.success<MeOutput>(res, {
+        account_type: accountType,
+        role,
+        organization: anyUser.organization
+            ? {
+                  id: Number(anyUser.organization.id),
+                  name: anyUser.organization.name,
+                  type: anyUser.organization.type,
+              }
+            : null,
+        faculty: anyUser.faculty
+            ? {
+                  id: Number(anyUser.faculty.id),
+                  code: anyUser.faculty.code,
+                  name: anyUser.faculty.name,
+              }
+            : null,
+        student: isStudent
+            ? {
+                  id: Number(anyUser.id),
+                  student_code: anyUser.studentCode,
+                  full_name: anyUser.fullName,
+                  email: anyUser.email,
+                  class_code: anyUser.classCode,
+              }
+            : undefined,
+        operator: !isStudent
+            ? {
+                  id: Number(anyUser.id),
+                  full_name: anyUser.fullName,
+                  email: anyUser.email,
+              }
+            : undefined,
+    })
 })
 
 export const handleChangePassword = catchAsync(

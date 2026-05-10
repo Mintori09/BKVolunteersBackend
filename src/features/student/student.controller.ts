@@ -6,13 +6,12 @@ import { ApiError } from 'src/utils/ApiError'
 import * as studentService from './student.service'
 import { TypedRequest } from 'src/types/request'
 import { UpdateProfileInput } from './types'
-import { PointTransactionFilter } from '../gamification/types'
 
 export const getMe = catchAsync(async (req, res: Response) => {
     const userId = req.payload?.userId
-    const role = req.payload?.role
+    const accountType = req.payload?.accountType
 
-    if (!userId || role !== 'SINHVIEN') {
+    if (!userId || accountType !== 'STUDENT') {
         throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chưa xác thực người dùng')
     }
 
@@ -23,9 +22,9 @@ export const getMe = catchAsync(async (req, res: Response) => {
 export const updateMe = catchAsync(
     async (req: TypedRequest<UpdateProfileInput>, res: Response) => {
         const userId = req.payload?.userId
-        const role = req.payload?.role
+        const accountType = req.payload?.accountType
 
-        if (!userId || role !== 'SINHVIEN') {
+        if (!userId || accountType !== 'STUDENT') {
             throw new ApiError(
                 HttpStatus.UNAUTHORIZED,
                 'Chưa xác thực người dùng'
@@ -37,32 +36,11 @@ export const updateMe = catchAsync(
     }
 )
 
-export const getPointsHistory = catchAsync(async (req, res: Response) => {
-    const userId = req.payload?.userId
-    const role = req.payload?.role
-
-    if (!userId || role !== 'SINHVIEN') {
-        throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chưa xác thực người dùng')
-    }
-
-    const { page, limit, sourceType, fromDate, toDate } = req.query as any
-
-    const history = await studentService.getPointsHistory(userId, {
-        page: page ? parseInt(page) : undefined,
-        limit: limit ? parseInt(limit) : undefined,
-        sourceType,
-        fromDate,
-        toDate,
-    })
-
-    return ApiResponse.success(res, history)
-})
-
 export const getMyTitles = catchAsync(async (req, res: Response) => {
     const userId = req.payload?.userId
-    const role = req.payload?.role
+    const accountType = req.payload?.accountType
 
-    if (!userId || role !== 'SINHVIEN') {
+    if (!userId || accountType !== 'STUDENT') {
         throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chưa xác thực người dùng')
     }
 
