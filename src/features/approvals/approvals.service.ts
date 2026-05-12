@@ -32,7 +32,7 @@ export const getApprovalQueue = async (
     if (query.faculty_id) {
         where.facultyId = BigInt(query.faculty_id)
     }
-    if (principal.role !== 'DOANTRUONG') {
+    if (principal.role !== 'SCHOOL_ADMIN' && principal.role !== 'SCHOOL_REVIEWER') {
         if (principal.organizationId) {
             where.organizationId = BigInt(principal.organizationId)
         }

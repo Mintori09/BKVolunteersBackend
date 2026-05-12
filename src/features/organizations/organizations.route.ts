@@ -1,7 +1,10 @@
 import { Router } from 'express'
 import validate from 'src/common/middleware/validate'
 import * as organizationsController from './organizations.controller'
-import { listOrganizationsSchema } from './organizations.validation'
+import {
+    listOrganizationsSchema,
+    organizationSlugSchema,
+} from './organizations.validation'
 
 const organizationsRouter = Router()
 
@@ -108,6 +111,39 @@ organizationsRouter.get(
     '/',
     validate(listOrganizationsSchema),
     organizationsController.listOrganizations
+)
+
+/**
+ * @openapi
+ * /organizations/{slug}:
+ *   get:
+ *     summary: Get organization by slug
+ *     description: Return organization detail with faculty summary and active campaigns.
+ *     tags: [Organizations]
+ *     parameters:
+ *       - in: path
+ *         name: slug
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Organization detail
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/OrganizationDetailOutput'
+ *       404:
+ *         description: Organization not found
+ */
+organizationsRouter.get(
+    '/:slug',
+    validate(organizationSlugSchema),
+    organizationsController.getOrganizationBySlug
 )
 
 export default organizationsRouter

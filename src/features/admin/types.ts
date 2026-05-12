@@ -60,3 +60,42 @@ export interface AdminBackgroundJobListOutput {
         totalPages: number
     }
 }
+
+export interface AdminOrganizationIdParams {
+    id: string
+}
+
+export interface AdminCreateOrganizationBody {
+    code: string
+    name: string
+    type: string
+    faculty_id?: string
+    logo_url?: string | null
+    description?: string | null
+}
+
+export interface AdminUpdateOrganizationBody {
+    code?: string
+    name?: string
+    type?: string
+    faculty_id?: string | null
+    logo_url?: string | null
+    description?: string | null
+}
+
+export interface AdminOrganizationOutput {
+    id: number
+    code: string
+    name: string
+    type: string
+    status: string
+    logo_url: string | null
+    description: string | null
+    faculty: { id: number; code: string; name: string } | null
+    created_at: Date
+    updated_at: Date
+}
+
+export interface AdminOrganizationListOutput {
+    items: AdminOrganizationOutput[]
+}

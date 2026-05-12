@@ -10,8 +10,8 @@ import {
 export const listAuditLogs = async (
     query: AdminAuditLogsQuery
 ): Promise<AdminAuditLogListOutput> => {
-    const page = query.page ?? 1
-    const limit = query.limit ?? 20
+    const page = Number(query.page ?? 1)
+    const limit = Number(query.limit ?? 20)
     const where = {
         ...(query.action ? { action: query.action } : {}),
         ...(query.entity_type ? { entityType: query.entity_type } : {}),
@@ -50,8 +50,8 @@ export const listAuditLogs = async (
 export const listBackgroundJobs = async (
     query: AdminBackgroundJobsQuery
 ): Promise<AdminBackgroundJobListOutput> => {
-    const page = query.page ?? 1
-    const limit = query.limit ?? 20
+    const page = Number(query.page ?? 1)
+    const limit = Number(query.limit ?? 20)
     const where = {
         ...(query.type ? { type: query.type } : {}),
         ...(query.status ? { status: query.status } : {}),

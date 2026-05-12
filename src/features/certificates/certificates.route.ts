@@ -5,9 +5,11 @@ import * as certificatesController from './certificates.controller'
 import {
     certificateCampaignSchema,
     certificateIdSchema,
+    certificateTemplateIdSchema,
     createCertificateTemplateSchema,
     generateCertificatesSchema,
     revokeCertificateSchema,
+    updateCertificateTemplateSchema,
 } from './certificates.validation'
 
 const certificatesRouter = Router()
@@ -145,6 +147,20 @@ certificatesRouter.post(
     certificatesController.createTemplate
 )
 
+certificatesRouter.patch(
+    '/templates/:id',
+    isAuth,
+    validate(updateCertificateTemplateSchema),
+    certificatesController.updateTemplate
+)
+
+certificatesRouter.delete(
+    '/templates/:id',
+    isAuth,
+    validate(certificateTemplateIdSchema),
+    certificatesController.deleteTemplate
+)
+
 /**
  * @openapi
  * /certificates/campaigns/{campaignId}/generate:
@@ -182,6 +198,41 @@ certificatesRouter.post(
     isAuth,
     validate(generateCertificatesSchema),
     certificatesController.generateCertificates
+)
+
+/**
+ * @openapi
+ * /certificates/campaigns/{campaignId}:
+ *   get:
+ *     summary: List certificates for a campaign
+ *     tags: [Certificates]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: campaignId
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Campaign certificate list
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/CertificateOutput'
+ */
+certificatesRouter.get(
+    '/campaigns/:campaignId',
+    isAuth,
+    validate(certificateCampaignSchema),
+    certificatesController.listCampaignCertificates
 )
 
 /**

@@ -7,15 +7,25 @@ import { RequestValidationSchema } from 'src/types/request'
 
 /**
  * Đăng nhập
- * - username: email hoặc MSSV (9 số bắt đầu bằng 1)
+ * - identifier: email hoặc MSSV (9 số bắt đầu bằng 1)
  * - password: 6-50 ký tự
  */
+const mssvRegex = /^1\d{8}$/
+
 export const loginSchema: RequestValidationSchema = {
     body: z.object({
-        email: z
+        identifier: z
             .string()
-            .email('Email không hợp lệ')
-            .max(255, 'Email không được quá 255 ký tự'),
+            .min(1, 'Email hoặc MSSV là bắt buộc')
+            .max(255, 'Email hoặc MSSV không được quá 255 ký tự')
+            .refine(
+                (val) =>
+                    mssvRegex.test(val) ||
+                    z.string().email().safeParse(val).success,
+                {
+                    message: 'Phải là email hợp lệ hoặc MSSV (9 số bắt đầu bằng 1)',
+                }
+            ),
         password: z
             .string()
             .min(6, 'Mật khẩu phải có ít nhất 6 ký tự')

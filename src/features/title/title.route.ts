@@ -15,7 +15,7 @@ const titleRouter = Router()
 titleRouter.post(
     '/',
     isAuth,
-    restrictTo('DOANTRUONG'),
+    restrictTo('SCHOOL_ADMIN', 'SCHOOL_REVIEWER'),
     validate(createTitleSchema),
     titleController.createTitle
 )
@@ -23,7 +23,7 @@ titleRouter.post(
 titleRouter.put(
     '/:id',
     isAuth,
-    restrictTo('DOANTRUONG'),
+    restrictTo('SCHOOL_ADMIN', 'SCHOOL_REVIEWER'),
     validate(updateTitleSchema),
     titleController.updateTitle
 )
@@ -31,7 +31,7 @@ titleRouter.put(
 titleRouter.delete(
     '/:id',
     isAuth,
-    restrictTo('DOANTRUONG'),
+    restrictTo('SCHOOL_ADMIN', 'SCHOOL_REVIEWER'),
     validate(titleIdSchema),
     titleController.deleteTitle
 )

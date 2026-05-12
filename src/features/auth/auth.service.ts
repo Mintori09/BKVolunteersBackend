@@ -16,6 +16,16 @@ export const getUserByEmail = async (email: string) => {
     return authRepository.getUserByStudentEmail(email)
 }
 
+export const getUserByIdentifier = async (identifier: string) => {
+    const student = await authRepository.getUserByMssv(identifier)
+    if (student) return student
+
+    const operator = await authRepository.getUserByEmail(identifier)
+    if (operator) return operator
+
+    return authRepository.getUserByStudentEmail(identifier)
+}
+
 export const changePassword = async (
     userId: string,
     role: UserRole,
@@ -60,7 +70,7 @@ export const deleteAllUserRefreshTokens = async (
 }
 
 export const createSession = async (userId: string, role: UserRole) => {
-    const accountType: AccountType = role === 'SINHVIEN' ? 'STUDENT' : 'OPERATOR'
+    const accountType: AccountType = role === 'STUDENT' ? 'STUDENT' : 'OPERATOR'
     const user = await authRepository.getUserByPrincipal(userId, accountType)
     const facultyId =
         user && 'facultyId' in user ? (user.facultyId ?? null) : null

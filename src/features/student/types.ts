@@ -45,3 +45,17 @@ export interface PointHistoryItem {
 }
 
 export type PointsHistoryOutput = PaginatedResult<PointHistoryItem>
+
+export interface StudentCertificateItem {
+    id: string
+    certificateNo: string
+    campaignId: string
+    campaignTitle: string
+    moduleTitle: string | null
+    templateName: string
+    status: string
+    fileUrl: string | null
+    issuedAt: string | null
+    revokedAt: string | null
+    createdAt: string
+}

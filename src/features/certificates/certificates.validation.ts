@@ -42,3 +42,21 @@ export const revokeCertificateSchema: RequestValidationSchema = {
         revoke_reason: z.string().trim().optional(),
     }),
 }
+
+export const certificateTemplateIdSchema: RequestValidationSchema = {
+    params: z.object({
+        id: z.string().regex(/^\d+$/),
+    }),
+}
+
+export const updateCertificateTemplateSchema: RequestValidationSchema = {
+    params: z.object({
+        id: z.string().regex(/^\d+$/),
+    }),
+    body: z.object({
+        name: z.string().trim().min(1).optional(),
+        type: z.string().trim().optional(),
+        file_url: z.string().trim().nullable().optional(),
+        layout_json: z.record(z.string(), z.unknown()).nullable().optional(),
+    }),
+}

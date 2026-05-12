@@ -14,6 +14,9 @@ import { reportsRouter } from 'src/features/reports'
 import { adminRouter } from 'src/features/admin'
 import { itemDonationsRouter } from 'src/features/item-donations'
 import { eventsRouter } from 'src/features/events'
+import { passwordRouter } from 'src/features/password'
+import { uploadRouter, filesRouter } from 'src/features/upload'
+import { titleRouter } from 'src/features/title'
 
 const router = Router()
 
@@ -44,6 +47,10 @@ const defaultRoutes = [
     },
     { path: '/reports', route: reportsRouter },
     { path: '/admin', route: adminRouter },
+    { path: '/password', route: passwordRouter },
+    { path: '/upload', route: uploadRouter },
+    { path: '/files', route: filesRouter },
+    { path: '/titles', route: titleRouter },
 ]
 
 defaultRoutes.forEach((route) => {

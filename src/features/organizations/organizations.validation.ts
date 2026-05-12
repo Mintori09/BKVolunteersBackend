@@ -7,3 +7,9 @@ export const listOrganizationsSchema: RequestValidationSchema = {
         limit: z.coerce.number().int().min(1).max(100).optional(),
     }),
 }
+
+export const organizationSlugSchema: RequestValidationSchema = {
+    params: z.object({
+        slug: z.string().min(1),
+    }),
+}

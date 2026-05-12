@@ -12,7 +12,7 @@ import {
     UpdateCampaignModuleInput,
 } from './types'
 
-const APPROVER_ROLES = new Set(['DOANTRUONG'])
+const APPROVER_ROLES = new Set(['SCHOOL_ADMIN', 'SCHOOL_REVIEWER'])
 const EDITABLE_STATUSES = new Set<CampaignStatus>(['DRAFT', 'REVISION_REQUIRED'])
 
 const assertOperator = (payload?: JwtPayload | null) => {
@@ -36,7 +36,7 @@ const assertOwnerScope = (campaign: Awaited<ReturnType<typeof campaignRepository
         throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy chiến dịch')
     }
 
-    if (payload.role === 'DOANTRUONG') {
+    if (payload.role === 'SCHOOL_ADMIN' || payload.role === 'SCHOOL_REVIEWER') {
         return campaign
     }
 
@@ -236,7 +236,7 @@ export const getCampaigns = async (
     if (query.organization_id) where.organizationId = BigInt(query.organization_id)
     if (query.faculty_id) where.facultyId = BigInt(query.faculty_id)
 
-    if (principal.role !== 'DOANTRUONG' && principal.organizationId) {
+    if (principal.role !== 'SCHOOL_ADMIN' && principal.role !== 'SCHOOL_REVIEWER' && principal.organizationId) {
         where.organizationId = BigInt(principal.organizationId)
     }
 

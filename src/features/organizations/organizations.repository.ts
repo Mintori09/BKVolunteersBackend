@@ -10,3 +10,29 @@ export const findMany = async (_query: OrganizationListQuery) => {
         },
     })
 }
+
+export const findBySlug = async (slug: string) => {
+    return prismaClient.organization.findUnique({
+        where: { code: slug },
+        include: {
+            faculty: { select: { id: true, code: true, name: true } },
+            campaigns: {
+                where: {
+                    status: { in: ['PUBLISHED', 'ONGOING'] },
+                    deletedAt: null,
+                },
+                orderBy: { createdAt: 'desc' },
+                select: {
+                    id: true,
+                    title: true,
+                    slug: true,
+                    summary: true,
+                    status: true,
+                    coverImageUrl: true,
+                    startAt: true,
+                    endAt: true,
+                },
+            },
+        },
+    })
+}

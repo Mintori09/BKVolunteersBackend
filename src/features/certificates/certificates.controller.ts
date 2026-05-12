@@ -71,19 +71,66 @@ export const downloadCertificate = catchAsync(
         req: TypedRequest<EmptyBody, EmptyQuery, CertificateIdParams>,
         res: Response
     ) => {
-        const result = await certificatesService.downloadCertificate(req.params.id!)
+        const result = await certificatesService.downloadCertificate(
+            req.params.id!
+        )
         return ApiResponse.success(res, result)
     }
 )
 
 export const revokeCertificate = catchAsync(
     async (
-        req: TypedRequest<RevokeCertificateBody, EmptyQuery, CertificateIdParams>,
+        req: TypedRequest<
+            RevokeCertificateBody,
+            EmptyQuery,
+            CertificateIdParams
+        >,
         res: Response
     ) => {
         const result = await certificatesService.revokeCertificate(
             req.params.id!,
             req.body as RevokeCertificateBody,
+            req.payload
+        )
+        return ApiResponse.success(res, result)
+    }
+)
+
+export const updateTemplate = catchAsync(
+    async (
+        req: TypedRequest<
+            CreateCertificateTemplateBody,
+            EmptyQuery,
+            CertificateIdParams
+        >,
+        res: Response
+    ) => {
+        const result = await certificatesService.updateTemplate(
+            req.params.id!,
+            req.body as CreateCertificateTemplateBody,
+            req.payload
+        )
+        return ApiResponse.success(res, result, 'Cập nhật template thành công')
+    }
+)
+
+export const deleteTemplate = catchAsync(
+    async (
+        req: TypedRequest<EmptyBody, EmptyQuery, CertificateIdParams>,
+        res: Response
+    ) => {
+        await certificatesService.deleteTemplate(req.params.id!, req.payload)
+        res.sendStatus(HttpStatus.NO_CONTENT)
+    }
+)
+
+export const listCampaignCertificates = catchAsync(
+    async (
+        req: TypedRequest<EmptyBody, EmptyQuery, CertificateCampaignParams>,
+        res: Response
+    ) => {
+        const result = await certificatesService.listCampaignCertificates(
+            req.params.campaignId!,
             req.payload
         )
         return ApiResponse.success(res, result)

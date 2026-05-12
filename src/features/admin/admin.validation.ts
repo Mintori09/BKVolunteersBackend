@@ -21,3 +21,34 @@ export const listBackgroundJobsSchema: RequestValidationSchema = {
         status: z.string().trim().min(1).optional(),
     }),
 }
+
+export const createAdminOrganizationSchema: RequestValidationSchema = {
+    body: z.object({
+        code: z.string().trim().min(1).max(50),
+        name: z.string().trim().min(1).max(255),
+        type: z.string().trim().min(1).max(40),
+        faculty_id: z.string().regex(/^\d+$/).optional(),
+        logo_url: z.string().trim().max(500).nullable().optional(),
+        description: z.string().nullable().optional(),
+    }),
+}
+
+export const updateAdminOrganizationSchema: RequestValidationSchema = {
+    params: z.object({
+        id: z.string().regex(/^\d+$/),
+    }),
+    body: z.object({
+        code: z.string().trim().min(1).max(50).optional(),
+        name: z.string().trim().min(1).max(255).optional(),
+        type: z.string().trim().min(1).max(40).optional(),
+        faculty_id: z.string().regex(/^\d+$/).nullable().optional(),
+        logo_url: z.string().trim().max(500).nullable().optional(),
+        description: z.string().nullable().optional(),
+    }),
+}
+
+export const deleteAdminOrganizationSchema: RequestValidationSchema = {
+    params: z.object({
+        id: z.string().regex(/^\d+$/),
+    }),
+}

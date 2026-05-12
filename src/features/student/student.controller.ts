@@ -48,6 +48,30 @@ export const getMyTitles = catchAsync(async (req, res: Response) => {
     return ApiResponse.success(res, titles)
 })
 
+export const getMyCertificates = catchAsync(async (req, res: Response) => {
+    const userId = req.payload?.userId
+    const accountType = req.payload?.accountType
+
+    if (!userId || accountType !== 'STUDENT') {
+        throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chưa xác thực người dùng')
+    }
+
+    const certificates = await studentService.getMyCertificates(userId)
+    return ApiResponse.success(res, certificates)
+})
+
+export const getMyDonations = catchAsync(async (req, res: Response) => {
+    const userId = req.payload?.userId
+    const accountType = req.payload?.accountType
+
+    if (!userId || accountType !== 'STUDENT') {
+        throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chưa xác thực người dùng')
+    }
+
+    const donations = await studentService.getMyDonations(userId)
+    return ApiResponse.success(res, donations)
+})
+
 export const getStudentById = catchAsync(async (req, res: Response) => {
     const id = req.params.id as string
 

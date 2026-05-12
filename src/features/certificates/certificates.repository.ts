@@ -7,7 +7,9 @@ export const toJsonValue = (value: unknown) =>
         : (value as Prisma.InputJsonValue)
 
 export const findTemplates = async () =>
-    prismaClient.certificateTemplate.findMany({ orderBy: { createdAt: 'desc' } })
+    prismaClient.certificateTemplate.findMany({
+        orderBy: { createdAt: 'desc' },
+    })
 
 export const createTemplate = async (args: {
     name: string
@@ -61,11 +63,8 @@ export const findExistingCertificate = async (args: {
     })
 
 export const createCertificate = async (
-    data:
-        | Prisma.CertificateCreateInput
-        | Prisma.CertificateUncheckedCreateInput
-) =>
-    prismaClient.certificate.create({ data })
+    data: Prisma.CertificateCreateInput | Prisma.CertificateUncheckedCreateInput
+) => prismaClient.certificate.create({ data })
 
 export const createRenderJob = async (certificateId: bigint) =>
     prismaClient.backgroundJob.create({
@@ -79,10 +78,44 @@ export const createRenderJob = async (certificateId: bigint) =>
 export const findCertificateById = async (id: bigint) =>
     prismaClient.certificate.findUnique({ where: { id } })
 
+export const findCertificatesByCampaignId = async (campaignId: bigint) =>
+    prismaClient.certificate.findMany({
+        where: { campaignId },
+        include: {
+            student: true,
+            template: true,
+            module: true,
+        },
+        orderBy: { createdAt: 'desc' },
+    })
+
 export const updateCertificate = async (
     id: bigint,
     data: Prisma.CertificateUpdateInput | Prisma.CertificateUncheckedUpdateInput
 ) => prismaClient.certificate.update({ where: { id }, data })
+
+export const updateTemplate = async (
+    id: bigint,
+    data: {
+        name?: string
+        type?: string
+        fileUrl?: string | null
+        layoutJson?: unknown
+        status?: string
+    }
+) => {
+    const updateData: Record<string, unknown> = {}
+    if (data.name !== undefined) updateData.name = data.name
+    if (data.type !== undefined) updateData.type = data.type
+    if (data.fileUrl !== undefined) updateData.fileUrl = data.fileUrl
+    if (data.layoutJson !== undefined)
+        updateData.layoutJson = toJsonValue(data.layoutJson)
+    if (data.status !== undefined) updateData.status = data.status
+    return prismaClient.certificateTemplate.update({
+        where: { id },
+        data: updateData,
+    })
+}
 
 export const createAuditLog = async (data: {
     actorId: bigint
@@ -98,7 +131,9 @@ export const createAuditLog = async (data: {
             action: data.action,
             entityType: 'certificate',
             entityId: data.entityId,
-            beforeJson: data.beforeJson ? toJsonValue(data.beforeJson) : undefined,
+            beforeJson: data.beforeJson
+                ? toJsonValue(data.beforeJson)
+                : undefined,
             afterJson: data.afterJson ? toJsonValue(data.afterJson) : undefined,
         },
     })

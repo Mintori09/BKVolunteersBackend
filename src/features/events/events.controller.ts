@@ -52,3 +52,67 @@ export const approveEventRegistration = catchAsync(
         return ApiResponse.success(res, result)
     }
 )
+
+export const rejectEventRegistration = catchAsync(
+    async (
+        req: TypedRequest<{ reason?: string }, EmptyQuery, EventRegistrationParams>,
+        res: Response
+    ) => {
+        const result = await eventsService.rejectEventRegistration(
+            req.params.id!,
+            { reason: req.body.reason ?? '' },
+            req.payload
+        )
+        return ApiResponse.success(res, result)
+    }
+)
+
+export const checkInEventRegistration = catchAsync(
+    async (
+        req: TypedRequest<
+            { checked_in_at?: string },
+            EmptyQuery,
+            EventRegistrationParams
+        >,
+        res: Response
+    ) => {
+        const result = await eventsService.checkInEventRegistration(
+            req.params.id!,
+            req.body,
+            req.payload
+        )
+        return ApiResponse.success(res, result)
+    }
+)
+
+export const completeEventRegistration = catchAsync(
+    async (
+        req: TypedRequest<
+            { checked_out_at?: string; hours?: number; note?: string },
+            EmptyQuery,
+            EventRegistrationParams
+        >,
+        res: Response
+    ) => {
+        const result = await eventsService.completeEventRegistration(
+            req.params.id!,
+            req.body,
+            req.payload
+        )
+        return ApiResponse.success(res, result)
+    }
+)
+
+export const listEventRegistrations = catchAsync(
+    async (
+        req: TypedRequest<EmptyBody, Record<string, unknown>, EventModuleParams>,
+        res: Response
+    ) => {
+        const result = await eventsService.listEventRegistrations(
+            req.params.moduleId!,
+            req.query as any,
+            req.payload
+        )
+        return ApiResponse.success(res, result)
+    }
+)

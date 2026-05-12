@@ -10,6 +10,18 @@ import {
     EventRegisterOutput,
 } from './types'
 
+const requireOperator = (principal?: { accountType?: string; userId?: string }) => {
+    if (principal?.accountType !== 'OPERATOR' || !principal.userId) {
+        throw new ApiError(HttpStatus.FORBIDDEN, 'Yêu cầu tài khoản operator')
+    }
+}
+
+const requireStudent = (principal?: { accountType?: string; userId?: string }) => {
+    if (principal?.accountType !== 'STUDENT' || !principal.userId) {
+        throw new ApiError(HttpStatus.FORBIDDEN, 'Yêu cầu tài khoản sinh viên')
+    }
+}
+
 export const getEventModule = async (
     moduleIdRaw: string
 ): Promise<EventModuleOutput> => {
@@ -47,9 +59,7 @@ export const registerEvent = async (
     body: EventRegisterBody,
     principal?: { accountType?: string; userId?: string }
 ): Promise<EventRegisterOutput> => {
-    if (principal?.accountType !== 'STUDENT' || !principal.userId) {
-        throw new ApiError(HttpStatus.FORBIDDEN, 'Yêu cầu tài khoản sinh viên')
-    }
+    requireStudent(principal)
 
     const moduleId = BigInt(moduleIdRaw)
     const module = await eventsRepository.findModuleBaseById(moduleId)
@@ -61,7 +71,7 @@ export const registerEvent = async (
     const registration = await eventsRepository.upsertRegistration({
         moduleId,
         campaignId: module.campaignId,
-        studentId: BigInt(principal.userId),
+        studentId: BigInt(principal!.userId!),
         answersJson: body.answers_json,
     })
 
@@ -77,18 +87,119 @@ export const approveEventRegistration = async (
     body: EventApproveBody,
     principal?: { accountType?: string; userId?: string }
 ): Promise<EventApproveOutput> => {
-    if (principal?.accountType !== 'OPERATOR' || !principal.userId) {
-        throw new ApiError(HttpStatus.FORBIDDEN, 'Yêu cầu tài khoản operator')
-    }
+    requireOperator(principal)
 
     const registration = await eventsRepository.approveRegistration({
         id: BigInt(idRaw),
-        reviewedBy: BigInt(principal.userId),
+        reviewedBy: BigInt(principal!.userId!),
         note: body.note ?? null,
     })
 
     return {
         id: serializeId(registration.id)!,
         status: registration.status,
+    }
+}
+
+export const rejectEventRegistration = async (
+    idRaw: string,
+    body: { reason: string },
+    principal?: { accountType?: string; userId?: string }
+): Promise<EventApproveOutput> => {
+    requireOperator(principal)
+
+    const registration = await eventsRepository.rejectRegistration({
+        id: BigInt(idRaw),
+        reviewedBy: BigInt(principal!.userId!),
+        reason: body.reason,
+    })
+
+    return {
+        id: serializeId(registration.id)!,
+        status: registration.status,
+    }
+}
+
+export const checkInEventRegistration = async (
+    idRaw: string,
+    body: { checked_in_at?: string },
+    principal?: { accountType?: string; userId?: string }
+): Promise<EventApproveOutput> => {
+    requireOperator(principal)
+
+    const registration = await eventsRepository.checkInRegistration({
+        id: BigInt(idRaw),
+        checkedInAt: body.checked_in_at ? new Date(body.checked_in_at) : new Date(),
+    })
+
+    return {
+        id: serializeId(registration.id)!,
+        status: registration.status,
+    }
+}
+
+export const completeEventRegistration = async (
+    idRaw: string,
+    body: { checked_out_at?: string; hours?: number; note?: string },
+    principal?: { accountType?: string; userId?: string }
+): Promise<EventApproveOutput> => {
+    requireOperator(principal)
+
+    const registration = await eventsRepository.completeRegistration({
+        id: BigInt(idRaw),
+        checkedOutAt: body.checked_out_at ? new Date(body.checked_out_at) : null,
+        hours: body.hours ?? null,
+        note: body.note ?? null,
+    })
+
+    return {
+        id: serializeId(registration.id)!,
+        status: registration.status,
+    }
+}
+
+export const listEventRegistrations = async (
+    moduleIdRaw: string,
+    query: { status?: string; q?: string; page?: number; limit?: number },
+    principal?: { accountType?: string; userId?: string }
+) => {
+    const moduleId = BigInt(moduleIdRaw)
+    const page = Number(query.page ?? 1)
+    const limit = Number(query.limit ?? 20)
+    const skip = (page - 1) * limit
+
+    const { total, items } = await eventsRepository.findRegistrationsByModuleId({
+        moduleId,
+        status: query.status,
+        q: query.q,
+        skip,
+        take: limit,
+    })
+
+    return {
+        items: items.map((item) => ({
+            id: serializeId(item.id)!.toString(),
+            campaign_id: serializeId(item.campaignId)!.toString(),
+            module_id: serializeId(item.moduleId)!.toString(),
+            student: {
+                id: serializeId(item.studentId)!.toString(),
+                full_name: item.student.fullName,
+                student_code: item.student.studentCode,
+                email: item.student.email,
+            },
+            status: item.status,
+            registered_at: item.createdAt.toISOString(),
+            reviewed_at: item.reviewedAt?.toISOString() ?? null,
+            review_note: item.reviewNote ?? null,
+            checked_in_at: item.checkedInAt?.toISOString() ?? null,
+            checked_out_at: item.checkedOutAt?.toISOString() ?? null,
+            hours: item.hours ?? null,
+        })),
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.max(1, Math.ceil(total / limit)),
+        },
     }
 }

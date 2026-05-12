@@ -6,7 +6,7 @@ export type { UserRole }
 // ============================================
 
 export interface LoginInput {
-    email: string
+    identifier: string
     password: string
 }
 

@@ -451,17 +451,30 @@ model AuditLog {
 }
 
 model BackgroundJob {
-  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  type       String    @db.VarChar(60)
-  status     String    @default("PENDING") @db.VarChar(40)
-  payloadJson Json     @map("payload_json")
-  attempts   Int       @default(0) @db.UnsignedInt
-  lastError  String?   @map("last_error") @db.Text
-  runAt      DateTime  @map("run_at")
-  lockedAt   DateTime? @map("locked_at")
-  createdAt  DateTime  @default(now()) @map("created_at")
-  updatedAt  DateTime  @updatedAt @map("updated_at")
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  type        String    @db.VarChar(60)
+  status      String    @default("PENDING") @db.VarChar(40)
+  payloadJson Json      @map("payload_json")
+  attempts    Int       @default(0) @db.UnsignedInt
+  lastError   String?   @map("last_error") @db.Text
+  runAt       DateTime  @map("run_at")
+  lockedAt    DateTime? @map("locked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   @@index([status, runAt])
   @@map("background_jobs")
+}
+
+model PasswordResetToken {
+  id        BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  email     String    @db.VarChar(255)
+  codeHash  String    @map("code_hash") @db.VarChar(255)
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@index([email, usedAt, expiresAt])
+  @@map("password_reset_tokens")
 }

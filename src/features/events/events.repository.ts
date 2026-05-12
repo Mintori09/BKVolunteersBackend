@@ -65,3 +65,86 @@ export const approveRegistration = async (args: {
         },
     })
 }
+
+export const rejectRegistration = async (args: {
+    id: bigint
+    reviewedBy: bigint
+    reason: string
+}) => {
+    return prismaClient.eventRegistration.update({
+        where: { id: args.id },
+        data: {
+            status: 'REJECTED',
+            reviewedAt: new Date(),
+            reviewedBy: args.reviewedBy,
+            reviewNote: args.reason,
+        },
+    })
+}
+
+export const checkInRegistration = async (args: {
+    id: bigint
+    checkedInAt: Date
+}) => {
+    return prismaClient.eventRegistration.update({
+        where: { id: args.id },
+        data: {
+            status: 'CHECKED_IN',
+            checkedInAt: args.checkedInAt,
+        },
+    })
+}
+
+export const completeRegistration = async (args: {
+    id: bigint
+    checkedOutAt: Date | null
+    hours: number | null
+    note: string | null
+}) => {
+    return prismaClient.eventRegistration.update({
+        where: { id: args.id },
+        data: {
+            status: 'COMPLETED',
+            checkedOutAt: args.checkedOutAt,
+            hours: args.hours,
+            reviewNote: args.note,
+        },
+    })
+}
+
+export const findRegistrationsByModuleId = async (args: {
+    moduleId: bigint
+    status?: string
+    q?: string
+    skip: number
+    take: number
+}) => {
+    const where: Record<string, unknown> = { moduleId: args.moduleId }
+    if (args.status) where.status = args.status
+    if (args.q) {
+        where.OR = [
+            { student: { fullName: { contains: args.q } } },
+            { student: { studentCode: { contains: args.q } } },
+        ]
+    }
+    const [total, items] = await Promise.all([
+        prismaClient.eventRegistration.count({ where }),
+        prismaClient.eventRegistration.findMany({
+            where,
+            skip: args.skip,
+            take: args.take,
+            include: {
+                student: {
+                    select: {
+                        id: true,
+                        fullName: true,
+                        studentCode: true,
+                        email: true,
+                    },
+                },
+            },
+            orderBy: { createdAt: 'desc' },
+        }),
+    ])
+    return { total, items }
+}

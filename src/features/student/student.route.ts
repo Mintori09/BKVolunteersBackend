@@ -30,6 +30,20 @@ studentRouter.get(
 )
 
 studentRouter.get(
+    '/me/certificates',
+    isAuth,
+    restrictTo('STUDENT'),
+    studentController.getMyCertificates
+)
+
+studentRouter.get(
+    '/me/donations',
+    isAuth,
+    restrictTo('STUDENT'),
+    studentController.getMyDonations
+)
+
+studentRouter.get(
     '/:id',
     isAuth,
     restrictTo('OPERATOR'),

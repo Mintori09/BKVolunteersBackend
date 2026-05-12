@@ -1,14 +1,20 @@
 import { Router } from 'express'
+import isAuth from 'src/common/middleware/isAuth'
 import { restrictTo } from 'src/common/middleware/restrictTo'
 import validate from 'src/common/middleware/validate'
 import * as adminController from './admin.controller'
+import * as adminOrgController from './admin-org.controller'
 import {
+    createAdminOrganizationSchema,
+    deleteAdminOrganizationSchema,
     listAuditLogsSchema,
     listBackgroundJobsSchema,
+    updateAdminOrganizationSchema,
 } from './admin.validation'
 
 const adminRouter = Router()
 
+adminRouter.use(isAuth)
 adminRouter.use(restrictTo('OPERATOR'))
 
 /**
@@ -197,6 +203,82 @@ adminRouter.get(
     '/background-jobs',
     validate(listBackgroundJobsSchema),
     adminController.listBackgroundJobs
+)
+
+/**
+ * @openapi
+ * /admin/organizations:
+ *   get:
+ *     summary: List all organizations
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Organization list
+ *   post:
+ *     summary: Create organization
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminCreateOrganizationBody'
+ *     responses:
+ *       201:
+ *         description: Organization created
+ */
+adminRouter.get('/organizations', adminOrgController.listOrganizations)
+
+adminRouter.post(
+    '/organizations',
+    validate(createAdminOrganizationSchema),
+    adminOrgController.createOrganization
+)
+
+/**
+ * @openapi
+ * /admin/organizations/{id}:
+ *   patch:
+ *     summary: Update organization
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Organization updated
+ *   delete:
+ *     summary: Soft delete organization
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       204:
+ *         description: Organization deleted
+ */
+adminRouter.patch(
+    '/organizations/:id',
+    validate(updateAdminOrganizationSchema),
+    adminOrgController.updateOrganization
+)
+
+adminRouter.delete(
+    '/organizations/:id',
+    validate(deleteAdminOrganizationSchema),
+    adminOrgController.deleteOrganization
 )
 
 export default adminRouter

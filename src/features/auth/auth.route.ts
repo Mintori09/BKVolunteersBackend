@@ -72,11 +72,7 @@ authRouter.post('/login', validate(loginSchema), authController.handleLogin)
  *       401:
  *         description: Unauthorized
  */
-authRouter.post(
-    '/logout',
-    validate(logoutSchema),
-    authController.handleLogout
-)
+authRouter.post('/logout', validate(logoutSchema), authController.handleLogout)
 
 /**
  * @openapi
@@ -101,7 +97,11 @@ authRouter.post(
  *       403:
  *         description: Forbidden
  */
-authRouter.post('/refresh', validate(refreshSchema), authController.handleRefresh)
+authRouter.post(
+    '/refresh',
+    validate(refreshSchema),
+    authController.handleRefresh
+)
 
 /**
  * @openapi
@@ -126,6 +126,10 @@ authRouter.post('/refresh', validate(refreshSchema), authController.handleRefres
  *       401:
  *         description: Unauthorized
  */
+authRouter.get('/microsoft/login', authController.handleMicrosoftLogin)
+authRouter.get('/microsoft/callback', authController.handleMicrosoftCallback)
+authRouter.get('/microsoft/mock-callback', authController.handleMicrosoftMockCallback)
+
 authRouter.get('/me', isAuth, authController.getMe)
 
 /**

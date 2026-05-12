@@ -8,7 +8,10 @@ import {
     RevokeCertificateBody,
 } from './types'
 
-const requireOperator = (payload?: { accountType?: string; userId?: string }) => {
+const requireOperator = (payload?: {
+    accountType?: string
+    userId?: string
+}) => {
     if (payload?.accountType !== 'OPERATOR' || !payload.userId) {
         throw new ApiError(HttpStatus.FORBIDDEN, 'Yêu cầu tài khoản operator')
     }
@@ -18,7 +21,9 @@ const certificateNo = (campaignId: bigint, studentId: bigint) =>
     `CERT-${campaignId.toString()}-${studentId.toString()}`
 
 const serializeTemplate = (
-    item: Awaited<ReturnType<typeof certificatesRepository.findTemplates>>[number]
+    item: Awaited<
+        ReturnType<typeof certificatesRepository.findTemplates>
+    >[number]
 ) => ({
     id: serializeId(item.id)!,
     name: item.name,
@@ -96,10 +101,11 @@ export const generateCertificates = async (
         throw new ApiError(HttpStatus.NOT_FOUND, 'Template not found')
     }
 
-    const registrations = await certificatesRepository.findEligibleRegistrations({
-        campaignId,
-        moduleId,
-    })
+    const registrations =
+        await certificatesRepository.findEligibleRegistrations({
+            campaignId,
+            moduleId,
+        })
     const created = []
     for (const registration of registrations) {
         const existing = await certificatesRepository.findExistingCertificate({
@@ -181,6 +187,75 @@ export const revokeCertificate = async (
         afterJson: { status: updated.status },
     })
     return serializeCertificate(updated)
+}
+
+export const updateTemplate = async (
+    idRaw: string,
+    body: CreateCertificateTemplateBody,
+    payload?: { accountType?: string; userId?: string }
+) => {
+    requireOperator(payload)
+    const id = BigInt(idRaw)
+    const existing = await certificatesRepository.findTemplateById(id)
+    if (!existing) {
+        throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy template')
+    }
+    const data: Parameters<typeof certificatesRepository.updateTemplate>[1] = {}
+    if (body.name !== undefined) data.name = body.name
+    if (body.type !== undefined) data.type = body.type
+    if (body.file_url !== undefined) data.fileUrl = body.file_url
+    if (body.layout_json !== undefined) data.layoutJson = body.layout_json
+    const updated = await certificatesRepository.updateTemplate(id, data)
+    return serializeTemplate(updated)
+}
+
+export const deleteTemplate = async (
+    idRaw: string,
+    payload?: { accountType?: string; userId?: string }
+) => {
+    requireOperator(payload)
+    const id = BigInt(idRaw)
+    const existing = await certificatesRepository.findTemplateById(id)
+    if (!existing) {
+        throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy template')
+    }
+    await certificatesRepository.updateTemplate(id, { status: 'INACTIVE' })
+}
+
+export const listCampaignCertificates = async (
+    campaignIdRaw: string,
+    payload?: { accountType?: string; userId?: string }
+) => {
+    requireOperator(payload)
+    const campaignId = BigInt(campaignIdRaw)
+    const campaign = await certificatesRepository.findCampaignById(campaignId)
+    if (!campaign || campaign.deletedAt) {
+        throw new ApiError(HttpStatus.NOT_FOUND, 'Campaign not found')
+    }
+    const items = await certificatesRepository.findCertificatesByCampaignId(campaignId)
+    return items.map((item) => ({
+        id: serializeId(item.id)!,
+        certificate_no: item.certificateNo,
+        campaign_id: serializeId(item.campaignId)!,
+        module_id: serializeId(item.moduleId),
+        module_title: item.module?.title ?? null,
+        student_id: serializeId(item.studentId)!,
+        student_name: item.student.fullName,
+        student_code: item.student.studentCode,
+        template_id: serializeId(item.templateId)!,
+        template_name: item.template.name,
+        status: item.status,
+        snapshot_json: item.snapshotJson,
+        file_url: item.fileUrl,
+        file_hash: item.fileHash,
+        issued_at: item.issuedAt,
+        revoked_at: item.revokedAt,
+        revoked_by: serializeId(item.revokedBy),
+        revoke_reason: item.revokeReason,
+        replacement_certificate_id: serializeId(item.replacementCertificateId),
+        created_at: item.createdAt,
+        updated_at: item.updatedAt,
+    }))
 }
 
 export const reissueCertificate = async (
