@@ -24,7 +24,7 @@ export const seedOperators = async (prisma: PrismaClient) => {
             email: 'operator@bkv.local',
             passwordHash: await argon2.hash('Password123'),
             fullName: 'School Operator',
-            role: 'SCHOOL_ADMIN',
+            role: 'DOANTRUONG',
             status: 'ACTIVE',
         },
     })
@@ -38,7 +38,7 @@ export const seedOperators = async (prisma: PrismaClient) => {
             email: 'club@bkvolunteers.local',
             passwordHash: await argon2.hash('Password123'),
             fullName: 'Faculty Club Operator',
-            role: 'ORG_ADMIN',
+            role: 'CLB',
             status: 'ACTIVE',
         },
     })

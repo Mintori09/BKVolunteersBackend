@@ -72,6 +72,7 @@ export const verifyCertificate = async (
         return { valid: false, certificate: null }
     }
 
+    const anyCert = certificate as any
     return {
         valid: certificate.status !== 'REVOKED',
         certificate: {
@@ -82,6 +83,9 @@ export const verifyCertificate = async (
             revoked_at: certificate.revokedAt,
             student_id: serializeId(certificate.studentId)!,
             campaign_id: serializeId(certificate.campaignId)!,
+            student_name: anyCert.student?.fullName ?? null,
+            campaign_title: anyCert.campaign?.title ?? null,
+            organization: anyCert.campaign?.organization?.name ?? null,
         },
     }
 }

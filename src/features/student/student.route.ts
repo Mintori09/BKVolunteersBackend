@@ -10,14 +10,14 @@ const studentRouter = Router()
 studentRouter.get(
     '/me/dashboard',
     isAuth,
-    restrictTo('STUDENT'),
+    restrictTo('SINHVIEN'),
     studentController.getMe
 )
 
 studentRouter.patch(
     '/me/profile',
     isAuth,
-    restrictTo('STUDENT'),
+    restrictTo('SINHVIEN'),
     validate(updateProfileSchema),
     studentController.updateMe
 )
@@ -25,21 +25,21 @@ studentRouter.patch(
 studentRouter.get(
     '/me/titles',
     isAuth,
-    restrictTo('STUDENT'),
+    restrictTo('SINHVIEN'),
     studentController.getMyTitles
 )
 
 studentRouter.get(
     '/me/certificates',
     isAuth,
-    restrictTo('STUDENT'),
+    restrictTo('SINHVIEN'),
     studentController.getMyCertificates
 )
 
 studentRouter.get(
     '/me/donations',
     isAuth,
-    restrictTo('STUDENT'),
+    restrictTo('SINHVIEN'),
     studentController.getMyDonations
 )
 

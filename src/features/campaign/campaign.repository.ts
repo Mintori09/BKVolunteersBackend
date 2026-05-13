@@ -143,14 +143,18 @@ export const createReview = async (data: {
     campaignId: bigint
     body: string
     authorId: bigint
+    moduleId?: bigint | null
+    authorType?: string
+    visibility?: string
 }) =>
     prismaClient.campaignReview.create({
         data: {
             campaignId: data.campaignId,
-            authorType: 'OPERATOR',
+            authorType: data.authorType ?? 'OPERATOR',
             authorId: data.authorId,
             body: data.body,
-            visibility: 'INTERNAL',
+            moduleId: data.moduleId ?? null,
+            visibility: data.visibility ?? 'INTERNAL',
         },
     })
 

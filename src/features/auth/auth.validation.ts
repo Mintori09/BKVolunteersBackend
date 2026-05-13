@@ -41,7 +41,7 @@ export const refreshSchema: RequestValidationSchema = {
 
 export const logoutSchema: RequestValidationSchema = {
     body: z.object({
-        refresh_token: z.string().min(1, 'Refresh token là bắt buộc'),
+        refresh_token: z.string().optional(),
     }),
 }
 

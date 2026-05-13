@@ -70,7 +70,7 @@ export const deleteAllUserRefreshTokens = async (
 }
 
 export const createSession = async (userId: string, role: UserRole) => {
-    const accountType: AccountType = role === 'STUDENT' ? 'STUDENT' : 'OPERATOR'
+    const accountType: AccountType = role === 'SINHVIEN' ? 'STUDENT' : 'OPERATOR'
     const user = await authRepository.getUserByPrincipal(userId, accountType)
     const facultyId =
         user && 'facultyId' in user ? (user.facultyId ?? null) : null

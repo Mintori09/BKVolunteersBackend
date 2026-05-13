@@ -12,7 +12,7 @@ import {
     UpdateCampaignModuleInput,
 } from './types'
 
-const APPROVER_ROLES = new Set(['SCHOOL_ADMIN', 'SCHOOL_REVIEWER'])
+const APPROVER_ROLES = new Set(['DOANTRUONG', 'LCD'])
 const EDITABLE_STATUSES = new Set<CampaignStatus>(['DRAFT', 'REVISION_REQUIRED'])
 
 const assertOperator = (payload?: JwtPayload | null) => {
@@ -36,7 +36,7 @@ const assertOwnerScope = (campaign: Awaited<ReturnType<typeof campaignRepository
         throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy chiến dịch')
     }
 
-    if (payload.role === 'SCHOOL_ADMIN' || payload.role === 'SCHOOL_REVIEWER') {
+    if (payload.role === 'DOANTRUONG' || payload.role === 'LCD') {
         return campaign
     }
 
@@ -236,7 +236,7 @@ export const getCampaigns = async (
     if (query.organization_id) where.organizationId = BigInt(query.organization_id)
     if (query.faculty_id) where.facultyId = BigInt(query.faculty_id)
 
-    if (principal.role !== 'SCHOOL_ADMIN' && principal.role !== 'SCHOOL_REVIEWER' && principal.organizationId) {
+    if (principal.role !== 'DOANTRUONG' && principal.role !== 'LCD' && principal.organizationId) {
         where.organizationId = BigInt(principal.organizationId)
     }
 
@@ -352,6 +352,56 @@ export const approveCampaign = async (
     }
 
     throw new ApiError(HttpStatus.CONFLICT, 'Trạng thái không cho phép duyệt')
+}
+
+export const preApproveCampaign = async (
+    campaignId: string,
+    comment: string | undefined,
+    payload?: JwtPayload | null
+) => {
+    const principal = assertApprover(payload)
+    const campaign = await campaignRepository.findCampaignById(campaignId)
+
+    if (!campaign) {
+        throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy chiến dịch')
+    }
+
+    if (campaign.status !== 'SUBMITTED') {
+        throw new ApiError(
+            HttpStatus.CONFLICT,
+            'Chỉ có thể phê duyệt sơ bộ chiến dịch ở trạng thái SUBMITTED'
+        )
+    }
+
+    return transition(
+        campaignId,
+        principal,
+        'PRE_APPROVED',
+        'CAMPAIGN_PRE_APPROVED',
+        comment
+    )
+}
+
+export const rejectCampaign = async (
+    campaignId: string,
+    comment: string,
+    payload?: JwtPayload | null
+) => {
+    const principal = assertApprover(payload)
+    const campaign = await campaignRepository.findCampaignById(campaignId)
+
+    if (!campaign) {
+        throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy chiến dịch')
+    }
+
+    if (!['SUBMITTED', 'PRE_APPROVED'].includes(campaign.status)) {
+        throw new ApiError(
+            HttpStatus.CONFLICT,
+            'Trạng thái không cho phép từ chối'
+        )
+    }
+
+    return transition(campaignId, principal, 'REJECTED', 'CAMPAIGN_REJECTED', comment)
 }
 
 export const publishCampaign = async (

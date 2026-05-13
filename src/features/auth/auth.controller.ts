@@ -52,8 +52,7 @@ export const handleLogin = catchAsync(
             )
         }
 
-        const userRole: UserRole =
-            'studentCode' in user ? 'STUDENT' : user.role
+        const userRole: UserRole = 'studentCode' in user ? 'SINHVIEN' : user.role
 
         if (cookies?.[config.jwt.refresh_token.cookie_name]) {
             const refreshToken = cookies[config.jwt.refresh_token.cookie_name]
@@ -98,116 +97,129 @@ export const handleLogin = catchAsync(
     }
 )
 
-export const handleLogout = catchAsync(async (req: TypedRequest<LogoutInput>, res: Response) => {
-    const refreshToken =
-        req.body.refresh_token ??
-        req.cookies?.[config.jwt.refresh_token.cookie_name]
+export const handleLogout = catchAsync(
+    async (req: TypedRequest<LogoutInput>, res: Response) => {
+        const refreshToken =
+            req.body.refresh_token ??
+            req.cookies?.[config.jwt.refresh_token.cookie_name]
 
-    if (!refreshToken) {
-        return res.sendStatus(HttpStatus.NO_CONTENT)
-    }
+        if (!refreshToken) {
+            return res.sendStatus(HttpStatus.NO_CONTENT)
+        }
 
-    const foundRft = await authService.getRefreshTokenByToken(refreshToken)
+        const foundRft = await authService.getRefreshTokenByToken(refreshToken)
 
-    if (!foundRft) {
+        if (!foundRft) {
+            res.clearCookie(
+                config.jwt.refresh_token.cookie_name,
+                clearRefreshTokenCookieConfig
+            )
+            return res.sendStatus(HttpStatus.NO_CONTENT)
+        }
+
+        await authService.deleteRefreshToken(refreshToken)
+
         res.clearCookie(
             config.jwt.refresh_token.cookie_name,
             clearRefreshTokenCookieConfig
         )
+
         return res.sendStatus(HttpStatus.NO_CONTENT)
     }
+)
 
-    await authService.deleteRefreshToken(refreshToken)
+export const handleRefresh = catchAsync(
+    async (req: TypedRequest<RefreshInput>, res: Response) => {
+        const refreshToken: string | undefined =
+            req.body.refresh_token ??
+            req.cookies?.[config.jwt.refresh_token.cookie_name]
 
-    res.clearCookie(
-        config.jwt.refresh_token.cookie_name,
-        clearRefreshTokenCookieConfig
-    )
+        if (!refreshToken)
+            throw new ApiError(
+                HttpStatus.UNAUTHORIZED,
+                'Không tìm thấy refresh token'
+            )
 
-    return res.sendStatus(HttpStatus.NO_CONTENT)
-})
-
-export const handleRefresh = catchAsync(async (req: TypedRequest<RefreshInput>, res: Response) => {
-    const refreshToken: string | undefined =
-        req.body.refresh_token ??
-        req.cookies?.[config.jwt.refresh_token.cookie_name]
-
-    if (!refreshToken)
-        throw new ApiError(
-            HttpStatus.UNAUTHORIZED,
-            'Không tìm thấy refresh token'
+        res.clearCookie(
+            config.jwt.refresh_token.cookie_name,
+            clearRefreshTokenCookieConfig
         )
 
-    res.clearCookie(
-        config.jwt.refresh_token.cookie_name,
-        clearRefreshTokenCookieConfig
-    )
-
         const foundRefreshToken =
-        await authService.getRefreshTokenByToken(refreshToken)
+            await authService.getRefreshTokenByToken(refreshToken)
 
-    if (!foundRefreshToken) {
+        if (!foundRefreshToken) {
+            try {
+                const payload = await authService.verifyToken(
+                    refreshToken,
+                    config.jwt.refresh_token.secret
+                )
+                await authService.deleteAllUserRefreshTokens(
+                    payload.userId,
+                    payload.role
+                )
+            } catch {
+                // Ignore verify errors here, just forbidden
+            }
+            throw new ApiError(
+                HttpStatus.FORBIDDEN,
+                'Refresh token không hợp lệ'
+            )
+        }
+
+        await authService.deleteRefreshToken(refreshToken)
+
         try {
             const payload = await authService.verifyToken(
                 refreshToken,
                 config.jwt.refresh_token.secret
             )
-            await authService.deleteAllUserRefreshTokens(
+
+            const tokenUserId =
+                foundRefreshToken.userType === 'student'
+                    ? foundRefreshToken.studentId
+                    : foundRefreshToken.userId
+
+            if (tokenUserId !== payload.userId) {
+                throw new ApiError(
+                    HttpStatus.FORBIDDEN,
+                    'Không khớp người dùng'
+                )
+            }
+
+            const user = await authService.getUserByPrincipal(
                 payload.userId,
-                payload.role
+                payload.accountType
             )
+
+            if (!user) {
+                throw new ApiError(
+                    HttpStatus.FORBIDDEN,
+                    'Không tìm thấy người dùng'
+                )
+            }
+
+            const { accessToken, refreshToken: newRefreshToken } =
+                await authService.createSession(payload.userId, payload.role)
+
+            res.cookie(
+                config.jwt.refresh_token.cookie_name,
+                newRefreshToken,
+                refreshTokenCookieConfig
+            )
+
+            return ApiResponse.success<LoginOutput>(res, {
+                accessToken,
+                refreshToken: newRefreshToken,
+            })
         } catch {
-            // Ignore verify errors here, just forbidden
-        }
-        throw new ApiError(HttpStatus.FORBIDDEN, 'Refresh token không hợp lệ')
-    }
-
-    await authService.deleteRefreshToken(refreshToken)
-
-    try {
-        const payload = await authService.verifyToken(
-            refreshToken,
-            config.jwt.refresh_token.secret
-        )
-
-        const tokenUserId =
-            foundRefreshToken.userType === 'student'
-                ? foundRefreshToken.studentId
-                : foundRefreshToken.userId
-
-        if (tokenUserId !== payload.userId) {
-            throw new ApiError(HttpStatus.FORBIDDEN, 'Không khớp người dùng')
-        }
-
-        const user = await authService.getUserByPrincipal(
-            payload.userId,
-            payload.accountType
-        )
-
-        if (!user) {
             throw new ApiError(
                 HttpStatus.FORBIDDEN,
-                'Không tìm thấy người dùng'
+                'Refresh token không hợp lệ'
             )
         }
-
-        const { accessToken, refreshToken: newRefreshToken } =
-            await authService.createSession(payload.userId, payload.role)
-
-        res.cookie(
-            config.jwt.refresh_token.cookie_name,
-            newRefreshToken,
-            refreshTokenCookieConfig
-        )
-
-        return ApiResponse.success<LoginOutput>(res, {
-            accessToken,
-            refreshToken: newRefreshToken,
-        })
-    } catch {
-        throw new ApiError(HttpStatus.FORBIDDEN, 'Refresh token không hợp lệ')
     }
-})
+)
 
 export const getMe = catchAsync(async (req: Request, res: Response) => {
     const userId = req.payload?.userId
@@ -283,17 +295,18 @@ export const handleMicrosoftLogin = catchAsync(
         }
 
         const frontendUrl = config.frontend.url
-        return res.redirect(
-            302,
-            `${frontendUrl}/auth/microsoft/mock-login`,
-        )
-    },
+        return res.redirect(302, `${frontendUrl}/auth/microsoft/mock-login`)
+    }
 )
 
 export const handleMicrosoftCallback = catchAsync(
     async (req: Request, res: Response) => {
         const frontendUrl = config.frontend.url
-        const { code, state, error: oauthError } = req.query as {
+        const {
+            code,
+            state,
+            error: oauthError,
+        } = req.query as {
             code?: string
             state?: string
             error?: string
@@ -302,7 +315,7 @@ export const handleMicrosoftCallback = catchAsync(
         if (oauthError) {
             return res.redirect(
                 302,
-                `${frontendUrl}/auth/microsoft/callback?error=${encodeURIComponent(oauthError)}`,
+                `${frontendUrl}/auth/microsoft/callback?error=${encodeURIComponent(oauthError)}`
             )
         }
 
@@ -313,13 +326,13 @@ export const handleMicrosoftCallback = catchAsync(
             if (!code || !state || state !== storedState) {
                 return res.redirect(
                     302,
-                    `${frontendUrl}/auth/microsoft/callback?error=invalid_state`,
+                    `${frontendUrl}/auth/microsoft/callback?error=invalid_state`
                 )
             }
 
             const token = await microsoftAuth.getMicrosoftToken(code)
             const msUser = await microsoftAuth.getMicrosoftUser(
-                token.accessToken,
+                token.accessToken
             )
             const { accessToken, refreshToken } =
                 await microsoftAuth.authorizeMicrosoftUser(msUser.email)
@@ -327,20 +340,20 @@ export const handleMicrosoftCallback = catchAsync(
             res.cookie(
                 config.jwt.refresh_token.cookie_name,
                 refreshToken,
-                refreshTokenCookieConfig,
+                refreshTokenCookieConfig
             )
 
             return res.redirect(
                 302,
-                `${frontendUrl}/auth/microsoft/callback?access_token=${accessToken}`,
+                `${frontendUrl}/auth/microsoft/callback?access_token=${accessToken}`
             )
         }
 
         return res.redirect(
             302,
-            `${frontendUrl}/auth/microsoft/callback?error=microsoft_not_configured`,
+            `${frontendUrl}/auth/microsoft/callback?error=microsoft_not_configured`
         )
-    },
+    }
 )
 
 export const handleMicrosoftMockCallback = catchAsync(
@@ -351,7 +364,7 @@ export const handleMicrosoftMockCallback = catchAsync(
         if (!email) {
             return res.redirect(
                 302,
-                `${frontendUrl}/auth/microsoft/callback?error=missing_email`,
+                `${frontendUrl}/auth/microsoft/callback?error=missing_email`
             )
         }
 
@@ -362,24 +375,22 @@ export const handleMicrosoftMockCallback = catchAsync(
             res.cookie(
                 config.jwt.refresh_token.cookie_name,
                 refreshToken,
-                refreshTokenCookieConfig,
+                refreshTokenCookieConfig
             )
 
             return res.redirect(
                 302,
-                `${frontendUrl}/auth/microsoft/callback?access_token=${accessToken}`,
+                `${frontendUrl}/auth/microsoft/callback?access_token=${accessToken}`
             )
         } catch (err) {
             const message =
-                err instanceof ApiError
-                    ? err.message
-                    : 'Microsoft login failed'
+                err instanceof ApiError ? err.message : 'Microsoft login failed'
             return res.redirect(
                 302,
-                `${frontendUrl}/auth/microsoft/callback?error=${encodeURIComponent(message)}`,
+                `${frontendUrl}/auth/microsoft/callback?error=${encodeURIComponent(message)}`
             )
         }
-    },
+    }
 )
 
 export const handleChangePassword = catchAsync(

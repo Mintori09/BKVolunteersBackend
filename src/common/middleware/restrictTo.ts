@@ -16,7 +16,7 @@ export const restrictTo = (...roles: string[]) => {
                 (allowed) =>
                     allowed === role ||
                     allowed === accountType ||
-                    (allowed === 'STUDENT' && accountType === 'STUDENT') ||
+                    (allowed === 'SINHVIEN' && accountType === 'STUDENT') ||
                     (allowed === 'OPERATOR' && accountType === 'OPERATOR')
             )
 

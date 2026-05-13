@@ -29,7 +29,7 @@ describe('generateTokens util', () => {
         const token = createAccessToken(
             'user123',
             'OPERATOR',
-'SCHOOL_ADMIN',
+'DOANTRUONG',
             'org123',
             'faculty123'
         )
@@ -38,7 +38,7 @@ describe('generateTokens util', () => {
             {
                 userId: 'user123',
                 accountType: 'OPERATOR',
-                role: 'SCHOOL_ADMIN',
+                role: 'DOANTRUONG',
                 organizationId: 'org123',
                 facultyId: 'faculty123',
             },
@@ -48,13 +48,13 @@ describe('generateTokens util', () => {
     })
 
     it('should generate a refresh token', () => {
-        const token = createRefreshToken('user123', 'STUDENT', 'STUDENT')
+        const token = createRefreshToken('user123', 'STUDENT', 'SINHVIEN')
         expect(token).toBe('mock-token')
         expect(jwt.sign).toHaveBeenCalledWith(
             {
                 userId: 'user123',
                 accountType: 'STUDENT',
-                role: 'STUDENT',
+                role: 'SINHVIEN',
             },
             'refresh-secret',
             { expiresIn: '7d' }

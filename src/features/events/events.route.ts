@@ -20,7 +20,7 @@ eventsRouter.get(
 )
 
 eventsRouter.post(
-    '/modules/:moduleId/register',
+    '/modules/:moduleId/registrations',
     isAuth,
     validate(eventRegisterSchema),
     eventsController.registerEvent

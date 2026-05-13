@@ -2,7 +2,28 @@ import { HttpStatus } from 'src/common/constants'
 import { serializeId, serializePagination } from 'src/common/serializers'
 import { ApiError } from 'src/utils/ApiError'
 import * as approvalsRepository from './approvals.repository'
+import * as campaignRepository from 'src/features/campaign/campaign.repository'
 import { ApprovalQueueOutput, ApprovalQueueQuery } from './types'
+import type { JwtPayload } from 'jsonwebtoken'
+
+export const addApprovalComment = async (
+    campaignId: string,
+    body: { body: string; visibility?: string; module_id?: string },
+    payload?: JwtPayload | null
+) => {
+    if (!payload?.userId) {
+        throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chưa xác thực')
+    }
+
+    return campaignRepository.createReview({
+        campaignId: BigInt(campaignId),
+        moduleId: body.module_id ? BigInt(body.module_id) : null,
+        authorId: BigInt(payload.userId),
+        authorType: payload.accountType === 'STUDENT' ? 'STUDENT' : 'OPERATOR',
+        body: body.body,
+        visibility: body.visibility ?? 'INTERNAL',
+    })
+}
 
 export const getApprovalQueue = async (
     query: ApprovalQueueQuery,
@@ -32,7 +53,7 @@ export const getApprovalQueue = async (
     if (query.faculty_id) {
         where.facultyId = BigInt(query.faculty_id)
     }
-    if (principal.role !== 'SCHOOL_ADMIN' && principal.role !== 'SCHOOL_REVIEWER') {
+    if (principal.role !== 'DOANTRUONG' && principal.role !== 'LCD') {
         if (principal.organizationId) {
             where.organizationId = BigInt(principal.organizationId)
         }

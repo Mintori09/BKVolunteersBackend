@@ -65,7 +65,7 @@ export const getUserByMssv = async (mssv: string) => {
 }
 
 export const getUserById = async (userId: string, role: UserRole) => {
-    if (role === 'STUDENT') {
+    if (role === 'SINHVIEN') {
         const student = await prismaClient.student.findUnique({
             where: { id: toBigIntId(userId) },
             include: {
@@ -115,7 +115,7 @@ export const getRefreshTokenByToken = async (token: string) => {
     })
     if (refreshToken) {
         const role =
-            refreshToken.accountType === 'STUDENT' ? 'STUDENT' : undefined
+            refreshToken.accountType === 'STUDENT' ? 'SINHVIEN' : undefined
 
         return {
             ...refreshToken,
@@ -135,7 +135,7 @@ export const getRefreshTokenByToken = async (token: string) => {
 }
 
 export const deleteRefreshToken = async (token: string, role?: UserRole) => {
-    if (role === 'STUDENT') {
+    if (role === 'SINHVIEN') {
         return prismaClient.refreshToken.deleteMany({
             where: { tokenHash: token, accountType: 'STUDENT' },
         })
@@ -153,7 +153,7 @@ export const deleteAllUserRefreshTokens = async (
     userId: string,
     role: UserRole
 ) => {
-    if (role === 'STUDENT') {
+    if (role === 'SINHVIEN') {
         return prismaClient.refreshToken.deleteMany({
             where: {
                 studentId: toBigIntId(userId),
@@ -178,11 +178,11 @@ export const createRefreshToken = async (
         data: {
             tokenHash: token,
             expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-            accountType: role === 'STUDENT' ? 'STUDENT' : 'OPERATOR',
+            accountType: role === 'SINHVIEN' ? 'STUDENT' : 'OPERATOR',
             studentId:
-                role === 'STUDENT' ? toBigIntId(userId) : undefined,
+                role === 'SINHVIEN' ? toBigIntId(userId) : undefined,
             operatorAccountId:
-                role === 'STUDENT' ? undefined : toBigIntId(userId),
+                role === 'SINHVIEN' ? undefined : toBigIntId(userId),
         },
     })
 }
@@ -192,7 +192,7 @@ export const updatePassword = async (
     hashedPassword: string,
     role: UserRole
 ) => {
-    if (role === 'STUDENT') {
+    if (role === 'SINHVIEN') {
         return prismaClient.student.update({
             where: { id: toBigIntId(userId) },
             data: { passwordHash: hashedPassword },

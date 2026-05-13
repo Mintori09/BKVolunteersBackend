@@ -49,7 +49,7 @@ const notificationRouter = Router()
  */
 
 notificationRouter.get(
-    '/me',
+    '/',
     isAuth,
     validate(getMyNotificationsSchema),
     notificationController.getMyNotifications
@@ -58,7 +58,7 @@ notificationRouter.get(
 /**
  * @openapi
  * /notifications/{id}/read:
- *   put:
+ *   patch:
  *     summary: Mark one notification as read
  *     tags: [Notification]
  *     security:
@@ -89,7 +89,7 @@ notificationRouter.get(
  *         description: Not Found
  */
 
-notificationRouter.put(
+notificationRouter.patch(
     '/:id/read',
     isAuth,
     validate(notificationIdSchema),
@@ -99,7 +99,7 @@ notificationRouter.put(
 /**
  * @openapi
  * /notifications/read-all:
- *   put:
+ *   patch:
  *     summary: Mark all notifications as read
  *     tags: [Notification]
  *     security:
@@ -120,7 +120,7 @@ notificationRouter.put(
  *         description: Unauthorized
  */
 
-notificationRouter.put(
+notificationRouter.patch(
     '/read-all',
     isAuth,
     notificationController.markAllAsRead

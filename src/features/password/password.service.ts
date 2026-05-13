@@ -101,7 +101,7 @@ export const resetPassword = async (
         await authRepository.updatePassword(
             student.id.toString(),
             hashedPassword,
-            'STUDENT' as any,
+            'SINHVIEN' as any,
         )
     } else {
         const operator = await authRepository.getUserByEmail(email)

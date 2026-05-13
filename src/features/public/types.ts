@@ -49,5 +49,8 @@ export interface PublicCertificateVerifyOutput {
         revoked_at: Date | null
         student_id: number
         campaign_id: number
+        student_name: string | null
+        campaign_title: string | null
+        organization: string | null
     } | null
 }

@@ -52,5 +52,14 @@ export const findPublicCampaignBySlug = async (slug: string) => {
 export const findCertificateByNumber = async (certificateNo: string) => {
     return prismaClient.certificate.findUnique({
         where: { certificateNo },
+        include: {
+            student: { select: { fullName: true } },
+            campaign: {
+                select: {
+                    title: true,
+                    organization: { select: { name: true } },
+                },
+            },
+        },
     })
 }

@@ -143,5 +143,5 @@ export async function authorizeMicrosoftUser(
         )
     }
 
-    return authService.createSession(student.id, 'STUDENT')
+    return authService.createSession(student.id, 'SINHVIEN')
 }

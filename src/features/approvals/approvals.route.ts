@@ -2,7 +2,12 @@ import { Router } from 'express'
 import isAuth from 'src/common/middleware/isAuth'
 import validate from 'src/common/middleware/validate'
 import * as approvalsController from './approvals.controller'
-import { approvalQueueSchema } from './approvals.validation'
+import {
+    approvalQueueSchema,
+    approvalIdSchema,
+    approvalActionSchema,
+    approvalCommentSchema,
+} from './approvals.validation'
 
 const approvalsRouter = Router()
 
@@ -15,42 +20,9 @@ const approvalsRouter = Router()
 
 /**
  * @openapi
- * components:
- *   schemas:
- *     ApprovalQueueItemOutput:
- *       type: object
- *       required: [id, title, slug, summary, scope_type, status, organization, faculty, created_by, last_review, last_activity, updated_at]
- *       properties:
- *         id: { type: integer, example: 101 }
- *         title: { type: string, example: "Mua he xanh 2026" }
- *         slug: { type: string, example: "mua-he-xanh-2026" }
- *         summary: { type: string, nullable: true }
- *         scope_type: { type: string, example: "SCHOOL" }
- *         status: { type: string, example: "SUBMITTED" }
- *         organization: { nullable: true }
- *         faculty: { nullable: true }
- *         created_by: { nullable: true }
- *         last_review: { nullable: true }
- *         last_activity: { nullable: true }
- *         updated_at: { type: string, format: date-time }
- *     ApprovalQueueOutput:
- *       type: object
- *       required: [items, pagination]
- *       properties:
- *         items:
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/ApprovalQueueItemOutput'
- *         pagination:
- *           $ref: '#/components/schemas/PaginationMeta'
- */
-
-/**
- * @openapi
  * /approvals:
  *   get:
  *     summary: List approval queue
- *     description: Return scoped approval queue for operator principals. Non-DOANTRUONG operators are limited to their organization or faculty.
  *     tags: [Approvals]
  *     security:
  *       - bearerAuth: []
@@ -73,39 +45,72 @@ const approvalsRouter = Router()
  *     responses:
  *       200:
  *         description: Approval queue page
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/ApiResponseSuccess'
- *                 - type: object
- *                   properties:
- *                     data:
- *                       $ref: '#/components/schemas/ApprovalQueueOutput'
- *       400:
- *         description: Invalid query
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ValidationError'
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/UnauthorizedError'
- *       403:
- *         description: Forbidden
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ForbiddenError'
  */
 approvalsRouter.get(
     '/',
     isAuth,
     validate(approvalQueueSchema),
     approvalsController.getApprovalQueue
+)
+
+/**
+ * GET /approvals/campaigns/:id - Campaign approval detail
+ */
+approvalsRouter.get(
+    '/campaigns/:id',
+    isAuth,
+    validate(approvalIdSchema),
+    approvalsController.getApprovalCampaignDetail
+)
+
+/**
+ * POST /approvals/campaigns/:id/comments - Add approval comment
+ */
+approvalsRouter.post(
+    '/campaigns/:id/comments',
+    isAuth,
+    validate(approvalCommentSchema),
+    approvalsController.addApprovalComment
+)
+
+/**
+ * POST /approvals/campaigns/:id/request-revision
+ */
+approvalsRouter.post(
+    '/campaigns/:id/request-revision',
+    isAuth,
+    validate(approvalActionSchema),
+    approvalsController.requestRevision
+)
+
+/**
+ * POST /approvals/campaigns/:id/pre-approve
+ */
+approvalsRouter.post(
+    '/campaigns/:id/pre-approve',
+    isAuth,
+    validate(approvalActionSchema),
+    approvalsController.preApproveCampaign
+)
+
+/**
+ * POST /approvals/campaigns/:id/approve
+ */
+approvalsRouter.post(
+    '/campaigns/:id/approve',
+    isAuth,
+    validate(approvalActionSchema),
+    approvalsController.approveCampaign
+)
+
+/**
+ * POST /approvals/campaigns/:id/reject
+ */
+approvalsRouter.post(
+    '/campaigns/:id/reject',
+    isAuth,
+    validate(approvalActionSchema),
+    approvalsController.rejectCampaign
 )
 
 export default approvalsRouter
