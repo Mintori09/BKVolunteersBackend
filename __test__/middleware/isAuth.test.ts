@@ -27,7 +27,8 @@ describe('isAuth middleware', () => {
     beforeEach(() => {
         req = {} as Request
         res = {
-            sendStatus: jest.fn(),
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn().mockReturnThis(),
         } as unknown as Response
         next = jest.fn()
     })
@@ -39,7 +40,16 @@ describe('isAuth middleware', () => {
     it('should return 401 if no authorization header is present', () => {
         isAuth(req, res, next)
 
-        expect(res.sendStatus).toHaveBeenCalledWith(httpStatus.UNAUTHORIZED)
+        expect(res.status).toHaveBeenCalledWith(httpStatus.UNAUTHORIZED)
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({
+                success: false,
+                error: expect.objectContaining({
+                    code: 'AUTH_ACCESS_TOKEN_REQUIRED',
+                    message: 'Access token is required',
+                }),
+            })
+        )
         expect(next).not.toHaveBeenCalled()
     })
 
@@ -48,7 +58,16 @@ describe('isAuth middleware', () => {
 
         isAuth(req, res, next)
 
-        expect(res.sendStatus).toHaveBeenCalledWith(httpStatus.UNAUTHORIZED)
+        expect(res.status).toHaveBeenCalledWith(httpStatus.UNAUTHORIZED)
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({
+                success: false,
+                error: expect.objectContaining({
+                    code: 'AUTH_ACCESS_TOKEN_REQUIRED',
+                    message: 'Access token is required',
+                }),
+            })
+        )
         expect(next).not.toHaveBeenCalled()
     })
 
@@ -57,16 +76,34 @@ describe('isAuth middleware', () => {
 
         isAuth(req, res, next)
 
-        expect(res.sendStatus).toHaveBeenCalledWith(httpStatus.UNAUTHORIZED)
+        expect(res.status).toHaveBeenCalledWith(httpStatus.UNAUTHORIZED)
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({
+                success: false,
+                error: expect.objectContaining({
+                    code: 'AUTH_ACCESS_TOKEN_REQUIRED',
+                    message: 'Access token is required',
+                }),
+            })
+        )
         expect(next).not.toHaveBeenCalled()
     })
 
-    it('should return 403 if token is invalid', () => {
+    it('should return 401 if token is invalid', () => {
         req.headers = { authorization: 'Bearer InvalidToken' }
 
         isAuth(req, res, next)
 
-        expect(res.sendStatus).toHaveBeenCalledWith(httpStatus.FORBIDDEN)
+        expect(res.status).toHaveBeenCalledWith(httpStatus.UNAUTHORIZED)
+        expect(res.json).toHaveBeenCalledWith(
+            expect.objectContaining({
+                success: false,
+                error: expect.objectContaining({
+                    code: 'AUTH_ACCESS_TOKEN_INVALID',
+                    message: 'Access token is invalid or expired',
+                }),
+            })
+        )
         expect(next).not.toHaveBeenCalled()
     })
 

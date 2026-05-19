@@ -1,6 +1,6 @@
 import { prismaClient } from 'src/config'
 import { TitleFilter, CreateTitleInput, UpdateTitleInput } from './types'
-import { PaginatedResult } from '../gamification/types'
+import { PaginatedResult } from 'src/common/types'
 import { Title } from '@prisma/client'
 
 export const create = async (data: CreateTitleInput): Promise<Title> => {
@@ -10,7 +10,6 @@ export const create = async (data: CreateTitleInput): Promise<Title> => {
             description: data.description,
             minPoints: data.minPoints,
             iconUrl: data.iconUrl,
-            badgeColor: data.badgeColor,
         },
     })
 }
@@ -40,12 +39,9 @@ export const findById = async (id: number): Promise<Title | null> => {
 export const findMany = async (
     filters: TitleFilter
 ): Promise<PaginatedResult<Title>> => {
-    const { page = 1, limit = 10, isActive } = filters
+    const { page = 1, limit = 10 } = filters
 
-    const where: any = {}
-    if (isActive !== undefined) {
-        where.isActive = isActive
-    }
+    const where = {}
 
     const [items, total] = await Promise.all([
         prismaClient.title.findMany({
@@ -74,7 +70,6 @@ export const findTitlesBelowPoints = async (
     return prismaClient.title.findMany({
         where: {
             minPoints: { lte: points },
-            isActive: true,
         },
         orderBy: { minPoints: 'asc' },
     })

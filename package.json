@@ -6,7 +6,7 @@
     "scripts": {
         "dev": "tsx watch src/server.ts",
         "build": "pnpm tsc",
-        "start": "tsx src/server.ts",
+        "start": "node dist/server.ts",
         "test": "jest",
         "db:migrate": "prisma migrate deploy",
         "db:seed": "tsx prisma/seed/index.ts",
@@ -77,5 +77,15 @@
         "typescript": "^5.9.3",
         "typescript-eslint": "^8.57.0",
         "winston": "^3.19.0"
+    },
+    "pnpm": {
+        "onlyBuiltDependencies": [
+            "@prisma/engines",
+            "@scarf/scarf",
+            "argon2",
+            "esbuild",
+            "prisma",
+            "unrs-resolver"
+        ]
     }
 }

@@ -1,249 +1,249 @@
-# BKVolunteers Backend API
+# BKVolunteers Backend
 
-Backend API cho nền tảng quản lý tình nguyện viên và tổ chức sự kiện tình nguyện.
+Backend spec-first cho nền tảng quản lý hoạt động tình nguyện trong môi trường đại học, bao gồm chiến dịch, quyên góp, sự kiện, chứng nhận, thông báo và báo cáo.
 
-## Giới thiệu
+Repository này là lớp API cho đợt pilot reset của BKVolunteers. Hệ thống hiện dùng route tree canonical, tài liệu Swagger, dữ liệu seed demo và codebase TypeScript theo kiến trúc module trên Express và Prisma.
 
-**BKVolunteers** là một nền tảng kết nối tình nguyện viên với các tổ chức từ thiện. API được xây dựng trên kiến trúc modular với TypeScript, Express và Prisma ORM.
+## BKVolunteers Là Gì
 
-### Đặc điểm chính
+BKVolunteers được xây cho bài toán vận hành hoạt động tình nguyện ở cấp trường và cấp khoa.
 
-- **Ngôn ngữ**: TypeScript với kiểu dữ liệu chặt chẽ
-- **Kiến trúc**: Controller-Service-Repository pattern
-- **Database**: Prisma ORM + MariaDB
-- **Xác thực**: JWT (Access + Refresh tokens), Argon2 password hashing
-- **Email**: Nodemailer (SMTP) cho password reset
-- **Validation**: Zod schema validation
-- **Testing**: Jest với Babel
-- **API Docs**: Swagger/OpenAPI
-- **Containerized**: Docker + Docker Compose
+Hệ thống hiện xoay quanh 3 nhóm actor chính:
 
-## Tài khoản demo:
+- `Sinh viên`: đăng ký hoạt động, quyên góp, theo dõi lịch sử tham gia và xem chứng nhận.
+- `Điều phối viên`: tạo và vận hành chiến dịch, duyệt luồng phê duyệt, xác minh donation và xem báo cáo.
+- `Tổ chức`: đơn vị sở hữu chiến dịch và tài khoản operator.
 
-- Student 1: `102220001@sv1.dut.udn.vn` / `102220001`
-- Student 2: `105220001@sv1.dut.udn.vn` / `105220001`
-- Org admin: `lcd.cntt@dut.udn.vn` / `Password@123`
-- School admin: `school.admin@dut.udn.vn` / `Password@123`
-- Reviewer: `reviewer@dut.udn.vn` / `Password@123`
+Mô hình dữ liệu trung tâm của API:
 
-## Công nghệ
+- `campaign` là container chính.
+- `campaign module` là bề mặt triển khai nghiệp vụ.
+- Module hiện có gồm `fundraising`, `item donations` và `events`.
+- Các mảng hỗ trợ gồm `approvals`, `certificates`, `notifications`, `reports` và `admin`.
 
-| Thành phần      | Công nghệ   |
-| --------------- | ----------- |
-| Runtime         | Node.js 18+ |
-| Framework       | Express.js  |
-| Language        | TypeScript  |
-| Database        | MariaDB 11  |
-| ORM             | Prisma      |
-| Validation      | Zod         |
-| Testing         | Jest        |
-| Package Manager | pnpm        |
-| Container       | Docker      |
+## Tính Năng Chính
 
-## Cấu trúc Project
+- Xác thực spec-first với access token, refresh token và `/auth/me` theo principal mới
+- Danh sách và chi tiết chiến dịch public qua `/public/campaigns` và slug
+- Luồng vận hành campaign cho operator: submit, review, approve, publish, end
+- Fundraising chạy trên canonical tables `campaign_modules + money_donations + payment_transactions`
+- Quyên góp hiện vật chạy trên `item_targets + item_pledges`
+- Đăng ký và duyệt tham gia sự kiện trên `event_registrations`
+- Bề mặt self-service cho sinh viên: dashboard, activities, donations, titles, certificates
+- Tạo, render, revoke, reissue và verify certificate
+- Approval queue, audit logs và reports theo canonical schema
+- Swagger UI để duyệt contract API
 
-```
+## API Surface
+
+Toàn bộ route public được mount dưới `/api/v1`:
+
+- `/auth`
+- `/public`
+- `/organizations`
+- `/campaigns`
+- `/approvals`
+- `/fundraising`
+- `/item-donations`
+- `/events`
+- `/students`
+- `/certificates`
+- `/notifications`
+- `/reports`
+- `/admin`
+
+Swagger UI có tại:
+
+- `/api-docs`
+
+## Công Nghệ Sử Dụng
+
+- `Node.js`
+- `TypeScript`
+- `Express 5`
+- `Prisma`
+- `MariaDB`
+- `Zod`
+- `JWT`
+- `Argon2`
+- `Jest`
+- `Swagger / OpenAPI`
+
+## Kiến Trúc
+
+Codebase theo kiến trúc module nhiều lớp:
+
+```text
 src/
-├── features/           # Domain modules
-│   ├── auth/          # Xác thực (login, logout, refresh, me, changePassword)
-│   ├── forgotPassword/ # Quên mật khẩu (forgot-password, reset-password)
-│   └── ...            # (Sắp triển khai: users, students, campaigns, clubs)
-├── common/            # Shared middleware & routes
-│   └── middleware/    # isAuth, restrictTo, validate, authLimiter, xss, errorHandler
-├── config/            # Configuration (Prisma, JWT, SMTP, CORS, Helmet, Swagger)
-├── utils/             # Utilities (ApiError, ApiResponse, catchAsync, sendEmail)
-└── types/             # Global TypeScript types
+├── features/<feature>/
+│   ├── *.route.ts
+│   ├── *.controller.ts
+│   ├── *.service.ts
+│   ├── *.repository.ts
+│   ├── *.validation.ts
+│   ├── types.ts
+│   └── tests/
+├── common/
+├── config/
+├── types/
+└── utils/
 ```
 
-## Bắt đầu
+Các feature spec-first mới được tổ chức quanh endpoint contract tường minh và route-level Swagger docs. Các phần dùng chung như middleware auth, serializer, API envelope và pagination helper được đặt ngoài feature folders.
 
-### Yêu cầu
+## Bắt Đầu Nhanh
 
-- Node.js 18+
-- pnpm 10+
-- Docker & Docker Compose (tùy chọn)
+### Yêu Cầu
 
-### Cài đặt
+- `Node.js 18+`
+- `pnpm 10+`
+- `MariaDB`
 
-1. **Clone repository:**
+### Cài Đặt
 
-   ```bash
+```bash
+git clone <repository-url>
+cd BKVolunteersBackend
+pnpm install
+```
 
-   git clone <repository-url>
+### Cấu Hình Môi Trường
 
-   cd BKVolunteersBackend
+Tạo file `.env` cục bộ từ file mẫu rồi điền cấu hình database, JWT và mail.
 
-   ```
+Các biến môi trường thường dùng:
 
-2. **Cài dependencies:**
+- `NODE_ENV`
+- `PORT`
+- `DATABASE_URL`
+- `ACCESS_TOKEN_SECRET`
+- `REFRESH_TOKEN_SECRET`
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_USERNAME`
+- `SMTP_PASSWORD`
+- `EMAIL_FROM`
+- `SEPAY_WEBHOOK_SECRET`
 
-   ```bash
+### Generate Prisma Client
 
-   pnpm install
+```bash
+pnpm exec prisma generate
+```
 
-   ```
-
-3. **Setup môi trường:**
-
-   ```bash
-
-   cp .env-example .env
-   # Sửa .env với thông tin database và JWT secrets
-   ```
-
-4. **Generate Prisma Client:**
-
-   ```bash
-
-   pnpm exec prisma generate
-
-   ```
-
-### Chạy Development
-
-**Cách 1: Local**
+### Chạy API
 
 ```bash
 pnpm dev
 ```
 
-**Cách 2: Docker Compose**
+Mặc định server chạy tại:
+
+- `http://localhost:4000`
+
+## Database Và Seed
+
+Pilot hiện được thiết kế để chạy trên canonical schema sạch.
+
+Entrypoint seed hiện tại:
+
+- [prisma/seed/index.ts](/home/mintori/Projects/Personal/BKVolunteersBackend/fix-implement/prisma/seed/index.ts)
+
+Dữ liệu demo hiện được seed gồm:
+
+- faculties
+- titles
+- organizations
+- operator accounts
+- students
+- demo campaign và modules
+
+### Tài Khoản Demo
+
+Tài khoản operator:
+
+- `operator@bkv.local` / `Password123`
+- `club@bkvolunteers.local` / `Password123`
+
+Tài khoản sinh viên:
+
+- `102210001@sv1.dut.udn.vn` / `102210001`
+- `102210002@sv1.dut.udn.vn` / `102210002`
+
+### Campaign Demo
+
+Seed hiện tạo một campaign đã publish:
+
+- slug: `pilot-canonical-campaign`
+- modules:
+  - `FUNDRAISING`
+  - `EVENT`
+
+Campaign này phù hợp để kiểm tra public campaign listing, module detail APIs, reporting và certificate flows.
+
+## Các Lệnh Thường Dùng
 
 ```bash
-docker-compose up -d
+pnpm dev
+pnpm build
+pnpm start
+pnpm test
+pnpm lint
+pnpm exec prisma generate
+pnpm exec prisma migrate dev --name <name>
+pnpm exec prisma studio
 ```
-
-Server chạy tại: `http://localhost:4000`
-
-### Các lệnh thường dùng
-
-| Lệnh                           | Mô tả                            |
-| ------------------------------ | -------------------------------- |
-| `pnpm dev`                     | Chạy development với hot reload  |
-| `pnpm build`                   | Build TypeScript sang JavaScript |
-| `pnpm start`                   | Chạy production build            |
-| `pnpm test`                    | Chạy tất cả tests                |
-| `pnpm lint`                    | Kiểm tra code format             |
-| `pnpm exec prisma migrate dev` | Tạo database migration           |
-| `pnpm exec prisma studio`      | Mở Prisma Studio                 |
-
-## API Endpoints
-
-### Authentication
-
-| Method | Endpoint | Mô tả | Auth Required |
-| --- | --- | --- | --- |
-| POST | `/api/v1/auth/login` | Đăng nhập (username hoặc MSSV) | No |
-| POST | `/api/v1/auth/logout` | Đăng xuất | Yes |
-| POST | `/api/v1/auth/refresh` | Refresh access token | No (cookie) |
-| GET | `/api/v1/auth/me` | Lấy thông tin user hiện tại | Yes |
-| PATCH | `/api/v1/auth/change-password` | Đổi mật khẩu | Yes |
-
-### Password Reset
-
-| Method | Endpoint | Mô tả | Auth Required |
-| --- | --- | --- | --- |
-| POST | `/api/v1/password/forgot-password` | Yêu cầu reset mật khẩu | No |
-| POST | `/api/v1/password/reset-password/:token` | Reset mật khẩu với token | No |
-
-### Users (chưa triển khai)
-
-| Method | Endpoint            | Mô tả               |
-| ------ | ------------------- | ------------------- |
-| GET    | `/api/v1/users`     | Lấy danh sách users |
-| GET    | `/api/v1/users/:id` | Lấy chi tiết user   |
-| PATCH  | `/api/v1/users/:id` | Cập nhật user       |
-| DELETE | `/api/v1/users/:id` | Xóa user            |
-
-### Students (chưa triển khai)
-
-| Method | Endpoint               | Mô tả                  |
-| ------ | ---------------------- | ---------------------- |
-| GET    | `/api/v1/students`     | Lấy danh sách students |
-| GET    | `/api/v1/students/:id` | Lấy chi tiết student   |
-| POST   | `/api/v1/students`     | Đăng ký student mới    |
-
-### Campaigns (chưa triển khai)
-
-| Method | Endpoint                | Mô tả               |
-| ------ | ----------------------- | ------------------- |
-| GET    | `/api/v1/campaigns`     | Danh sách campaigns |
-| POST   | `/api/v1/campaigns`     | Tạo campaign mới    |
-| GET    | `/api/v1/campaigns/:id` | Chi tiết campaign   |
-| PATCH  | `/api/v1/campaigns/:id` | Cập nhật campaign   |
-| DELETE | `/api/v1/campaigns/:id` | Xóa campaign        |
-
-## Database Models
-
-### Core Models
-
-| Model     | Mô tả                                  |
-| --------- | -------------------------------------- |
-| `Faculty` | Khoa/đơn vị với mã và tên              |
-| `User`    | Tài khoản admin (CLB, LCD, DOANTRUONG) |
-| `Student` | Sinh viên tình nguyện viên (SINHVIEN)  |
-
-### Campaign System
-
-| Model                   | Mô tả                                    |
-| ----------------------- | ---------------------------------------- |
-| `Campaign`              | Base campaign với status, approval flow  |
-| `MoneyDonationCampaign` | Campaign quyên góp tiền                  |
-| `ItemDonationCampaign`  | Campaign quyên góp hiện vật              |
-| `EventCampaign`         | Sự kiện tình nguyện với participant mgmt |
-
-### Other Models
-
-| Model                 | Mô tả                                   |
-| --------------------- | --------------------------------------- |
-| `Club`                | CLB (khoa hoặc trường)                  |
-| `Title`               | Danh hiệu thành tựu với point threshold |
-| `Donation`            | Ghi nhận donation từ student            |
-| `Participant`         | Tham gia event với check-in status      |
-| `RefreshToken`        | User refresh tokens                     |
-| `StudentRefreshToken` | Student refresh tokens                  |
-| `ResetToken`          | Password reset tokens                   |
-
-## Biến môi trường
-
-| Variable               | Mô tả              | Default         |
-| ---------------------- | ------------------ | --------------- |
-| `NODE_ENV`             | Môi trường         | `development`   |
-| `PORT`                 | Cổng server        | `4000`          |
-| `DATABASE_URL`         | Connection string  | `mariadb://...` |
-| `ACCESS_TOKEN_SECRET`  | JWT access secret  | -               |
-| `REFRESH_TOKEN_SECRET` | JWT refresh secret | -               |
-| `SMTP_HOST`            | SMTP server        | `localhost`     |
-| `SMTP_PORT`            | SMTP port          | `587`           |
-| `SMTP_USERNAME`        | SMTP user          | -               |
-| `SMTP_PASSWORD`        | SMTP password      | -               |
-| `EMAIL_FROM`           | Email gửi đi       | -               |
-
-## Thêm Feature mới
-
-1. Tạo folder trong `src/features/<feature>/`
-2. Định nghĩa types trong `types.ts`
-3. Viết repository trong `*.repository.ts`
-4. Viết service trong `*.service.ts`
-5. Viết controller trong `*.controller.ts`
-6. Đăng ký routes trong `*.route.ts` và `src/common/routes.ts`
-7. Viết tests trong `tests/`
 
 ## Testing
 
-Project có **16 test files** covering:
+Repository hiện có test cho middleware, utilities và các feature spec-first chính.
 
-- Auth feature (controller, service, repository, integration)
-- ForgotPassword feature (controller, integration)
-- Middleware (validate, isAuth, restrictTo, xss, errorHandler)
-- Utilities (sendEmail, generateTokens, sanitize, paginate)
+Chạy toàn bộ test:
 
 ```bash
-pnpm test                           # Chạy tất cả tests
-pnpm exec jest <file_path>          # Chạy test file cụ thể
-pnpm exec jest --watch              # Watch mode
+pnpm test
 ```
+
+Chạy một file test cụ thể:
+
+```bash
+pnpm exec jest src/features/fundraising/tests/fundraising.service.test.ts
+```
+
+## Swagger
+
+Swagger/OpenAPI được generate từ JSDoc trong các file route của feature.
+
+Sau khi app chạy, mở:
+
+- `http://localhost:4000/api-docs`
+
+Docs hiện phản ánh route tree spec-first và các named schema cho request/response contract của từng feature.
+
+## Trạng Thái Hiện Tại
+
+Repository này đã đi qua một đợt hard-cut spec-first cho pilot.
+
+Điều đó có nghĩa là:
+
+- canonical tables và APIs là source of truth
+- router public đã được mount quanh các route group mới
+- compatibility với API legacy không còn là mục tiêu
+- seed dữ liệu giả định pilot reset sạch, không backfill dữ liệu cũ
+
+Một số phần vẫn còn ở mức thin slice so với production platform hoàn chỉnh, nhưng kiến trúc hiện tại đã được dọn lại để tiếp tục mở rộng theo cùng hướng.
+
+## Đóng Góp
+
+Nếu thêm mới hoặc rewrite feature, nên giữ đúng convention của repo:
+
+- khai báo tường minh input/output types cho endpoint
+- đặt validation trong `*.validation.ts`
+- giữ truy cập Prisma trong `*.repository.ts`
+- giữ business rules trong `*.service.ts`
+- khai báo route và Swagger trong `*.route.ts`
+- thêm test co-located trong `tests/`
 
 ## License
 
-None License
+`package.json` hiện chưa khai báo license cho dự án. Nếu cần public rộng hơn, nên bổ sung license rõ ràng.

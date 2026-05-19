@@ -1,10 +1,10 @@
-import { AccountType, ContractRole } from 'src/contract/types'
+import { UserRole } from 'src/common/types'
 
 declare module 'jsonwebtoken' {
     export interface JwtPayload {
         userId: string
-        accountType: AccountType
-        role: ContractRole
+        accountType: 'STUDENT' | 'OPERATOR'
+        role: UserRole
         organizationId?: string | null
         facultyId?: string | null
     }

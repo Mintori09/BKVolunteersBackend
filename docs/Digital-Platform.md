@@ -1,5 +1,7 @@
 # Tổng Quan Dự Án: Xây Dựng Nền Tảng Số Hóa Các Chiến Dịch Tình Nguyện - Gây Quỹ Cho Liên Chi Đoàn Và Câu Lạc Bộ Trong Trường Đại Học Bách Khoa - Đại Học Đà Nẵng
 
+> Tài liệu mô tả yêu cầu/ý tưởng sản phẩm ở giai đoạn thiết kế ban đầu. Nguồn sự thật hiện tại cho API và backlog nằm trong `docs/api/` và `docs/PRODUCT_BACKLOG.md`.
+
 ---
 
 ## I. Đối Tượng Người Dùng

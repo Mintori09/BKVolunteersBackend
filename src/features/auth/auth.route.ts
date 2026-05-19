@@ -1,6 +1,11 @@
 import { Router } from 'express'
 import validate from 'src/common/middleware/validate'
-import { changePasswordSchema, loginSchema } from './auth.validation'
+import {
+    changePasswordSchema,
+    loginSchema,
+    logoutSchema,
+    refreshSchema,
+} from './auth.validation'
 
 import * as authController from './auth.controller'
 import isAuth from 'src/common/middleware/isAuth'
@@ -27,10 +32,10 @@ const authRouter = Router()
  *           schema:
  *             type: object
  *             required:
- *               - mssv
+ *               - username
  *               - password
  *             properties:
- *               email:
+ *               username:
  *                 type: string
  *                 format: string
  *               password:
@@ -39,6 +44,15 @@ const authRouter = Router()
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/LoginOutput'
  *       401:
  *         description: Unauthorized
  */
@@ -58,7 +72,7 @@ authRouter.post('/login', validate(loginSchema), authController.handleLogin)
  *       401:
  *         description: Unauthorized
  */
-authRouter.post('/logout', isAuth, authController.handleLogout)
+authRouter.post('/logout', validate(logoutSchema), authController.handleLogout)
 
 /**
  * @openapi
@@ -69,12 +83,25 @@ authRouter.post('/logout', isAuth, authController.handleLogout)
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/LoginOutput'
  *       401:
  *         description: Unauthorized
  *       403:
  *         description: Forbidden
  */
-authRouter.post('/refresh', authController.handleRefresh)
+authRouter.post(
+    '/refresh',
+    validate(refreshSchema),
+    authController.handleRefresh
+)
 
 /**
  * @openapi
@@ -87,14 +114,27 @@ authRouter.post('/refresh', authController.handleRefresh)
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       nullable: true
  *       401:
  *         description: Unauthorized
  */
+authRouter.get('/microsoft/login', authController.handleMicrosoftLogin)
+authRouter.get('/microsoft/callback', authController.handleMicrosoftCallback)
+authRouter.get('/microsoft/mock-callback', authController.handleMicrosoftMockCallback)
+
 authRouter.get('/me', isAuth, authController.getMe)
 
 /**
  * @openapi
- * /auth/change-password:
+ * /auth/me/password:
  *   patch:
  *     summary: Change password
  *     tags: [Auth]
@@ -123,13 +163,22 @@ authRouter.get('/me', isAuth, authController.getMe)
  *     responses:
  *       200:
  *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       nullable: true
  *       400:
  *         description: Bad Request
  *       401:
  *         description: Unauthorized
  */
 authRouter.patch(
-    '/change-password',
+    '/me/password',
     isAuth,
     validate(changePasswordSchema),
     authController.handleChangePassword

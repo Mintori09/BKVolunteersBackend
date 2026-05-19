@@ -6,327 +6,209 @@ datasource db {
   provider = "mysql"
 }
 
-enum AccountType {
-  STUDENT
-  OPERATOR
-}
-
-enum OperatorRole {
-  ORG_ADMIN
-  ORG_MEMBER
-  SCHOOL_REVIEWER
-  SCHOOL_ADMIN
-  SYSTEM
-}
-
-enum OrganizationType {
-  FACULTY_UNION
-  CLUB
-  SCHOOL_UNION
-}
-
-enum RecordStatus {
-  ACTIVE
-  INACTIVE
-  SUSPENDED
-}
-
-enum CampaignScopeType {
-  FACULTY
-  SCHOOL
-  PUBLIC
-}
-
-enum CampaignStatus {
-  DRAFT
-  SUBMITTED
-  PRE_APPROVED
-  APPROVED
-  REVISION_REQUIRED
-  REJECTED
-  PUBLISHED
-  ONGOING
-  ENDED
-  ARCHIVED
-}
-
-enum CampaignModuleType {
-  fundraising
-  item_donation
-  event
-}
-
-enum ModuleStatus {
-  DRAFT
-  READY_FOR_REVIEW
-  APPROVED
-  OPEN
-  CLOSED
-  CANCELLED
-}
-
-enum MoneyDonationStatus {
-  PENDING
-  MATCHED
-  VERIFIED
-  REJECTED
-  REFUNDED
-}
-
-enum TransactionMatchStatus {
-  UNMATCHED
-  MATCHED
-  IGNORED
-}
-
-enum ItemTargetStatus {
-  ACTIVE
-  CLOSED
-}
-
-enum ItemPledgeStatus {
-  PLEDGED
-  CONFIRMED
-  RECEIVED
-  REJECTED
-  CANCELLED
-}
-
-enum EventRegistrationStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  CANCELLED
-  CHECKED_IN
-  COMPLETED
-}
-
-enum CertificateTemplateStatus {
-  ACTIVE
-  INACTIVE
-}
-
-enum CertificateStatus {
-  PENDING
-  RENDERING
-  READY
-  SIGNED
-  REVOKED
-  FAILED
-}
-
-enum BackgroundJobStatus {
-  PENDING
-  RUNNING
-  SUCCEEDED
-  FAILED
-  CANCELLED
-}
-
 model Faculty {
-  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  code      String   @unique @db.VarChar(20)
-  name      String   @db.VarChar(255)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
+  id           BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  code         String            @unique @db.VarChar(20)
+  name         String            @db.VarChar(255)
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
   organizations Organization[]
-  operators     OperatorAccount[]
-  students      Student[]
-  campaigns     Campaign[]
+  operatorAccounts OperatorAccount[]
+  students     Student[]
+  campaigns    Campaign[]
 
   @@map("faculties")
 }
 
 model Organization {
-  id          BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
-  code        String           @unique @db.VarChar(50)
-  name        String           @db.VarChar(255)
-  type        OrganizationType
-  facultyId   BigInt?          @map("faculty_id") @db.UnsignedBigInt
-  logoUrl     String?          @map("logo_url") @db.VarChar(500)
-  description String?          @db.Text
-  status      RecordStatus     @default(ACTIVE)
-  createdAt   DateTime         @default(now()) @map("created_at")
-  updatedAt   DateTime         @updatedAt @map("updated_at")
-  deletedAt   DateTime?        @map("deleted_at")
-
-  faculty   Faculty?          @relation(fields: [facultyId], references: [id], onDelete: SetNull)
-  operators OperatorAccount[]
-  campaigns Campaign[]
+  id               BigInt             @id @default(autoincrement()) @db.UnsignedBigInt
+  code             String             @unique @db.VarChar(50)
+  name             String             @db.VarChar(255)
+  type             String             @db.VarChar(40)
+  facultyId        BigInt?            @map("faculty_id") @db.UnsignedBigInt
+  logoUrl          String?            @map("logo_url") @db.VarChar(500)
+  description      String?            @db.Text
+  status           String             @default("ACTIVE") @db.VarChar(40)
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+  deletedAt        DateTime?          @map("deleted_at")
+  faculty          Faculty?           @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+  operatorAccounts OperatorAccount[]
+  campaigns        Campaign[]
 
   @@index([type])
-  @@index([facultyId])
   @@map("organizations")
 }
 
 model OperatorAccount {
-  id             BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
-  organizationId BigInt?      @map("organization_id") @db.UnsignedBigInt
-  facultyId      BigInt?      @map("faculty_id") @db.UnsignedBigInt
-  email          String       @unique @db.VarChar(255)
-  passwordHash   String       @map("password_hash") @db.VarChar(255)
-  fullName       String       @map("full_name") @db.VarChar(255)
-  phone          String?      @db.VarChar(30)
-  avatarUrl      String?      @map("avatar_url") @db.VarChar(500)
-  role           OperatorRole
-  status         RecordStatus @default(ACTIVE)
-  lastLoginAt    DateTime?    @map("last_login_at")
-  createdAt      DateTime     @default(now()) @map("created_at")
-  updatedAt      DateTime     @updatedAt @map("updated_at")
-  deletedAt      DateTime?    @map("deleted_at")
-
-  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  faculty      Faculty?      @relation(fields: [facultyId], references: [id], onDelete: SetNull)
-  createdCampaigns Campaign[] @relation("CampaignCreatedBy")
-  approvedCampaigns Campaign[] @relation("CampaignApprovedBy")
-  verifiedMoneyDonations MoneyDonation[] @relation("MoneyDonationVerifiedBy")
-  receivedItemHandovers ItemHandoverRecord[] @relation("ItemHandoverReceivedBy")
-  reviewedEventRegistrations EventRegistration[] @relation("EventRegistrationReviewedBy")
-  createdCertificateTemplates CertificateTemplate[] @relation("CertificateTemplateCreatedBy")
-  revokedCertificates Certificate[] @relation("CertificateRevokedBy")
-  notifications Notification[]
-  refreshTokens RefreshToken[]
+  id                   BigInt                  @id @default(autoincrement()) @db.UnsignedBigInt
+  organizationId       BigInt?                 @map("organization_id") @db.UnsignedBigInt
+  facultyId            BigInt?                 @map("faculty_id") @db.UnsignedBigInt
+  email                String                  @unique @db.VarChar(255)
+  passwordHash         String                  @map("password_hash") @db.VarChar(255)
+  fullName             String                  @map("full_name") @db.VarChar(255)
+  phone                String?                 @db.VarChar(30)
+  avatarUrl            String?                 @map("avatar_url") @db.VarChar(500)
+  role                 String                  @db.VarChar(40)
+  status               String                  @default("ACTIVE") @db.VarChar(40)
+  lastLoginAt          DateTime?               @map("last_login_at")
+  createdAt            DateTime                @default(now()) @map("created_at")
+  updatedAt            DateTime                @updatedAt @map("updated_at")
+  deletedAt            DateTime?               @map("deleted_at")
+  organization         Organization?           @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  faculty              Faculty?                @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+  refreshTokens        RefreshToken[]
+  oauthAccounts        OauthAccount[]
+  campaignsCreated     Campaign[]              @relation("CampaignCreatedBy")
+  campaignsApproved    Campaign[]              @relation("CampaignApprovedBy")
+  certificateTemplates CertificateTemplate[]
+  certificatesRevoked  Certificate[]           @relation("CertificateRevokedBy")
+  verifiedMoneyDonations MoneyDonation[]       @relation("MoneyDonationVerifiedBy")
+  notifications        Notification[]
 
   @@index([role])
-  @@index([organizationId])
-  @@index([facultyId])
   @@map("operator_accounts")
 }
 
 model Title {
-  id          BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  name        String   @db.VarChar(120)
-  description String?  @db.Text
-  minPoints   Int      @default(0) @map("min_points")
-  iconUrl     String?  @map("icon_url") @db.VarChar(500)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  students Student[]
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  name        String    @db.VarChar(120)
+  description String?   @db.Text
+  minPoints   Int       @default(0) @map("min_points")
+  iconUrl     String?   @map("icon_url") @db.VarChar(500)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  students    Student[]
 
   @@map("titles")
 }
 
 model Student {
-  id             BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
-  facultyId      BigInt       @map("faculty_id") @db.UnsignedBigInt
-  currentTitleId BigInt?      @map("current_title_id") @db.UnsignedBigInt
-  studentCode    String       @unique @map("student_code") @db.VarChar(30)
-  email          String       @unique @db.VarChar(255)
-  passwordHash   String       @map("password_hash") @db.VarChar(255)
-  fullName       String       @map("full_name") @db.VarChar(255)
-  classCode      String?      @map("class_code") @db.VarChar(50)
-  major          String?      @db.VarChar(120)
-  year           Int?         @db.UnsignedSmallInt
-  phone          String?      @db.VarChar(30)
-  avatarUrl      String?      @map("avatar_url") @db.VarChar(500)
-  status         RecordStatus @default(ACTIVE)
-  totalPoints    Int          @default(0) @map("total_points")
-  lastLoginAt    DateTime?    @map("last_login_at")
-  createdAt      DateTime     @default(now()) @map("created_at")
-  updatedAt      DateTime     @updatedAt @map("updated_at")
-  deletedAt      DateTime?    @map("deleted_at")
-
-  faculty       Faculty @relation(fields: [facultyId], references: [id], onDelete: Restrict)
-  currentTitle  Title?  @relation(fields: [currentTitleId], references: [id], onDelete: SetNull)
-  refreshTokens RefreshToken[]
-  moneyDonations MoneyDonation[]
-  itemPledges ItemPledge[]
+  id                 BigInt              @id @default(autoincrement()) @db.UnsignedBigInt
+  facultyId          BigInt              @map("faculty_id") @db.UnsignedBigInt
+  currentTitleId     BigInt?             @map("current_title_id") @db.UnsignedBigInt
+  studentCode        String              @unique @map("student_code") @db.VarChar(30)
+  email              String              @unique @db.VarChar(255)
+  passwordHash       String              @map("password_hash") @db.VarChar(255)
+  fullName           String              @map("full_name") @db.VarChar(255)
+  classCode          String?             @map("class_code") @db.VarChar(50)
+  major              String?             @db.VarChar(120)
+  year               Int?                @db.UnsignedSmallInt
+  phone              String?             @db.VarChar(30)
+  avatarUrl          String?             @map("avatar_url") @db.VarChar(500)
+  status             String              @default("ACTIVE") @db.VarChar(40)
+  totalPoints        Int                 @default(0) @map("total_points")
+  lastLoginAt        DateTime?           @map("last_login_at")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+  deletedAt          DateTime?           @map("deleted_at")
+  faculty            Faculty             @relation(fields: [facultyId], references: [id], onDelete: Restrict)
+  currentTitle       Title?              @relation(fields: [currentTitleId], references: [id], onDelete: SetNull)
+  refreshTokens      RefreshToken[]
+  oauthAccounts      OauthAccount[]
+  moneyDonations     MoneyDonation[]
+  itemPledges        ItemPledge[]
   eventRegistrations EventRegistration[]
-  certificates Certificate[]
-  notifications Notification[]
+  certificates       Certificate[]
+  notifications      Notification[]
 
-  @@index([facultyId])
-  @@index([currentTitleId])
   @@map("students")
 }
 
 model RefreshToken {
-  id                BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
-  accountType       AccountType @map("account_type")
-  operatorAccountId BigInt?     @map("operator_account_id") @db.UnsignedBigInt
-  studentId         BigInt?     @map("student_id") @db.UnsignedBigInt
-  tokenHash         String      @map("token_hash") @db.VarChar(255)
-  expiresAt         DateTime    @map("expires_at")
-  revokedAt         DateTime?   @map("revoked_at")
-  createdAt         DateTime    @default(now()) @map("created_at")
+  id                BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  accountType       String            @map("account_type") @db.VarChar(20)
+  operatorAccountId BigInt?           @map("operator_account_id") @db.UnsignedBigInt
+  studentId         BigInt?           @map("student_id") @db.UnsignedBigInt
+  tokenHash         String            @unique @map("token_hash") @db.VarChar(255)
+  expiresAt         DateTime          @map("expires_at")
+  revokedAt         DateTime?         @map("revoked_at")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  operatorAccount   OperatorAccount?  @relation(fields: [operatorAccountId], references: [id], onDelete: Cascade)
+  student           Student?          @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
-  operatorAccount OperatorAccount? @relation(fields: [operatorAccountId], references: [id], onDelete: Cascade)
-  student         Student?         @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  @@unique([tokenHash])
-  @@index([accountType, operatorAccountId])
-  @@index([accountType, studentId])
+  @@index([accountType])
   @@map("refresh_tokens")
 }
 
+model OauthAccount {
+  id                BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  accountType       String            @map("account_type") @db.VarChar(20)
+  operatorAccountId BigInt?           @map("operator_account_id") @db.UnsignedBigInt
+  studentId         BigInt?           @map("student_id") @db.UnsignedBigInt
+  provider          String            @db.VarChar(50)
+  providerAccountId String            @map("provider_account_id") @db.VarChar(255)
+  email             String?           @db.VarChar(255)
+  createdAt         DateTime          @default(now()) @map("created_at")
+  operatorAccount   OperatorAccount?  @relation(fields: [operatorAccountId], references: [id], onDelete: Cascade)
+  student           Student?          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("oauth_accounts")
+}
+
 model Campaign {
-  id             BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
-  organizationId BigInt            @map("organization_id") @db.UnsignedBigInt
-  title          String            @db.VarChar(255)
-  slug           String            @unique @db.VarChar(255)
-  summary        String            @db.VarChar(500)
-  description    String?           @db.LongText
-  coverImageUrl  String?           @map("cover_image_url") @db.VarChar(500)
-  beneficiary    String?           @db.VarChar(255)
-  scopeType      CampaignScopeType @map("scope_type")
-  facultyId      BigInt?           @map("faculty_id") @db.UnsignedBigInt
-  startAt        DateTime          @map("start_at")
-  endAt          DateTime          @map("end_at")
-  status         CampaignStatus    @default(DRAFT)
-  publishedAt    DateTime?         @map("published_at")
-  createdBy      BigInt            @map("created_by") @db.UnsignedBigInt
-  approvedBy     BigInt?           @map("approved_by") @db.UnsignedBigInt
-  approvedAt     DateTime?         @map("approved_at")
-  createdAt      DateTime          @default(now()) @map("created_at")
-  updatedAt      DateTime          @updatedAt @map("updated_at")
-  deletedAt      DateTime?         @map("deleted_at")
-
-  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  faculty      Faculty?         @relation(fields: [facultyId], references: [id], onDelete: SetNull)
-  creator      OperatorAccount  @relation("CampaignCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
-  approver     OperatorAccount? @relation("CampaignApprovedBy", fields: [approvedBy], references: [id], onDelete: SetNull)
-  modules      CampaignModule[]
-  reviews      CampaignReview[]
-  moneyDonations MoneyDonation[]
+  id                 BigInt              @id @default(autoincrement()) @db.UnsignedBigInt
+  organizationId     BigInt              @map("organization_id") @db.UnsignedBigInt
+  title              String              @db.VarChar(255)
+  slug               String              @unique @db.VarChar(255)
+  summary            String              @db.VarChar(500)
+  description        String?             @db.LongText
+  coverImageUrl      String?             @map("cover_image_url") @db.VarChar(500)
+  beneficiary        String?             @db.VarChar(255)
+  scopeType          String              @map("scope_type") @db.VarChar(20)
+  facultyId          BigInt?             @map("faculty_id") @db.UnsignedBigInt
+  startAt            DateTime            @map("start_at")
+  endAt              DateTime            @map("end_at")
+  status             String              @default("DRAFT") @db.VarChar(40)
+  publishedAt        DateTime?           @map("published_at")
+  createdBy          BigInt              @map("created_by") @db.UnsignedBigInt
+  approvedBy         BigInt?             @map("approved_by") @db.UnsignedBigInt
+  approvedAt         DateTime?           @map("approved_at")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+  deletedAt          DateTime?           @map("deleted_at")
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  faculty            Faculty?            @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+  creator            OperatorAccount     @relation("CampaignCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  approver           OperatorAccount?    @relation("CampaignApprovedBy", fields: [approvedBy], references: [id], onDelete: SetNull)
+  modules            CampaignModule[]
+  reviews            CampaignReview[]
+  activities         CampaignActivity[]
+  moneyDonations     MoneyDonation[]
   paymentTransactions PaymentTransaction[]
-  itemTargets ItemTarget[]
-  itemPledges ItemPledge[]
-  itemHandoverRecords ItemHandoverRecord[]
+  itemTargets        ItemTarget[]
+  itemPledges        ItemPledge[]
   eventRegistrations EventRegistration[]
-  certificates Certificate[]
+  certificates       Certificate[]
 
-  @@index([organizationId])
-  @@index([facultyId])
   @@index([status])
   @@index([scopeType])
   @@map("campaigns")
 }
 
 model CampaignModule {
-  id           BigInt             @id @default(autoincrement()) @db.UnsignedBigInt
-  campaignId   BigInt             @map("campaign_id") @db.UnsignedBigInt
-  type         CampaignModuleType
-  title        String             @db.VarChar(255)
-  description  String?            @db.Text
-  startAt      DateTime           @map("start_at")
-  endAt        DateTime           @map("end_at")
-  status       ModuleStatus       @default(DRAFT)
-  settingsJson Json               @map("settings_json")
-  createdAt    DateTime           @default(now()) @map("created_at")
-  updatedAt    DateTime           @updatedAt @map("updated_at")
-  deletedAt    DateTime?          @map("deleted_at")
-
-  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  reviews CampaignReview[]
-  moneyDonations MoneyDonation[]
+  id                 BigInt               @id @default(autoincrement()) @db.UnsignedBigInt
+  campaignId         BigInt               @map("campaign_id") @db.UnsignedBigInt
+  type               String               @db.VarChar(40)
+  title              String               @db.VarChar(255)
+  description        String?              @db.Text
+  startAt            DateTime             @map("start_at")
+  endAt              DateTime             @map("end_at")
+  status             String               @default("DRAFT") @db.VarChar(40)
+  settingsJson       Json                 @map("settings_json")
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+  deletedAt          DateTime?            @map("deleted_at")
+  campaign           Campaign             @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  reviews            CampaignReview[]
+  activities         CampaignActivity[]
+  moneyDonations     MoneyDonation[]
   paymentTransactions PaymentTransaction[]
-  itemTargets ItemTarget[]
-  itemPledges ItemPledge[]
-  itemHandoverRecords ItemHandoverRecord[]
+  itemTargets        ItemTarget[]
+  itemPledges        ItemPledge[]
   eventRegistrations EventRegistration[]
-  certificates Certificate[]
+  certificates       Certificate[]
 
   @@index([campaignId])
   @@index([type])
@@ -334,272 +216,234 @@ model CampaignModule {
 }
 
 model CampaignReview {
-  id            BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
-  campaignId    BigInt      @map("campaign_id") @db.UnsignedBigInt
-  moduleId      BigInt?     @map("module_id") @db.UnsignedBigInt
-  authorType    AccountType @map("author_type")
-  authorId      BigInt      @map("author_id") @db.UnsignedBigInt
-  body          String      @db.Text
-  visibility    String      @default("INTERNAL") @db.VarChar(20)
-  attachmentUrl String?     @map("attachment_url") @db.VarChar(500)
-  createdAt     DateTime    @default(now()) @map("created_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
-
-  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  module   CampaignModule? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  id            BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  campaignId    BigInt          @map("campaign_id") @db.UnsignedBigInt
+  moduleId      BigInt?         @map("module_id") @db.UnsignedBigInt
+  authorType    String          @map("author_type") @db.VarChar(20)
+  authorId      BigInt          @map("author_id") @db.UnsignedBigInt
+  body          String          @db.Text
+  visibility    String          @default("INTERNAL") @db.VarChar(20)
+  attachmentUrl String?         @map("attachment_url") @db.VarChar(500)
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  campaign      Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  module        CampaignModule? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
 
   @@index([campaignId])
-  @@index([moduleId])
   @@map("campaign_reviews")
 }
 
-model MoneyDonation {
-  id                   BigInt              @id @default(autoincrement()) @db.UnsignedBigInt
-  campaignId           BigInt              @map("campaign_id") @db.UnsignedBigInt
-  moduleId             BigInt              @map("module_id") @db.UnsignedBigInt
-  studentId            BigInt              @map("student_id") @db.UnsignedBigInt
-  donorName            String              @map("donor_name") @db.VarChar(255)
-  amount               Decimal             @db.Decimal(15, 2)
-  message              String?             @db.VarChar(500)
-  evidenceUrl          String?             @map("evidence_url") @db.VarChar(500)
-  status               MoneyDonationStatus @default(PENDING)
-  matchedTransactionId BigInt?             @map("matched_transaction_id") @db.UnsignedBigInt
-  verifiedBy           BigInt?             @map("verified_by") @db.UnsignedBigInt
-  verifiedAt           DateTime?           @map("verified_at")
-  rejectReason         String?             @map("reject_reason") @db.VarChar(500)
-  createdAt            DateTime            @default(now()) @map("created_at")
-  updatedAt            DateTime            @updatedAt @map("updated_at")
-
-  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  module CampaignModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  student Student @relation(fields: [studentId], references: [id], onDelete: Restrict)
-  matchedTransaction PaymentTransaction? @relation(fields: [matchedTransactionId], references: [id], onDelete: SetNull)
-  verifier OperatorAccount? @relation("MoneyDonationVerifiedBy", fields: [verifiedBy], references: [id], onDelete: SetNull)
+model CampaignActivity {
+  id           BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  campaignId   BigInt          @map("campaign_id") @db.UnsignedBigInt
+  moduleId     BigInt?         @map("module_id") @db.UnsignedBigInt
+  actorType    String          @map("actor_type") @db.VarChar(20)
+  actorId      BigInt          @map("actor_id") @db.UnsignedBigInt
+  activityType String          @map("activity_type") @db.VarChar(50)
+  message      String?         @db.VarChar(500)
+  dataJson     Json?           @map("data_json")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  campaign     Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  module       CampaignModule? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
 
   @@index([campaignId])
-  @@index([moduleId])
-  @@index([studentId])
-  @@index([status])
+  @@index([activityType])
+  @@map("campaign_activities")
+}
+
+model MoneyDonation {
+  id                   BigInt               @id @default(autoincrement()) @db.UnsignedBigInt
+  campaignId           BigInt               @map("campaign_id") @db.UnsignedBigInt
+  moduleId             BigInt               @map("module_id") @db.UnsignedBigInt
+  studentId            BigInt               @map("student_id") @db.UnsignedBigInt
+  donorName            String               @map("donor_name") @db.VarChar(255)
+  amount               Decimal              @db.Decimal(15, 2)
+  message              String?              @db.VarChar(500)
+  evidenceUrl          String?              @map("evidence_url") @db.VarChar(500)
+  status               String               @default("PENDING") @db.VarChar(40)
+  matchedTransactionId BigInt?              @unique @map("matched_transaction_id") @db.UnsignedBigInt
+  verifiedBy           BigInt?              @map("verified_by") @db.UnsignedBigInt
+  verifiedAt           DateTime?            @map("verified_at")
+  rejectReason         String?              @map("reject_reason") @db.VarChar(500)
+  createdAt            DateTime             @default(now()) @map("created_at")
+  updatedAt            DateTime             @updatedAt @map("updated_at")
+  campaign             Campaign             @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  module               CampaignModule       @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  student              Student              @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  verifier             OperatorAccount?     @relation("MoneyDonationVerifiedBy", fields: [verifiedBy], references: [id], onDelete: SetNull)
+  matchedTransaction   PaymentTransaction?  @relation("MatchedTransaction", fields: [matchedTransactionId], references: [id], onDelete: SetNull)
+  paymentTransactions  PaymentTransaction[] @relation("TransactionMatchedDonation")
+
   @@map("money_donations")
 }
 
 model PaymentTransaction {
-  id                    BigInt                 @id @default(autoincrement()) @db.UnsignedBigInt
-  campaignId            BigInt?                @map("campaign_id") @db.UnsignedBigInt
-  moduleId              BigInt?                @map("module_id") @db.UnsignedBigInt
-  provider              String                 @db.VarChar(40)
-  providerTransactionId String                 @map("provider_transaction_id") @db.VarChar(120)
-  amount                Decimal                @db.Decimal(15, 2)
-  content               String?                @db.VarChar(500)
-  transactionTime       DateTime               @map("transaction_time")
-  rawPayload            Json                   @map("raw_payload")
-  matchStatus           TransactionMatchStatus @default(UNMATCHED) @map("match_status")
-  createdAt             DateTime               @default(now()) @map("created_at")
-  updatedAt             DateTime               @updatedAt @map("updated_at")
-
-  module CampaignModule? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
-  campaign Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
-  matchedDonations MoneyDonation[]
+  id                    BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
+  campaignId            BigInt?          @map("campaign_id") @db.UnsignedBigInt
+  moduleId              BigInt?          @map("module_id") @db.UnsignedBigInt
+  provider              String           @db.VarChar(40)
+  providerTransactionId String           @map("provider_transaction_id") @db.VarChar(255)
+  amount                Decimal          @db.Decimal(15, 2)
+  content               String?          @db.VarChar(500)
+  accountNo             String?          @map("account_no") @db.VarChar(100)
+  transactionTime       DateTime         @map("transaction_time")
+  rawPayload            Json?            @map("raw_payload")
+  matchStatus           String           @default("UNMATCHED") @map("match_status") @db.VarChar(40)
+  matchedDonationId     BigInt?          @map("matched_donation_id") @db.UnsignedBigInt
+  createdAt             DateTime         @default(now()) @map("created_at")
+  updatedAt             DateTime         @updatedAt @map("updated_at")
+  campaign              Campaign?        @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  module                CampaignModule?  @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  matchedDonation       MoneyDonation?   @relation("TransactionMatchedDonation", fields: [matchedDonationId], references: [id], onDelete: SetNull)
+  donationMatch         MoneyDonation?   @relation("MatchedTransaction")
 
   @@unique([provider, providerTransactionId])
-  @@index([campaignId])
-  @@index([moduleId])
   @@map("payment_transactions")
 }
 
 model ItemTarget {
-  id               BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
-  campaignId       BigInt           @map("campaign_id") @db.UnsignedBigInt
-  moduleId         BigInt           @map("module_id") @db.UnsignedBigInt
-  name             String           @db.VarChar(255)
-  unit             String           @db.VarChar(50)
-  targetQuantity   Int              @map("target_quantity") @db.UnsignedInt
-  receivedQuantity Int              @default(0) @map("received_quantity") @db.UnsignedInt
-  description      String?          @db.Text
-  status           ItemTargetStatus @default(ACTIVE)
-  createdAt        DateTime         @default(now()) @map("created_at")
-  updatedAt        DateTime         @updatedAt @map("updated_at")
+  id               BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  campaignId       BigInt          @map("campaign_id") @db.UnsignedBigInt
+  moduleId         BigInt          @map("module_id") @db.UnsignedBigInt
+  name             String          @db.VarChar(255)
+  unit             String          @db.VarChar(50)
+  targetQuantity   Int             @map("target_quantity") @db.UnsignedInt
+  receivedQuantity Int             @default(0) @map("received_quantity") @db.UnsignedInt
+  description      String?         @db.Text
+  status           String          @default("ACTIVE") @db.VarChar(40)
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+  campaign         Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  module           CampaignModule  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  pledges          ItemPledge[]
 
-  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  module CampaignModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  pledges ItemPledge[]
-  handoverRecords ItemHandoverRecord[]
-
-  @@index([campaignId])
-  @@index([moduleId])
   @@map("item_targets")
 }
 
 model ItemPledge {
-  id                BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
-  campaignId        BigInt           @map("campaign_id") @db.UnsignedBigInt
-  moduleId          BigInt           @map("module_id") @db.UnsignedBigInt
-  itemTargetId      BigInt           @map("item_target_id") @db.UnsignedBigInt
-  studentId         BigInt           @map("student_id") @db.UnsignedBigInt
-  donorName         String           @map("donor_name") @db.VarChar(255)
-  quantity          Int              @db.UnsignedInt
-  expectedHandoverAt DateTime?       @map("expected_handover_at")
-  status            ItemPledgeStatus @default(PLEDGED)
-  note              String?          @db.VarChar(500)
-  receivedQuantity  Int?             @map("received_quantity") @db.UnsignedInt
-  receivedAt        DateTime?        @map("received_at")
-  evidenceUrl       String?          @map("evidence_url") @db.VarChar(500)
-  createdAt         DateTime         @default(now()) @map("created_at")
-  updatedAt         DateTime         @updatedAt @map("updated_at")
+  id                 BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
+  campaignId         BigInt           @map("campaign_id") @db.UnsignedBigInt
+  moduleId           BigInt           @map("module_id") @db.UnsignedBigInt
+  itemTargetId       BigInt           @map("item_target_id") @db.UnsignedBigInt
+  studentId          BigInt           @map("student_id") @db.UnsignedBigInt
+  donorName          String           @map("donor_name") @db.VarChar(255)
+  quantity           Int              @db.UnsignedInt
+  expectedHandoverAt DateTime?        @map("expected_handover_at")
+  status             String           @default("PLEDGED") @db.VarChar(40)
+  note               String?          @db.VarChar(500)
+  receivedQuantity   Int?             @map("received_quantity") @db.UnsignedInt
+  receivedAt         DateTime?        @map("received_at")
+  receivedBy         BigInt?          @map("received_by") @db.UnsignedBigInt
+  evidenceUrl        String?          @map("evidence_url") @db.VarChar(500)
+  handoverNote       String?          @map("handover_note") @db.VarChar(500)
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+  campaign           Campaign         @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  module             CampaignModule   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  itemTarget         ItemTarget       @relation(fields: [itemTargetId], references: [id], onDelete: Restrict)
+  student            Student          @relation(fields: [studentId], references: [id], onDelete: Restrict)
 
-  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  module CampaignModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  itemTarget ItemTarget @relation(fields: [itemTargetId], references: [id], onDelete: Restrict)
-  student Student @relation(fields: [studentId], references: [id], onDelete: Restrict)
-  handoverRecords ItemHandoverRecord[]
-
-  @@index([campaignId])
-  @@index([moduleId])
-  @@index([itemTargetId])
-  @@index([studentId])
-  @@index([status])
   @@map("item_pledges")
 }
 
-model ItemHandoverRecord {
-  id           BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  campaignId   BigInt   @map("campaign_id") @db.UnsignedBigInt
-  moduleId     BigInt   @map("module_id") @db.UnsignedBigInt
-  itemPledgeId BigInt   @map("item_pledge_id") @db.UnsignedBigInt
-  itemTargetId BigInt   @map("item_target_id") @db.UnsignedBigInt
-  quantity     Int      @db.UnsignedInt
-  receivedBy   BigInt?  @map("received_by") @db.UnsignedBigInt
-  receivedAt   DateTime @default(now()) @map("received_at")
-  location     String?  @db.VarChar(255)
-  note         String?  @db.VarChar(500)
-  evidenceUrl  String?  @map("evidence_url") @db.VarChar(500)
-  createdAt    DateTime @default(now()) @map("created_at")
-
-  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  module CampaignModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  itemPledge ItemPledge @relation(fields: [itemPledgeId], references: [id], onDelete: Restrict)
-  itemTarget ItemTarget @relation(fields: [itemTargetId], references: [id], onDelete: Restrict)
-  receiver OperatorAccount? @relation("ItemHandoverReceivedBy", fields: [receivedBy], references: [id], onDelete: SetNull)
-
-  @@index([campaignId])
-  @@index([moduleId])
-  @@index([itemPledgeId])
-  @@index([itemTargetId])
-  @@map("item_handover_records")
-}
-
 model EventRegistration {
-  id           BigInt                  @id @default(autoincrement()) @db.UnsignedBigInt
-  campaignId   BigInt                  @map("campaign_id") @db.UnsignedBigInt
-  moduleId     BigInt                  @map("module_id") @db.UnsignedBigInt
-  studentId    BigInt                  @map("student_id") @db.UnsignedBigInt
-  status       EventRegistrationStatus @default(PENDING)
-  answersJson  Json?                   @map("answers_json")
-  registeredAt DateTime                @default(now()) @map("registered_at")
-  checkedInAt  DateTime?               @map("checked_in_at")
-  checkedOutAt DateTime?               @map("checked_out_at")
-  hours        Decimal?                @db.Decimal(5, 2)
-  reviewedBy   BigInt?                 @map("reviewed_by") @db.UnsignedBigInt
-  reviewedAt   DateTime?               @map("reviewed_at")
-  reviewNote   String?                 @map("review_note") @db.VarChar(500)
-  createdAt    DateTime                @default(now()) @map("created_at")
-  updatedAt    DateTime                @updatedAt @map("updated_at")
-
-  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  module CampaignModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  student Student @relation(fields: [studentId], references: [id], onDelete: Restrict)
-  reviewer OperatorAccount? @relation("EventRegistrationReviewedBy", fields: [reviewedBy], references: [id], onDelete: SetNull)
+  id           BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
+  campaignId   BigInt           @map("campaign_id") @db.UnsignedBigInt
+  moduleId     BigInt           @map("module_id") @db.UnsignedBigInt
+  studentId    BigInt           @map("student_id") @db.UnsignedBigInt
+  status       String           @default("PENDING") @db.VarChar(40)
+  answersJson  Json?            @map("answers_json")
+  registeredAt DateTime         @default(now()) @map("registered_at")
+  checkedInAt  DateTime?        @map("checked_in_at")
+  checkedOutAt DateTime?        @map("checked_out_at")
+  hours        Decimal?         @db.Decimal(5, 2)
+  reviewedBy   BigInt?          @map("reviewed_by") @db.UnsignedBigInt
+  reviewedAt   DateTime?        @map("reviewed_at")
+  reviewNote   String?          @map("review_note") @db.VarChar(500)
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+  campaign     Campaign         @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  module       CampaignModule   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  student      Student          @relation(fields: [studentId], references: [id], onDelete: Restrict)
 
   @@unique([moduleId, studentId])
-  @@index([campaignId])
-  @@index([studentId])
-  @@index([status])
   @@map("event_registrations")
 }
 
 model CertificateTemplate {
-  id         BigInt                    @id @default(autoincrement()) @db.UnsignedBigInt
-  name       String                    @db.VarChar(255)
-  type       String                    @db.VarChar(40)
-  layoutJson Json                      @map("layout_json")
-  fileUrl    String?                   @map("file_url") @db.VarChar(500)
-  status     CertificateTemplateStatus @default(ACTIVE)
-  createdBy  BigInt                    @map("created_by") @db.UnsignedBigInt
-  createdAt  DateTime                  @default(now()) @map("created_at")
-  updatedAt  DateTime                  @updatedAt @map("updated_at")
-
-  creator OperatorAccount @relation("CertificateTemplateCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  id           BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  name         String            @db.VarChar(255)
+  type         String            @db.VarChar(40)
+  fileUrl      String?           @map("file_url") @db.VarChar(500)
+  layoutJson   Json?             @map("layout_json")
+  status       String            @default("ACTIVE") @db.VarChar(40)
+  createdBy    BigInt            @map("created_by") @db.UnsignedBigInt
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+  creator      OperatorAccount   @relation(fields: [createdBy], references: [id], onDelete: Restrict)
   certificates Certificate[]
 
   @@map("certificate_templates")
 }
 
 model Certificate {
-  id                       BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
-  certificateNo            String            @unique @map("certificate_no") @db.VarChar(100)
-  campaignId               BigInt            @map("campaign_id") @db.UnsignedBigInt
-  moduleId                 BigInt?           @map("module_id") @db.UnsignedBigInt
-  studentId                BigInt            @map("student_id") @db.UnsignedBigInt
-  templateId               BigInt            @map("template_id") @db.UnsignedBigInt
-  status                   CertificateStatus @default(PENDING)
-  snapshotJson             Json              @map("snapshot_json")
-  fileUrl                  String?           @map("file_url") @db.VarChar(500)
-  fileHash                 String?           @map("file_hash") @db.VarChar(255)
-  issuedAt                 DateTime?         @map("issued_at")
-  revokedAt                DateTime?         @map("revoked_at")
-  revokedBy                BigInt?           @map("revoked_by") @db.UnsignedBigInt
-  revokeReason             String?           @map("revoke_reason") @db.VarChar(500)
-  replacementCertificateId BigInt?           @map("replacement_certificate_id") @db.UnsignedBigInt
-  createdAt                DateTime          @default(now()) @map("created_at")
-  updatedAt                DateTime          @updatedAt @map("updated_at")
+  id                       BigInt               @id @default(autoincrement()) @db.UnsignedBigInt
+  certificateNo            String               @unique @map("certificate_no") @db.VarChar(100)
+  campaignId               BigInt               @map("campaign_id") @db.UnsignedBigInt
+  moduleId                 BigInt?              @map("module_id") @db.UnsignedBigInt
+  studentId                BigInt               @map("student_id") @db.UnsignedBigInt
+  templateId               BigInt               @map("template_id") @db.UnsignedBigInt
+  status                   String               @default("PENDING") @db.VarChar(40)
+  snapshotJson             Json                 @map("snapshot_json")
+  fileUrl                  String?              @map("file_url") @db.VarChar(500)
+  fileHash                 String?              @map("file_hash") @db.VarChar(255)
+  issuedAt                 DateTime?            @map("issued_at")
+  revokedAt                DateTime?            @map("revoked_at")
+  revokedBy                BigInt?              @map("revoked_by") @db.UnsignedBigInt
+  revokeReason             String?              @map("revoke_reason") @db.VarChar(500)
+  replacementCertificateId BigInt?              @map("replacement_certificate_id") @db.UnsignedBigInt
+  createdAt                DateTime             @default(now()) @map("created_at")
+  updatedAt                DateTime             @updatedAt @map("updated_at")
+  campaign                 Campaign             @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  module                   CampaignModule?      @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  student                  Student              @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  template                 CertificateTemplate  @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  revokedByAccount         OperatorAccount?     @relation("CertificateRevokedBy", fields: [revokedBy], references: [id], onDelete: SetNull)
+  replacementCertificate   Certificate?         @relation("CertificateReplacement", fields: [replacementCertificateId], references: [id], onDelete: SetNull)
+  replacedByCertificates   Certificate[]        @relation("CertificateReplacement")
 
-  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  module CampaignModule? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
-  student Student @relation(fields: [studentId], references: [id], onDelete: Restrict)
-  template CertificateTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
-  revoker OperatorAccount? @relation("CertificateRevokedBy", fields: [revokedBy], references: [id], onDelete: SetNull)
-  replacement Certificate? @relation("CertificateReplacement", fields: [replacementCertificateId], references: [id], onDelete: SetNull)
-  replacedCertificates Certificate[] @relation("CertificateReplacement")
-
-  @@index([campaignId])
-  @@index([moduleId])
-  @@index([studentId])
-  @@index([status])
   @@map("certificates")
 }
 
 model Notification {
-  id                BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
-  accountType       AccountType @map("account_type")
-  operatorAccountId BigInt?     @map("operator_account_id") @db.UnsignedBigInt
-  studentId         BigInt?     @map("student_id") @db.UnsignedBigInt
-  type              String      @db.VarChar(80)
-  title             String      @db.VarChar(255)
-  body              String      @db.Text
-  dataJson          Json?       @map("data_json")
-  isEmailSent       Boolean     @default(false) @map("is_email_sent")
-  readAt            DateTime?   @map("read_at")
-  createdAt         DateTime    @default(now()) @map("created_at")
+  id                BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
+  accountType       String           @map("account_type") @db.VarChar(20)
+  operatorAccountId BigInt?          @map("operator_account_id") @db.UnsignedBigInt
+  studentId         BigInt?          @map("student_id") @db.UnsignedBigInt
+  type              String           @db.VarChar(50)
+  title             String           @db.VarChar(255)
+  body              String           @db.Text
+  dataJson          Json?            @map("data_json")
+  isEmailSent       Boolean          @default(false) @map("is_email_sent")
+  readAt            DateTime?        @map("read_at")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  operatorAccount   OperatorAccount? @relation(fields: [operatorAccountId], references: [id], onDelete: Cascade)
+  student           Student?         @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
-  operatorAccount OperatorAccount? @relation(fields: [operatorAccountId], references: [id], onDelete: Cascade)
-  student Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  @@index([accountType, operatorAccountId])
-  @@index([accountType, studentId])
   @@map("notifications")
 }
 
 model AuditLog {
-  id         BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
-  actorType  AccountType @map("actor_type")
-  actorId    BigInt      @map("actor_id") @db.UnsignedBigInt
-  action     String      @db.VarChar(120)
-  entityType String      @map("entity_type") @db.VarChar(80)
-  entityId   BigInt?     @map("entity_id") @db.UnsignedBigInt
-  beforeJson Json?       @map("before_json")
-  afterJson  Json?       @map("after_json")
-  ipAddress  String?     @map("ip_address") @db.VarChar(80)
-  createdAt  DateTime    @default(now()) @map("created_at")
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  actorType  String    @map("actor_type") @db.VarChar(20)
+  actorId    BigInt    @map("actor_id") @db.UnsignedBigInt
+  action     String    @db.VarChar(100)
+  entityType String    @map("entity_type") @db.VarChar(50)
+  entityId   BigInt    @map("entity_id") @db.UnsignedBigInt
+  beforeJson Json?     @map("before_json")
+  afterJson  Json?     @map("after_json")
+  ipAddress  String?   @map("ip_address") @db.VarChar(64)
+  createdAt  DateTime  @default(now()) @map("created_at")
 
   @@index([action])
   @@index([entityType, entityId])
@@ -607,17 +451,30 @@ model AuditLog {
 }
 
 model BackgroundJob {
-  id          BigInt              @id @default(autoincrement()) @db.UnsignedBigInt
-  type        String              @db.VarChar(80)
-  status      BackgroundJobStatus @default(PENDING)
-  payloadJson Json                @map("payload_json")
-  attempts    Int                 @default(0) @db.UnsignedInt
-  lastError   String?             @map("last_error") @db.Text
-  runAt       DateTime            @map("run_at")
-  lockedAt    DateTime?           @map("locked_at")
-  createdAt   DateTime            @default(now()) @map("created_at")
-  updatedAt   DateTime            @updatedAt @map("updated_at")
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  type        String    @db.VarChar(60)
+  status      String    @default("PENDING") @db.VarChar(40)
+  payloadJson Json      @map("payload_json")
+  attempts    Int       @default(0) @db.UnsignedInt
+  lastError   String?   @map("last_error") @db.Text
+  runAt       DateTime  @map("run_at")
+  lockedAt    DateTime? @map("locked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   @@index([status, runAt])
   @@map("background_jobs")
+}
+
+model PasswordResetToken {
+  id        BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  email     String    @db.VarChar(255)
+  codeHash  String    @map("code_hash") @db.VarChar(255)
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@index([email, usedAt, expiresAt])
+  @@map("password_reset_tokens")
 }

@@ -7,12 +7,6 @@ import validate from './validate'
 import { restrictTo } from './restrictTo'
 import isCreator from './isCreator'
 import isStudent from './isStudent'
-import {
-    requireAuth,
-    requireRoles,
-    requireAccountType,
-    requireOrgScope,
-} from './permission'
 
 export {
     errorHandler,
@@ -24,8 +18,4 @@ export {
     restrictTo,
     isCreator,
     isStudent,
-    requireAuth,
-    requireRoles,
-    requireAccountType,
-    requireOrgScope,
 }

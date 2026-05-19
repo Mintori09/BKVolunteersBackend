@@ -1,61 +1,58 @@
-import * as argon2 from 'argon2'
 import { PrismaClient } from '@prisma/client'
-
-const STUDENT_FIXTURES = [
-    {
-        studentCode: '102220001',
-        email: '102220001@sv1.dut.udn.vn',
-        fullName: 'Nguyen Van An',
-        facultyCode: '102',
-        classCode: '22T_DT1',
-        major: 'Cong nghe thong tin',
-        year: 2022,
-    },
-    {
-        studentCode: '105220001',
-        email: '105220001@sv1.dut.udn.vn',
-        fullName: 'Tran Thi Binh',
-        facultyCode: '105',
-        classCode: '22D_DT1',
-        major: 'Ky thuat dien',
-        year: 2022,
-    },
-]
+import * as argon2 from 'argon2'
 
 export async function seedStudents(prisma: PrismaClient): Promise<void> {
-    console.log('Seeding contract students...')
+    console.log('Seeding students...')
+    const faculty = await prisma.faculty.findFirst({
+        orderBy: { id: 'asc' },
+    })
 
-    for (const student of STUDENT_FIXTURES) {
-        const faculty = await prisma.faculty.findUnique({
-            where: { code: student.facultyCode },
-        })
+    if (!faculty) {
+        throw new Error('Cannot seed students without at least one faculty')
+    }
 
-        if (!faculty) {
-            throw new Error(`Faculty ${student.facultyCode} must be seeded first`)
-        }
+    const title = await prisma.title.findFirst({
+        orderBy: { minPoints: 'asc' },
+    })
 
+    const students = [
+        {
+            studentCode: '102210001',
+            email: '102210001@sv1.dut.udn.vn',
+            fullName: 'Nguyen Van A',
+            classCode: '22TCLC1',
+            major: 'Computer Science',
+            year: 2,
+        },
+        {
+            studentCode: '102210002',
+            email: '102210002@sv1.dut.udn.vn',
+            fullName: 'Tran Thi B',
+            classCode: '22TCLC1',
+            major: 'Computer Science',
+            year: 2,
+        },
+    ]
+
+    for (const student of students) {
         await prisma.student.upsert({
             where: { studentCode: student.studentCode },
-            update: {
-                email: student.email,
-                fullName: student.fullName,
-                facultyId: faculty.id,
-                classCode: student.classCode,
-                major: student.major,
-                year: student.year,
-            },
+            update: {},
             create: {
+                facultyId: faculty.id,
+                currentTitleId: title?.id,
                 studentCode: student.studentCode,
                 email: student.email,
                 passwordHash: await argon2.hash(student.studentCode),
                 fullName: student.fullName,
-                facultyId: faculty.id,
                 classCode: student.classCode,
                 major: student.major,
                 year: student.year,
+                totalPoints: 0,
+                status: 'ACTIVE',
             },
         })
     }
 
-    console.log(`Seeded ${STUDENT_FIXTURES.length} contract students`)
+    console.log(`Seeded ${students.length} students`)
 }
