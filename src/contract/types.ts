@@ -1,10 +1,8 @@
 export const CONTRACT_ROLES = [
-    'STUDENT',
-    'ORG_ADMIN',
-    'ORG_MEMBER',
-    'SCHOOL_REVIEWER',
-    'SCHOOL_ADMIN',
-    'SYSTEM',
+    'SINHVIEN',
+    'CLB',
+    'LCD',
+    'DOANTRUONG',
 ] as const
 
 export type ContractRole = (typeof CONTRACT_ROLES)[number]
@@ -71,10 +69,5 @@ export type CertificateStatus =
     | 'REVOKED'
     | 'FAILED'
 
-export const isOperatorRole = (role?: string): role is Exclude<ContractRole, 'STUDENT'> =>
-    role === 'ORG_ADMIN' ||
-    role === 'ORG_MEMBER' ||
-    role === 'SCHOOL_REVIEWER' ||
-    role === 'SCHOOL_ADMIN' ||
-    role === 'SYSTEM'
-
+export const isOperatorRole = (role?: string): role is Exclude<ContractRole, 'SINHVIEN'> =>
+    role === 'CLB' || role === 'LCD' || role === 'DOANTRUONG'

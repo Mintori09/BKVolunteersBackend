@@ -1,10 +1,12 @@
 import { serializeId, serializePagination } from 'src/common/serializers'
+import * as certificatesService from 'src/features/certificates/certificates.service'
 import * as adminRepository from './admin.repository'
 import {
     AdminAuditLogListOutput,
     AdminAuditLogsQuery,
     AdminBackgroundJobListOutput,
     AdminBackgroundJobsQuery,
+    AdminRunBackgroundJobsBody,
 } from './types'
 
 export const listAuditLogs = async (
@@ -18,6 +20,14 @@ export const listAuditLogs = async (
         ...(query.entity_id ? { entityId: BigInt(query.entity_id) } : {}),
         ...(query.actor_type ? { actorType: query.actor_type } : {}),
         ...(query.actor_id ? { actorId: BigInt(query.actor_id) } : {}),
+        ...(query.from || query.to
+            ? {
+                  createdAt: {
+                      ...(query.from ? { gte: new Date(query.from) } : {}),
+                      ...(query.to ? { lte: new Date(query.to) } : {}),
+                  },
+              }
+            : {}),
     }
     const [total, items] = await adminRepository.findAuditLogs({
         page,
@@ -82,4 +92,17 @@ export const listBackgroundJobs = async (
             totalPages: Math.max(1, Math.ceil(total / limit)),
         }
     )
+}
+
+export const runBackgroundJobs = async (
+    body: AdminRunBackgroundJobsBody
+) => {
+    return certificatesService.processDueBackgroundJobs({
+        type: body.type,
+        limit: body.limit,
+    })
+}
+
+export const retryBackgroundJob = async (idRaw: string) => {
+    return certificatesService.retryBackgroundJob(idRaw)
 }

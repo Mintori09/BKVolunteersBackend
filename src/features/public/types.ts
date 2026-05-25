@@ -1,6 +1,10 @@
 export interface PublicCampaignListQuery {
     page?: number
     limit?: number
+    q?: string
+    organization_id?: string
+    module_type?: 'fundraising' | 'item_donation' | 'event'
+    status?: 'PUBLISHED' | 'ONGOING'
 }
 
 export interface PublicCampaignSlugParams {
@@ -17,6 +21,23 @@ export interface PublicCampaignListItemOutput {
     title: string
     summary: string | null
     cover_image_url: string | null
+    organization: {
+        id: number
+        code: string
+        name: string
+        type: string
+        logo_url: string | null
+    }
+    module_types: string[]
+    progress: {
+        percent: number
+        modules: Array<{
+            type: string
+            current: number
+            target: number
+            percent: number
+        }>
+    }
     beneficiary: string | null
     scope_type: string
     start_at: Date | null
@@ -36,7 +57,28 @@ export interface PublicCampaignListOutput {
 
 export interface PublicCampaignDetailOutput extends PublicCampaignListItemOutput {
     description: string | null
-    modules: Array<Record<string, never>>
+    published_at?: Date | null
+    modules: Array<{
+        id: number
+        type: string
+        title: string
+        description: string | null
+        status: string
+        start_at: Date
+        end_at: Date
+        settings: Record<string, unknown>
+        progress?: {
+            type: string
+            current: number
+            target: number
+            percent: number
+        }
+        cta: {
+            enabled: boolean
+            label: string
+            action: string | null
+        }
+    }>
 }
 
 export interface PublicCertificateVerifyOutput {

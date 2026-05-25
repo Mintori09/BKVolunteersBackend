@@ -32,6 +32,14 @@ export async function seedStudents(prisma: PrismaClient): Promise<void> {
             major: 'Computer Science',
             year: 2,
         },
+        {
+            studentCode: '102210003',
+            email: '102210003@sv1.dut.udn.vn',
+            fullName: 'Le Van C',
+            classCode: '22TCLC1',
+            major: 'Computer Science',
+            year: 2,
+        },
     ]
 
     for (const student of students) {

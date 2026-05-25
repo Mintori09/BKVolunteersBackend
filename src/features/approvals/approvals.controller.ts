@@ -34,6 +34,26 @@ export const getApprovalQueue = catchAsync(
     }
 )
 
+export const getApprovalQueueItems = catchAsync(
+    async (
+        req: TypedRequest<EmptyBody, ApprovalQueueQuery, EmptyParams>,
+        res: Response
+    ) => {
+        const result = await approvalsService.getApprovalQueue(
+            req.query,
+            req.payload
+                ? {
+                      accountType: req.payload.accountType,
+                      role: req.payload.role,
+                      organizationId: req.payload.organizationId ?? undefined,
+                      facultyId: req.payload.facultyId ?? undefined,
+                  }
+                : undefined
+        )
+        return ApiResponse.success(res, result.items)
+    }
+)
+
 export const getApprovalCampaignDetail = catchAsync(
     async (req: Request, res: Response) => {
         const campaign = await campaignService.getCampaignById(

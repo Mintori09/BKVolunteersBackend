@@ -6,6 +6,8 @@ export interface AdminAuditLogsQuery {
     entity_id?: string
     actor_type?: string
     actor_id?: string
+    from?: string
+    to?: string
 }
 
 export interface AdminBackgroundJobsQuery {
@@ -13,6 +15,15 @@ export interface AdminBackgroundJobsQuery {
     limit?: number
     type?: string
     status?: string
+}
+
+export interface AdminRunBackgroundJobsBody {
+    type?: string
+    limit?: number
+}
+
+export interface AdminRetryBackgroundJobParams {
+    id: string
 }
 
 export interface AdminAuditLogOutput {
@@ -65,10 +76,17 @@ export interface AdminOrganizationIdParams {
     id: string
 }
 
+export interface AdminOrganizationsQuery {
+    q?: string
+    type?: string
+    status?: string
+}
+
 export interface AdminCreateOrganizationBody {
     code: string
     name: string
     type: string
+    status?: string
     faculty_id?: string
     logo_url?: string | null
     description?: string | null
@@ -78,6 +96,7 @@ export interface AdminUpdateOrganizationBody {
     code?: string
     name?: string
     type?: string
+    status?: string
     faculty_id?: string | null
     logo_url?: string | null
     description?: string | null

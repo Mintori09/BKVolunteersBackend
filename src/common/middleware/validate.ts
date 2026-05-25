@@ -15,6 +15,25 @@ const validate = (schema: RequestValidationSchema) => {
         })
 
         if (result.success) {
+            if (result.data.body !== undefined) {
+                req.body = result.data.body
+            }
+            if (result.data.query !== undefined) {
+                Object.defineProperty(req, 'query', {
+                    value: result.data.query,
+                    configurable: true,
+                    enumerable: true,
+                    writable: true,
+                })
+            }
+            if (result.data.params !== undefined) {
+                Object.defineProperty(req, 'params', {
+                    value: result.data.params,
+                    configurable: true,
+                    enumerable: true,
+                    writable: true,
+                })
+            }
             return next()
         }
 

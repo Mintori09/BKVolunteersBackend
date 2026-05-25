@@ -7,8 +7,18 @@ export const campaignReportSchema: RequestValidationSchema = {
     }),
 }
 
+export const campaignReconciliationSchema: RequestValidationSchema = {
+    params: z.object({
+        id: z.string().regex(/^\d+$/),
+    }),
+}
+
 export const schoolOverviewSchema: RequestValidationSchema = {
     query: z.object({
-        page: z.coerce.number().int().min(1).optional(),
+        from: z.string().datetime().optional(),
+        to: z.string().datetime().optional(),
+        organization_id: z.string().regex(/^\d+$/).optional(),
+        module_type: z.string().trim().min(1).optional(),
+        status: z.string().trim().min(1).optional(),
     }),
 }

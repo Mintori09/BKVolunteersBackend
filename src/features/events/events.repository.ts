@@ -7,11 +7,23 @@ export const toJsonValue = (value: unknown) =>
         : (value as Prisma.InputJsonValue)
 
 export const findModuleById = async (moduleId: bigint) => {
-    return prismaClient.campaignModule.findUnique({
-        where: { id: moduleId },
+    return prismaClient.campaignModule.findFirst({
+        where: {
+            id: moduleId,
+            deletedAt: null,
+            campaign: {
+                deletedAt: null,
+            },
+        },
         include: {
             campaign: {
-                select: { id: true, title: true, slug: true, status: true },
+                select: {
+                    id: true,
+                    title: true,
+                    slug: true,
+                    status: true,
+                    organizationId: true,
+                },
             },
             eventRegistrations: {
                 select: { id: true, status: true },
@@ -21,31 +33,119 @@ export const findModuleById = async (moduleId: bigint) => {
 }
 
 export const findModuleBaseById = async (moduleId: bigint) => {
-    return prismaClient.campaignModule.findUnique({
-        where: { id: moduleId },
+    return prismaClient.campaignModule.findFirst({
+        where: {
+            id: moduleId,
+            deletedAt: null,
+            campaign: {
+                deletedAt: null,
+            },
+        },
+        include: {
+            campaign: {
+                select: {
+                    id: true,
+                    title: true,
+                    slug: true,
+                    status: true,
+                    organizationId: true,
+                },
+            },
+        },
     })
 }
 
-export const upsertRegistration = async (args: {
+export const updateModuleConfig = async (args: {
+    moduleId: bigint
+    settingsJson: Record<string, unknown>
+}) => {
+    return prismaClient.campaignModule.update({
+        where: { id: args.moduleId },
+        data: {
+            settingsJson: toJsonValue(args.settingsJson),
+        },
+    })
+}
+
+export const findRegistrationByModuleAndStudent = async (args: {
+    moduleId: bigint
+    studentId: bigint
+}) => {
+    return prismaClient.eventRegistration.findUnique({
+        where: {
+            moduleId_studentId: {
+                moduleId: args.moduleId,
+                studentId: args.studentId,
+            },
+        },
+    })
+}
+
+export const createRegistration = async (args: {
     moduleId: bigint
     campaignId: bigint
     studentId: bigint
     answersJson: unknown
+    status: string
 }) => {
-    const { moduleId, campaignId, studentId, answersJson } = args
-    return prismaClient.eventRegistration.upsert({
+    return prismaClient.eventRegistration.create({
+        data: {
+            campaignId: args.campaignId,
+            moduleId: args.moduleId,
+            studentId: args.studentId,
+            status: args.status,
+            answersJson: toJsonValue(args.answersJson),
+            reviewedAt: args.status === 'APPROVED' ? new Date() : null,
+        },
+    })
+}
+
+export const countRegistrationsByModule = async (args: {
+    moduleId: bigint
+    statuses?: string[]
+}) => {
+    return prismaClient.eventRegistration.count({
         where: {
-            moduleId_studentId: { moduleId, studentId },
+            moduleId: args.moduleId,
+            ...(args.statuses?.length
+                ? { status: { in: args.statuses } }
+                : {}),
         },
-        update: {
-            answersJson: toJsonValue(answersJson),
-            status: 'PENDING',
-        },
-        create: {
-            campaignId,
-            moduleId,
-            studentId,
-            answersJson: toJsonValue(answersJson),
+    })
+}
+
+export const findRegistrationById = async (id: bigint) => {
+    return prismaClient.eventRegistration.findUnique({
+        where: { id },
+        include: {
+            campaign: {
+                select: {
+                    id: true,
+                    title: true,
+                    slug: true,
+                    status: true,
+                    organizationId: true,
+                },
+            },
+            module: {
+                select: {
+                    id: true,
+                    title: true,
+                    type: true,
+                    status: true,
+                    startAt: true,
+                    endAt: true,
+                    settingsJson: true,
+                },
+            },
+            student: {
+                select: {
+                    id: true,
+                    fullName: true,
+                    studentCode: true,
+                    email: true,
+                },
+            },
         },
     })
 }
@@ -119,14 +219,20 @@ export const findRegistrationsByModuleId = async (args: {
     skip: number
     take: number
 }) => {
-    const where: Record<string, unknown> = { moduleId: args.moduleId }
-    if (args.status) where.status = args.status
-    if (args.q) {
-        where.OR = [
-            { student: { fullName: { contains: args.q } } },
-            { student: { studentCode: { contains: args.q } } },
-        ]
+    const where: Prisma.EventRegistrationWhereInput = {
+        moduleId: args.moduleId,
+        ...(args.status ? { status: args.status } : {}),
+        ...(args.q
+            ? {
+                  OR: [
+                      { student: { fullName: { contains: args.q } } },
+                      { student: { studentCode: { contains: args.q } } },
+                      { student: { email: { contains: args.q } } },
+                  ],
+              }
+            : {}),
     }
+
     const [total, items] = await Promise.all([
         prismaClient.eventRegistration.count({ where }),
         prismaClient.eventRegistration.findMany({

@@ -4,12 +4,15 @@ import { ApiResponse } from 'src/utils/ApiResponse'
 import { catchAsync } from 'src/utils/catchAsync'
 import * as fundraisingService from './fundraising.service'
 import {
+    AttachFundraisingTransactionBody,
     CreateFundraisingDonationBody,
     FundraisingDecisionBody,
     FundraisingDonationListQuery,
     FundraisingModuleConfigBody,
     FundraisingDonationParams,
     FundraisingModuleParams,
+    FundraisingTransactionListQuery,
+    FundraisingTransactionParams,
     SepayWebhookBody,
 } from './types'
 import { HttpStatus } from 'src/common/constants'
@@ -83,6 +86,19 @@ export const listDonations = catchAsync(
     }
 )
 
+export const listTransactions = catchAsync(
+    async (
+        req: TypedRequest<EmptyBody, FundraisingTransactionListQuery>,
+        res: Response
+    ) => {
+        const result = await fundraisingService.listTransactions(
+            req.query,
+            req.payload
+        )
+        return ApiResponse.success(res, result)
+    }
+)
+
 export const verifyDonation = catchAsync(
     async (
         req: TypedRequest<
@@ -116,6 +132,37 @@ export const rejectDonation = catchAsync(
             req.payload
         )
         return ApiResponse.success(res, result)
+    }
+)
+
+export const attachTransactionToDonation = catchAsync(
+    async (
+        req: TypedRequest<
+            AttachFundraisingTransactionBody,
+            EmptyQuery,
+            FundraisingTransactionParams
+        >,
+        res: Response
+    ) => {
+        const result = await fundraisingService.attachTransactionToDonation(
+            req.params.id!,
+            req.body as AttachFundraisingTransactionBody,
+            req.payload
+        )
+        return ApiResponse.success(res, result, 'Gắn transaction thành công')
+    }
+)
+
+export const unmatchTransaction = catchAsync(
+    async (
+        req: TypedRequest<EmptyBody, EmptyQuery, FundraisingTransactionParams>,
+        res: Response
+    ) => {
+        const result = await fundraisingService.unmatchTransaction(
+            req.params.id!,
+            req.payload
+        )
+        return ApiResponse.success(res, result, 'Gỡ đối soát transaction thành công')
     }
 )
 

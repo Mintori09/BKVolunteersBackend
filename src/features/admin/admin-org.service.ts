@@ -6,6 +6,7 @@ import {
     AdminCreateOrganizationBody,
     AdminOrganizationListOutput,
     AdminOrganizationOutput,
+    AdminOrganizationsQuery,
     AdminUpdateOrganizationBody,
 } from './types'
 
@@ -31,8 +32,10 @@ const serializeOrg = (
 })
 
 export const listOrganizations =
-    async (): Promise<AdminOrganizationListOutput> => {
-        const items = await adminOrgRepository.findMany()
+    async (
+        query?: AdminOrganizationsQuery
+    ): Promise<AdminOrganizationListOutput> => {
+        const items = await adminOrgRepository.findMany(query)
         return { items: items.map(serializeOrg) }
     }
 
@@ -47,6 +50,7 @@ export const createOrganization = async (
         code: body.code,
         name: body.name,
         type: body.type,
+        status: body.status,
         facultyId: body.faculty_id ? BigInt(body.faculty_id) : null,
         logoUrl: body.logo_url ?? null,
         description: body.description ?? null,
@@ -67,6 +71,7 @@ export const updateOrganization = async (
     if (body.code !== undefined) data.code = body.code
     if (body.name !== undefined) data.name = body.name
     if (body.type !== undefined) data.type = body.type
+    if (body.status !== undefined) data.status = body.status
     if (body.faculty_id !== undefined)
         data.facultyId = body.faculty_id ? BigInt(body.faculty_id) : null
     if (body.logo_url !== undefined) data.logoUrl = body.logo_url

@@ -8,10 +8,20 @@ export interface EventRegistrationParams {
 
 export interface EventRegisterBody {
     answers_json?: Record<string, unknown> | null
+    answers?: Record<string, unknown> | null
 }
 
 export interface EventApproveBody {
     note?: string
+    review_note?: string
+}
+
+export interface EventConfigBody {
+    location: string
+    quota: number
+    registration_required: boolean
+    checkin_required: boolean
+    benefits: string[]
 }
 
 export interface EventModuleOutput {
@@ -43,4 +53,9 @@ export interface EventRegisterOutput {
 export interface EventApproveOutput {
     id: number
     status: string
+}
+
+export interface EventConfigOutput {
+    module_id: number
+    config: Record<string, unknown>
 }

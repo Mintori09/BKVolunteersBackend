@@ -1,5 +1,6 @@
 import {
     eventApproveSchema,
+    eventConfigSchema,
     eventModuleParamsSchema,
     eventRegisterSchema,
 } from '../events.validation'
@@ -54,6 +55,26 @@ describe('events.validation', () => {
             })
 
             expect(result).toEqual({ note: 'Duyet' })
+        })
+    })
+
+    describe('eventConfigSchema', () => {
+        it('should accept zero quota for unlimited event', () => {
+            const result = eventConfigSchema.body?.parse({
+                location: 'Co so 1',
+                quota: 0,
+                registration_required: true,
+                checkin_required: false,
+                benefits: ['Cong diem ren luyen'],
+            })
+
+            expect(result).toEqual({
+                location: 'Co so 1',
+                quota: 0,
+                registration_required: true,
+                checkin_required: false,
+                benefits: ['Cong diem ren luyen'],
+            })
         })
     })
 })

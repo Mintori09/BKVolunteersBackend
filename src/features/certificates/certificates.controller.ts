@@ -9,6 +9,7 @@ import {
     CreateCertificateTemplateBody,
     GenerateCertificatesBody,
     RevokeCertificateBody,
+    UpdateCertificateTemplateBody,
 } from './types'
 import { HttpStatus } from 'src/common/constants'
 
@@ -78,6 +79,21 @@ export const downloadCertificate = catchAsync(
     }
 )
 
+export const serveCertificateFile = catchAsync(
+    async (
+        req: TypedRequest<EmptyBody, EmptyQuery, CertificateIdParams>,
+        res: Response
+    ) => {
+        const result = await certificatesService.getCertificateFile(req.params.id!)
+        res.setHeader('Content-Type', 'application/pdf')
+        res.setHeader(
+            'Content-Disposition',
+            `inline; filename="${result.certificateNo}.pdf"`
+        )
+        return res.send(result.buffer)
+    }
+)
+
 export const revokeCertificate = catchAsync(
     async (
         req: TypedRequest<
@@ -99,7 +115,7 @@ export const revokeCertificate = catchAsync(
 export const updateTemplate = catchAsync(
     async (
         req: TypedRequest<
-            CreateCertificateTemplateBody,
+            UpdateCertificateTemplateBody,
             EmptyQuery,
             CertificateIdParams
         >,
@@ -107,7 +123,7 @@ export const updateTemplate = catchAsync(
     ) => {
         const result = await certificatesService.updateTemplate(
             req.params.id!,
-            req.body as CreateCertificateTemplateBody,
+            req.body as UpdateCertificateTemplateBody,
             req.payload
         )
         return ApiResponse.success(res, result, 'Cập nhật template thành công')

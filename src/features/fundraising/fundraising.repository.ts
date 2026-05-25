@@ -7,8 +7,14 @@ export const toJsonValue = (value: unknown) =>
         : (value as Prisma.InputJsonValue)
 
 export const findModuleWithCampaign = async (moduleId: bigint) => {
-    return prismaClient.campaignModule.findUnique({
-        where: { id: moduleId },
+    return prismaClient.campaignModule.findFirst({
+        where: {
+            id: moduleId,
+            deletedAt: null,
+            campaign: {
+                deletedAt: null,
+            },
+        },
         include: {
             campaign: {
                 select: { id: true, title: true, status: true, slug: true },
@@ -22,7 +28,24 @@ export const findModuleWithCampaign = async (moduleId: bigint) => {
 }
 
 export const findModuleBaseById = async (moduleId: bigint) => {
-    return prismaClient.campaignModule.findUnique({ where: { id: moduleId } })
+    return prismaClient.campaignModule.findFirst({
+        where: {
+            id: moduleId,
+            deletedAt: null,
+            campaign: {
+                deletedAt: null,
+            },
+        },
+        include: {
+            campaign: {
+                select: {
+                    id: true,
+                    status: true,
+                    organizationId: true,
+                },
+            },
+        },
+    })
 }
 
 export const updateModuleConfig = async (args: {
@@ -67,7 +90,98 @@ export const findDonations = async (args: {
 }
 
 export const findDonationById = async (id: bigint) =>
-    prismaClient.moneyDonation.findUnique({ where: { id } })
+    prismaClient.moneyDonation.findUnique({
+        where: { id },
+        include: {
+            module: {
+                select: {
+                    id: true,
+                    campaign: {
+                        select: {
+                            organizationId: true,
+                        },
+                    },
+                },
+            },
+        },
+    })
+
+export const findPaymentTransactions = async (args: {
+    page: number
+    limit: number
+    where: Prisma.PaymentTransactionWhereInput
+}) => {
+    const { page, limit, where } = args
+
+    return Promise.all([
+        prismaClient.paymentTransaction.findMany({
+            where,
+            skip: (page - 1) * limit,
+            take: limit,
+            orderBy: { transactionTime: 'desc' },
+            include: {
+                campaign: {
+                    select: {
+                        id: true,
+                        organizationId: true,
+                    },
+                },
+                module: {
+                    select: {
+                        id: true,
+                        campaign: {
+                            select: {
+                                organizationId: true,
+                            },
+                        },
+                    },
+                },
+                matchedDonation: {
+                    select: {
+                        id: true,
+                        donorName: true,
+                        amount: true,
+                        status: true,
+                        createdAt: true,
+                    },
+                },
+            },
+        }),
+        prismaClient.paymentTransaction.count({ where }),
+    ])
+}
+
+export const findPaymentTransactionById = async (id: bigint) =>
+    prismaClient.paymentTransaction.findUnique({
+        where: { id },
+        include: {
+            campaign: {
+                select: {
+                    id: true,
+                    organizationId: true,
+                },
+            },
+            module: {
+                select: {
+                    id: true,
+                    campaign: {
+                        select: {
+                            organizationId: true,
+                        },
+                    },
+                },
+            },
+            matchedDonation: {
+                select: {
+                    id: true,
+                    donorName: true,
+                    amount: true,
+                    status: true,
+                    createdAt: true,
+                },
+            },
+        },
+    })
 
 export const updateDonationDecision = async (args: {
     id: bigint
@@ -177,5 +291,20 @@ export const attachDonationMatch = async (args: {
 }) =>
     prismaClient.moneyDonation.update({
         where: { id: args.donationId },
-        data: { matchedTransactionId: args.transactionId },
+        data: {
+            matchedTransactionId: args.transactionId,
+            status: 'MATCHED',
+        },
+    })
+
+export const clearDonationMatch = async (args: {
+    donationId: bigint
+    status?: string
+}) =>
+    prismaClient.moneyDonation.update({
+        where: { id: args.donationId },
+        data: {
+            matchedTransactionId: null,
+            ...(args.status ? { status: args.status } : {}),
+        },
     })

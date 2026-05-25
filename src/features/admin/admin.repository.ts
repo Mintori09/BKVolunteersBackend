@@ -9,6 +9,10 @@ export const findAuditLogs = async (args: {
         entityId?: bigint
         actorType?: string
         actorId?: bigint
+        createdAt?: {
+            gte?: Date
+            lte?: Date
+        }
     }
 }) => {
     const { page, limit, where } = args

@@ -13,6 +13,7 @@ export const eventRegisterSchema: RequestValidationSchema = {
     }),
     body: z.object({
         answers_json: z.record(z.string(), z.unknown()).nullable().optional(),
+        answers: z.record(z.string(), z.unknown()).nullable().optional(),
     }),
 }
 
@@ -22,6 +23,7 @@ export const eventApproveSchema: RequestValidationSchema = {
     }),
     body: z.object({
         note: z.string().trim().optional(),
+        review_note: z.string().trim().optional(),
     }),
 }
 
@@ -63,5 +65,18 @@ export const eventListRegistrationsSchema: RequestValidationSchema = {
         q: z.string().trim().optional(),
         page: z.coerce.number().int().min(1).optional(),
         limit: z.coerce.number().int().min(1).max(100).optional(),
+    }),
+}
+
+export const eventConfigSchema: RequestValidationSchema = {
+    params: z.object({
+        moduleId: z.string().regex(/^\d+$/),
+    }),
+    body: z.object({
+        location: z.string().trim().min(1),
+        quota: z.coerce.number().int().min(0),
+        registration_required: z.boolean(),
+        checkin_required: z.boolean(),
+        benefits: z.array(z.string().trim().min(1)).max(20),
     }),
 }

@@ -1,8 +1,24 @@
 import { prismaClient } from 'src/config'
 
-export const findMany = async () => {
+export const findMany = async (args?: {
+    q?: string
+    type?: string
+    status?: string
+}) => {
     return prismaClient.organization.findMany({
-        where: { deletedAt: null },
+        where: {
+            deletedAt: null,
+            ...(args?.q
+                ? {
+                      OR: [
+                          { code: { contains: args.q } },
+                          { name: { contains: args.q } },
+                      ],
+                  }
+                : {}),
+            ...(args?.type ? { type: args.type } : {}),
+            ...(args?.status ? { status: args.status } : {}),
+        },
         orderBy: { createdAt: 'desc' },
         include: {
             faculty: { select: { id: true, code: true, name: true } },
@@ -22,6 +38,7 @@ export const create = async (data: {
     code: string
     name: string
     type: string
+    status?: string
     facultyId?: bigint | null
     logoUrl?: string | null
     description?: string | null
@@ -31,6 +48,7 @@ export const create = async (data: {
             code: data.code,
             name: data.name,
             type: data.type,
+            status: data.status ?? 'ACTIVE',
             facultyId: data.facultyId ?? null,
             logoUrl: data.logoUrl ?? null,
             description: data.description ?? null,
@@ -47,6 +65,7 @@ export const update = async (
         code?: string
         name?: string
         type?: string
+        status?: string
         facultyId?: bigint | null
         logoUrl?: string | null
         description?: string | null
@@ -56,6 +75,7 @@ export const update = async (
     if (data.code !== undefined) updateData.code = data.code
     if (data.name !== undefined) updateData.name = data.name
     if (data.type !== undefined) updateData.type = data.type
+    if (data.status !== undefined) updateData.status = data.status
     if (data.facultyId !== undefined) updateData.facultyId = data.facultyId
     if (data.logoUrl !== undefined) updateData.logoUrl = data.logoUrl
     if (data.description !== undefined)

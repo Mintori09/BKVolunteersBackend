@@ -3,12 +3,23 @@ import isAuth from 'src/common/middleware/isAuth'
 import { restrictTo } from 'src/common/middleware'
 import validate from 'src/common/middleware/validate'
 import * as studentController from './student.controller'
-import { updateProfileSchema } from './student.validation'
+import {
+    getMyActivitiesSchema,
+    getMyDonationsSchema,
+    updateProfileSchema,
+} from './student.validation'
 
 const studentRouter = Router()
 
 studentRouter.get(
     '/me/dashboard',
+    isAuth,
+    restrictTo('SINHVIEN'),
+    studentController.getMyDashboard
+)
+
+studentRouter.get(
+    '/me/profile',
     isAuth,
     restrictTo('SINHVIEN'),
     studentController.getMe
@@ -37,9 +48,18 @@ studentRouter.get(
 )
 
 studentRouter.get(
+    '/me/activities',
+    isAuth,
+    restrictTo('SINHVIEN'),
+    validate(getMyActivitiesSchema),
+    studentController.getMyActivities
+)
+
+studentRouter.get(
     '/me/donations',
     isAuth,
     restrictTo('SINHVIEN'),
+    validate(getMyDonationsSchema),
     studentController.getMyDonations
 )
 

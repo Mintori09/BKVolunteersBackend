@@ -1,4 +1,5 @@
 import { Response, Request } from 'express'
+import { HttpStatus } from 'src/common/constants'
 import { ApiResponse } from 'src/utils/ApiResponse'
 import { catchAsync } from 'src/utils/catchAsync'
 import { TypedRequest } from 'src/types/request'
@@ -49,6 +50,11 @@ export const updateCampaign = catchAsync(
         return ApiResponse.success(res, campaign, 'Cập nhật chiến dịch thành công')
     }
 )
+
+export const deleteCampaign = catchAsync(async (req: Request, res: Response) => {
+    await campaignService.deleteCampaign(getRequestParam(req, 'id'), req.payload)
+    return res.sendStatus(HttpStatus.NO_CONTENT)
+})
 
 export const submitCampaignForReview = catchAsync(
     async (req: Request, res: Response) => {

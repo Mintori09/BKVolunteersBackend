@@ -6,6 +6,7 @@ import {
     eventApproveSchema,
     eventCheckInSchema,
     eventCompleteSchema,
+    eventConfigSchema,
     eventListRegistrationsSchema,
     eventModuleParamsSchema,
     eventRegisterSchema,
@@ -17,6 +18,13 @@ eventsRouter.get(
     '/modules/:moduleId',
     validate(eventModuleParamsSchema),
     eventsController.getEventModule
+)
+
+eventsRouter.patch(
+    '/modules/:moduleId/config',
+    isAuth,
+    validate(eventConfigSchema),
+    eventsController.updateEventConfig
 )
 
 eventsRouter.post(

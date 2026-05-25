@@ -30,6 +30,9 @@ const certificatesRouter = Router()
  *         file_url: { type: string, nullable: true }
  *         layout_json: { type: object, nullable: true }
  *         status: { type: string, example: ACTIVE }
+ *         is_locked:
+ *           type: boolean
+ *           description: Đã từng được dùng để sinh chứng nhận hay chưa
  *         created_by: { type: integer, nullable: true }
  *         created_at: { type: string, format: date-time }
  *         updated_at: { type: string, format: date-time }
@@ -41,6 +44,14 @@ const certificatesRouter = Router()
  *         type: { type: string, example: CAMPAIGN_COMPLETION }
  *         file_url: { type: string, nullable: true }
  *         layout_json: { type: object, additionalProperties: true }
+ *     UpdateCertificateTemplateBody:
+ *       type: object
+ *       properties:
+ *         name: { type: string, example: Chứng nhận tình nguyện viên 2026 }
+ *         type: { type: string, example: VOLUNTEER }
+ *         file_url: { type: string, nullable: true }
+ *         layout_json: { type: object, additionalProperties: true }
+ *         status: { type: string, enum: [ACTIVE, INACTIVE] }
  *     CertificateOutput:
  *       type: object
  *       properties:
@@ -154,6 +165,47 @@ certificatesRouter.patch(
     certificatesController.updateTemplate
 )
 
+/**
+ * @openapi
+ * /certificates/templates/{id}:
+ *   patch:
+ *     summary: Update certificate template
+ *     description: Template đã được dùng để sinh chứng nhận chỉ được sửa name và status. Muốn thay type, file_url hoặc layout_json cần tạo template mới.
+ *     tags: [Certificates]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateCertificateTemplateBody'
+ *     responses:
+ *       200:
+ *         description: Template updated
+ *       409:
+ *         description: Template đã bị khóa các field cấu trúc sau khi đã được dùng
+ *   delete:
+ *     summary: Deactivate certificate template
+ *     description: Soft deactivate template để giữ tương thích. Endpoint này không xóa vật lý dữ liệu.
+ *     tags: [Certificates]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       204:
+ *         description: Template has been deactivated
+ */
+
 certificatesRouter.delete(
     '/templates/:id',
     isAuth,
@@ -266,6 +318,12 @@ certificatesRouter.post(
     isAuth,
     validate(certificateIdSchema),
     certificatesController.renderCertificate
+)
+
+certificatesRouter.get(
+    '/:id/file',
+    validate(certificateIdSchema),
+    certificatesController.serveCertificateFile
 )
 
 /**

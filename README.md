@@ -111,6 +111,10 @@ pnpm install
 
 Tạo file `.env` cục bộ từ file mẫu rồi điền cấu hình database, JWT và mail.
 
+Mẫu production hiện có tại:
+
+- `BKVolunteersBackend/.env.production.example`
+
 Các biến môi trường thường dùng:
 
 - `NODE_ENV`

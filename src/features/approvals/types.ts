@@ -2,6 +2,8 @@ export interface ApprovalQueueQuery {
     page?: number
     limit?: number
     status?: string
+    module_type?: string
+    q?: string
     organization_id?: string
     faculty_id?: string
 }

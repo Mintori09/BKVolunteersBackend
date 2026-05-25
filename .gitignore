@@ -17,3 +17,10 @@ session.json
 .codex
 docs/.codex
 docs/superpowers/
+.jest-cache/
+.jest-cache-ci/
+.jest-cache-release/
+.ops-backups/
+.ops-restore-uploads/
+.ops-snapshots/
+uploads/

@@ -30,6 +30,8 @@ export const generateCertificatesSchema: RequestValidationSchema = {
         template_id: z.string().regex(/^\d+$/).optional(),
         templateId: z.string().regex(/^\d+$/).optional(),
         module_id: z.string().regex(/^\d+$/).optional(),
+        dry_run: z.coerce.boolean().optional(),
+        dryRun: z.coerce.boolean().optional(),
     }),
 }
 
@@ -58,5 +60,6 @@ export const updateCertificateTemplateSchema: RequestValidationSchema = {
         type: z.string().trim().optional(),
         file_url: z.string().trim().nullable().optional(),
         layout_json: z.record(z.string(), z.unknown()).nullable().optional(),
+        status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
     }),
 }

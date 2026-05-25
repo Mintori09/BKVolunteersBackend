@@ -5,6 +5,7 @@ import { catchAsync } from 'src/utils/catchAsync'
 import * as eventsService from './events.service'
 import {
     EventApproveBody,
+    EventConfigBody,
     EventModuleParams,
     EventRegisterBody,
     EventRegistrationParams,
@@ -39,6 +40,20 @@ export const registerEvent = catchAsync(
     }
 )
 
+export const updateEventConfig = catchAsync(
+    async (
+        req: TypedRequest<EventConfigBody, EmptyQuery, EventModuleParams>,
+        res: Response
+    ) => {
+        const result = await eventsService.updateEventConfig(
+            req.params.moduleId!,
+            req.body as EventConfigBody,
+            req.payload
+        )
+        return ApiResponse.success(res, result)
+    }
+)
+
 export const approveEventRegistration = catchAsync(
     async (
         req: TypedRequest<EventApproveBody, EmptyQuery, EventRegistrationParams>,
@@ -55,12 +70,12 @@ export const approveEventRegistration = catchAsync(
 
 export const rejectEventRegistration = catchAsync(
     async (
-        req: TypedRequest<{ reason?: string }, EmptyQuery, EventRegistrationParams>,
+        req: TypedRequest<{ reason?: string; review_note?: string }, EmptyQuery, EventRegistrationParams>,
         res: Response
     ) => {
         const result = await eventsService.rejectEventRegistration(
             req.params.id!,
-            { reason: req.body.reason ?? '' },
+            { reason: req.body.reason ?? req.body.review_note ?? '' },
             req.payload
         )
         return ApiResponse.success(res, result)

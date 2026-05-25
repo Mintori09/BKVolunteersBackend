@@ -6,6 +6,8 @@ export const approvalQueueSchema: RequestValidationSchema = {
         page: z.coerce.number().int().min(1).optional(),
         limit: z.coerce.number().int().min(1).max(100).optional(),
         status: z.string().trim().min(1).optional(),
+        module_type: z.enum(['fundraising', 'item_donation', 'event']).optional(),
+        q: z.string().trim().optional(),
         organization_id: z.string().regex(/^\d+$/).optional(),
         faculty_id: z.string().regex(/^\d+$/).optional(),
     }),

@@ -29,6 +29,10 @@ export const findApprovalQueue = async (args: {
                         role: true,
                     },
                 },
+                modules: {
+                    where: { deletedAt: null },
+                    select: { type: true },
+                },
                 reviews: {
                     orderBy: { createdAt: 'desc' },
                     take: 1,

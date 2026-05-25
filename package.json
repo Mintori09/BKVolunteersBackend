@@ -5,11 +5,15 @@
     "main": "index.js",
     "scripts": {
         "dev": "tsx watch src/server.ts",
-        "build": "pnpm tsc",
-        "start": "node dist/server.ts",
+        "build": "tsc -p tsconfig.json --pretty false && node ./scripts/fix-dist-imports.mjs",
+        "start": "node dist/src/server.js",
         "test": "jest",
         "db:migrate": "prisma migrate deploy",
         "db:seed": "tsx prisma/seed/index.ts",
+        "ops:logs:snapshot": "powershell -ExecutionPolicy Bypass -File ./scripts/collect-ops-snapshot.ps1",
+        "ops:backup:db": "powershell -ExecutionPolicy Bypass -File ./scripts/backup-mysql.ps1",
+        "ops:restore:db": "powershell -ExecutionPolicy Bypass -File ./scripts/restore-mysql.ps1",
+        "ops:backup:uploads": "powershell -ExecutionPolicy Bypass -File ./scripts/backup-uploads.ps1",
         "prepare": "husky",
         "lint": "prettier --check ."
     },

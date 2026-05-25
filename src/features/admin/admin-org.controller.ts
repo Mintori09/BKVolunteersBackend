@@ -2,7 +2,6 @@ import { Response } from 'express'
 import {
     EmptyBody,
     EmptyParams,
-    EmptyQuery,
     TypedRequest,
 } from 'src/types/request'
 import { HttpStatus } from 'src/common/constants'
@@ -12,17 +11,23 @@ import * as adminOrgService from './admin-org.service'
 import {
     AdminCreateOrganizationBody,
     AdminOrganizationIdParams,
+    AdminOrganizationsQuery,
     AdminUpdateOrganizationBody,
 } from './types'
 
-export const listOrganizations = catchAsync(async (_req, res: Response) => {
-    const result = await adminOrgService.listOrganizations()
-    return ApiResponse.success(res, result)
-})
+export const listOrganizations = catchAsync(
+    async (
+        req: TypedRequest<EmptyBody, AdminOrganizationsQuery, EmptyParams>,
+        res: Response
+    ) => {
+        const result = await adminOrgService.listOrganizations(req.query)
+        return ApiResponse.success(res, result)
+    }
+)
 
 export const createOrganization = catchAsync(
     async (
-        req: TypedRequest<AdminCreateOrganizationBody, EmptyQuery, EmptyParams>,
+        req: TypedRequest<AdminCreateOrganizationBody, AdminOrganizationsQuery, EmptyParams>,
         res: Response
     ) => {
         const result = await adminOrgService.createOrganization(
@@ -41,7 +46,7 @@ export const updateOrganization = catchAsync(
     async (
         req: TypedRequest<
             AdminUpdateOrganizationBody,
-            EmptyQuery,
+            AdminOrganizationsQuery,
             AdminOrganizationIdParams
         >,
         res: Response
@@ -56,7 +61,11 @@ export const updateOrganization = catchAsync(
 
 export const deleteOrganization = catchAsync(
     async (
-        req: TypedRequest<EmptyBody, EmptyQuery, AdminOrganizationIdParams>,
+        req: TypedRequest<
+            EmptyBody,
+            AdminOrganizationsQuery,
+            AdminOrganizationIdParams
+        >,
         res: Response
     ) => {
         await adminOrgService.deleteOrganization(req.params.id!)

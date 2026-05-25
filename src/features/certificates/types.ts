@@ -13,10 +13,20 @@ export interface CreateCertificateTemplateBody {
     layout_json?: Record<string, unknown> | null
 }
 
+export interface UpdateCertificateTemplateBody {
+    name?: string
+    type?: string
+    file_url?: string | null
+    layout_json?: Record<string, unknown> | null
+    status?: 'ACTIVE' | 'INACTIVE'
+}
+
 export interface GenerateCertificatesBody {
     template_id?: string
     templateId?: string
     module_id?: string
+    dry_run?: boolean
+    dryRun?: boolean
 }
 
 export interface RevokeCertificateBody {
@@ -31,6 +41,7 @@ export interface CertificateTemplateOutput {
     file_url: string | null
     layout_json: unknown
     status: string
+    is_locked: boolean
     created_by: number | null
     created_at: Date
     updated_at: Date
@@ -57,6 +68,8 @@ export interface CertificateOutput {
 }
 
 export interface GenerateCertificatesOutput {
+    dry_run?: boolean
+    candidate_count?: number
     created_count: number
     items: CertificateOutput[]
 }
@@ -64,6 +77,7 @@ export interface GenerateCertificatesOutput {
 export interface RenderCertificateOutput {
     queued: boolean
     certificate_id: number
+    background_job_id?: number
 }
 
 export interface DownloadCertificateOutput {

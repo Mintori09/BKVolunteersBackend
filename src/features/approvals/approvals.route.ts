@@ -53,6 +53,13 @@ approvalsRouter.get(
     approvalsController.getApprovalQueue
 )
 
+approvalsRouter.get(
+    '/campaigns',
+    isAuth,
+    validate(approvalQueueSchema),
+    approvalsController.getApprovalQueueItems
+)
+
 /**
  * GET /approvals/campaigns/:id - Campaign approval detail
  */

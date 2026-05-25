@@ -2,6 +2,7 @@ import {
     createCertificateTemplateSchema,
     generateCertificatesSchema,
     revokeCertificateSchema,
+    updateCertificateTemplateSchema,
 } from '../certificates.validation'
 
 describe('certificates.validation', () => {
@@ -34,11 +35,13 @@ describe('certificates.validation', () => {
             const parsed = generateCertificatesSchema.body!.parse({
                 template_id: '1',
                 module_id: '11',
+                dry_run: true,
             })
 
             expect(parsed).toEqual({
                 template_id: '1',
                 module_id: '11',
+                dry_run: true,
             })
         })
 
@@ -63,6 +66,28 @@ describe('certificates.validation', () => {
                 reason: 'Sai thong tin',
                 revoke_reason: 'Sai thong tin',
             })
+        })
+    })
+
+    describe('updateCertificateTemplateSchema', () => {
+        it('should accept ACTIVE and INACTIVE status', () => {
+            const parsed = updateCertificateTemplateSchema.body!.parse({
+                status: 'INACTIVE',
+                layout_json: { version: 2 },
+            })
+
+            expect(parsed).toEqual({
+                status: 'INACTIVE',
+                layout_json: { version: 2 },
+            })
+        })
+
+        it('should reject invalid status', () => {
+            expect(() =>
+                updateCertificateTemplateSchema.body!.parse({
+                    status: 'ARCHIVED',
+                })
+            ).toThrow()
         })
     })
 })

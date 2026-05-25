@@ -24,3 +24,29 @@ export const updateProfileSchema: RequestValidationSchema = {
             .optional(),
     }),
 }
+
+export const getMyActivitiesSchema: RequestValidationSchema = {
+    query: z.object({
+        type: z
+            .enum([
+                'money_donation',
+                'item_pledge',
+                'event_registration',
+                'certificate',
+                '',
+            ])
+            .optional(),
+        status: z.string().trim().optional(),
+        page: z.coerce.number().int().min(1).optional(),
+        limit: z.coerce.number().int().min(1).max(100).optional(),
+    }),
+}
+
+export const getMyDonationsSchema: RequestValidationSchema = {
+    query: z.object({
+        type: z.enum(['money', 'item', '']).optional(),
+        status: z.string().trim().optional(),
+        page: z.coerce.number().int().min(1).optional(),
+        limit: z.coerce.number().int().min(1).max(100).optional(),
+    }),
+}

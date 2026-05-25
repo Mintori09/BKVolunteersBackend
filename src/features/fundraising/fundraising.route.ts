@@ -3,10 +3,13 @@ import isAuth from 'src/common/middleware/isAuth'
 import validate from 'src/common/middleware/validate'
 import * as fundraisingController from './fundraising.controller'
 import {
+    attachFundraisingTransactionSchema,
     createFundraisingDonationSchema,
     fundraisingDecisionSchema,
     fundraisingModuleConfigSchema,
     fundraisingModuleSchema,
+    fundraisingTransactionSchema,
+    listFundraisingTransactionsSchema,
     listFundraisingDonationsSchema,
     sepayWebhookSchema,
 } from './fundraising.validation'
@@ -43,12 +46,19 @@ const fundraisingRouter = Router()
  *         settings_json:
  *           type: object
  *           additionalProperties: true
+ *         target_amount: { type: number, example: 5000000 }
+ *         receiver_name: { type: string, example: "CLB Tinh nguyen CNTT" }
+ *         bank_name: { type: string, example: "Vietcombank" }
+ *         bank_account_no: { type: string, example: "123456789" }
+ *         currency: { type: string, example: "VND" }
+ *         sepay_enabled: { type: boolean, example: true }
+ *         sepay_account_id: { type: string, nullable: true, example: "sp-01" }
  *         status: { type: string, example: ACTIVE }
  *     FundraisingModuleConfigOutput:
  *       type: object
  *       properties:
- *         id: { type: integer, example: 11 }
- *         settings_json: { type: object, nullable: true }
+ *         module_id: { type: integer, example: 11 }
+ *         config: { type: object, nullable: true }
  *         status: { type: string, example: ACTIVE }
  *     CreateFundraisingDonationBody:
  *       type: object
@@ -90,6 +100,46 @@ const fundraisingRouter = Router()
  *       properties:
  *         reason: { type: string, example: Đã đối soát thành công }
  *         reject_reason: { type: string, example: Chứng từ không hợp lệ }
+ *         transaction_id: { type: integer, nullable: true, example: 8801 }
+ *     FundraisingTransactionOutput:
+ *       type: object
+ *       properties:
+ *         id: { type: integer, example: 8801 }
+ *         provider: { type: string, example: SEPAY }
+ *         provider_transaction_id: { type: string, example: tx_001 }
+ *         campaign_id: { type: integer, nullable: true, example: 7 }
+ *         module_id: { type: integer, nullable: true, example: 11 }
+ *         amount: { type: number, example: 100000 }
+ *         content: { type: string, nullable: true }
+ *         account_no: { type: string, nullable: true }
+ *         transaction_time: { type: string, format: date-time }
+ *         match_status: { type: string, example: MATCHED }
+ *         matched_donation_id: { type: integer, nullable: true, example: 501 }
+ *         created_at: { type: string, format: date-time }
+ *         updated_at: { type: string, format: date-time }
+ *         matched_donation:
+ *           type: object
+ *           nullable: true
+ *           properties:
+ *             id: { type: integer, example: 501 }
+ *             donor_name: { type: string, nullable: true }
+ *             amount: { type: number, example: 100000 }
+ *             status: { type: string, example: MATCHED }
+ *             created_at: { type: string, format: date-time }
+ *     FundraisingTransactionListOutput:
+ *       type: object
+ *       properties:
+ *         items:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/FundraisingTransactionOutput'
+ *         pagination:
+ *           $ref: '#/components/schemas/PaginationMeta'
+ *     AttachFundraisingTransactionBody:
+ *       type: object
+ *       required: [donation_id]
+ *       properties:
+ *         donation_id: { type: integer, example: 501 }
  *     SepayWebhookBody:
  *       type: object
  *       properties:
@@ -232,6 +282,18 @@ fundraisingRouter.patch(
  *       - in: query
  *         name: limit
  *         schema: { type: integer, minimum: 1, maximum: 100 }
+ *       - in: query
+ *         name: status
+ *         schema: { type: string, enum: [PENDING, MATCHED, VERIFIED, REJECTED, REFUNDED] }
+ *       - in: query
+ *         name: q
+ *         schema: { type: string }
+ *       - in: query
+ *         name: from
+ *         schema: { type: string, format: date-time }
+ *       - in: query
+ *         name: to
+ *         schema: { type: string, format: date-time }
  *     responses:
  *       200:
  *         description: Donation list
@@ -257,6 +319,59 @@ fundraisingRouter.get(
     isAuth,
     validate(listFundraisingDonationsSchema),
     fundraisingController.listDonations
+)
+
+/**
+ * @openapi
+ * /fundraising/transactions:
+ *   get:
+ *     summary: List SePay/payment transactions for reconciliation
+ *     tags: [Fundraising]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, minimum: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, minimum: 1, maximum: 100 }
+ *       - in: query
+ *         name: match_status
+ *         schema: { type: string, enum: [MATCHED, UNMATCHED] }
+ *       - in: query
+ *         name: module_id
+ *         schema: { type: integer }
+ *       - in: query
+ *         name: campaign_id
+ *         schema: { type: integer }
+ *       - in: query
+ *         name: q
+ *         schema: { type: string }
+ *       - in: query
+ *         name: from
+ *         schema: { type: string, format: date-time }
+ *       - in: query
+ *         name: to
+ *         schema: { type: string, format: date-time }
+ *     responses:
+ *       200:
+ *         description: Transaction reconciliation queue
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/FundraisingTransactionListOutput'
+ */
+fundraisingRouter.get(
+    '/transactions',
+    isAuth,
+    validate(listFundraisingTransactionsSchema),
+    fundraisingController.listTransactions
 )
 
 /**
@@ -347,6 +462,78 @@ fundraisingRouter.patch(
     isAuth,
     validate(fundraisingDecisionSchema),
     fundraisingController.rejectDonation
+)
+
+/**
+ * @openapi
+ * /fundraising/transactions/{id}/attach-donation:
+ *   patch:
+ *     summary: Attach transaction to donation for manual reconciliation
+ *     tags: [Fundraising]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AttachFundraisingTransactionBody'
+ *     responses:
+ *       200:
+ *         description: Transaction matched to donation
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/FundraisingTransactionOutput'
+ */
+fundraisingRouter.patch(
+    '/transactions/:id/attach-donation',
+    isAuth,
+    validate(attachFundraisingTransactionSchema),
+    fundraisingController.attachTransactionToDonation
+)
+
+/**
+ * @openapi
+ * /fundraising/transactions/{id}/unmatch:
+ *   patch:
+ *     summary: Remove transaction to donation match
+ *     tags: [Fundraising]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Transaction unmatched
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/FundraisingTransactionOutput'
+ */
+fundraisingRouter.patch(
+    '/transactions/:id/unmatch',
+    isAuth,
+    validate(fundraisingTransactionSchema),
+    fundraisingController.unmatchTransaction
 )
 
 /**

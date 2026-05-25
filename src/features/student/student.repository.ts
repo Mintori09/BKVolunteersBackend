@@ -91,6 +91,98 @@ export const findDonationsByStudentId = async (studentId: string) => {
     return { moneyDonations, itemPledges }
 }
 
+export const findStudentDashboardData = async (studentId: string) => {
+    const id = toBigIntId(studentId)
+
+    const [
+        moneyDonations,
+        itemPledges,
+        eventRegistrations,
+        certificates,
+    ] = await Promise.all([
+        prismaClient.moneyDonation.findMany({
+            where: { studentId: id },
+            select: {
+                id: true,
+                campaignId: true,
+                moduleId: true,
+                status: true,
+                amount: true,
+                donorName: true,
+                message: true,
+                createdAt: true,
+                campaign: { select: { id: true, title: true, slug: true } },
+                module: {
+                    select: { id: true, title: true, type: true },
+                },
+            },
+            orderBy: { createdAt: 'desc' },
+        }),
+        prismaClient.itemPledge.findMany({
+            where: { studentId: id },
+            select: {
+                id: true,
+                campaignId: true,
+                moduleId: true,
+                status: true,
+                quantity: true,
+                receivedQuantity: true,
+                donorName: true,
+                createdAt: true,
+                receivedAt: true,
+                campaign: { select: { id: true, title: true, slug: true } },
+                module: {
+                    select: { id: true, title: true, type: true },
+                },
+                itemTarget: { select: { name: true, unit: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+        }),
+        prismaClient.eventRegistration.findMany({
+            where: { studentId: id },
+            select: {
+                id: true,
+                campaignId: true,
+                moduleId: true,
+                status: true,
+                hours: true,
+                createdAt: true,
+                reviewedAt: true,
+                checkedInAt: true,
+                checkedOutAt: true,
+                campaign: { select: { id: true, title: true, slug: true } },
+                module: {
+                    select: { id: true, title: true, type: true },
+                },
+            },
+            orderBy: { createdAt: 'desc' },
+        }),
+        prismaClient.certificate.findMany({
+            where: { studentId: id },
+            select: {
+                id: true,
+                certificateNo: true,
+                campaignId: true,
+                moduleId: true,
+                status: true,
+                issuedAt: true,
+                createdAt: true,
+                campaign: { select: { id: true, title: true, slug: true } },
+                module: { select: { id: true, title: true } },
+                template: { select: { name: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+        }),
+    ])
+
+    return {
+        moneyDonations,
+        itemPledges,
+        eventRegistrations,
+        certificates,
+    }
+}
+
 export const findCertificatesByStudentId = async (studentId: string) => {
     return prismaClient.certificate.findMany({
         where: { studentId: toBigIntId(studentId) },

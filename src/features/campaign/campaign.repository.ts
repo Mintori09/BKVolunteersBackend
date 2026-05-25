@@ -11,7 +11,14 @@ const toId = (value: string | number | bigint) => BigInt(value)
 
 const campaignInclude = {
     organization: {
-        select: { id: true, code: true, name: true, type: true, facultyId: true },
+        select: {
+            id: true,
+            code: true,
+            name: true,
+            type: true,
+            status: true,
+            facultyId: true,
+        },
     },
     faculty: {
         select: { id: true, code: true, name: true },
@@ -32,7 +39,8 @@ const campaignInclude = {
 } satisfies Prisma.CampaignInclude
 
 export const createCampaign = async (
-    data: CreateCampaignInput & {
+    data: Omit<CreateCampaignInput, 'slug'> & {
+        slug: string
         organizationId: bigint
         createdBy: bigint
     }
@@ -68,6 +76,21 @@ export const findCampaignBySlug = async (slug: string) =>
     prismaClient.campaign.findFirst({
         where: { slug, deletedAt: null },
         include: campaignInclude,
+    })
+
+export const findOrganizationById = async (id: string | number | bigint) =>
+    prismaClient.organization.findFirst({
+        where: {
+            id: toId(id),
+            deletedAt: null,
+        },
+        select: {
+            id: true,
+            code: true,
+            name: true,
+            status: true,
+            facultyId: true,
+        },
     })
 
 export const findCampaigns = async (args: {
@@ -117,6 +140,8 @@ export const updateCampaign = async (
                     ? BigInt(data.faculty_id)
                     : data.scope_type === 'SCHOOL'
                       ? null
+                      : data.scope_type === 'PUBLIC'
+                      ? null
                       : undefined,
             startAt: data.start_at ? new Date(data.start_at) : undefined,
             endAt: data.end_at ? new Date(data.end_at) : undefined,
@@ -138,6 +163,26 @@ export const transitionCampaign = async (
         data,
         include: campaignInclude,
     })
+
+export const softDeleteCampaign = async (id: string | number | bigint) => {
+    const deletedAt = new Date()
+
+    return prismaClient.$transaction(async (tx) => {
+        await tx.campaignModule.updateMany({
+            where: {
+                campaignId: toId(id),
+                deletedAt: null,
+            },
+            data: { deletedAt },
+        })
+
+        return tx.campaign.update({
+            where: { id: toId(id) },
+            data: { deletedAt },
+            include: campaignInclude,
+        })
+    })
+}
 
 export const createReview = async (data: {
     campaignId: bigint

@@ -1,8 +1,8 @@
 import * as z from 'zod'
 import { RequestValidationSchema } from 'src/types/request'
 import {
-    CAMPAIGN_MODULE_TYPE_VALUES,
-    CAMPAIGN_SCOPE_TYPE_VALUES,
+    CAMPAIGN_MODULE_TYPE_API_VALUES,
+    CAMPAIGN_SCOPE_TYPE_API_VALUES,
     CAMPAIGN_STATUS_VALUES,
 } from './types'
 
@@ -22,12 +22,12 @@ const isoDatetime = z.string().datetime({
 export const createCampaignSchema: RequestValidationSchema = {
     body: z.object({
         title: z.string().min(1).max(255),
-        slug: z.string().min(3).max(255),
+        slug: z.string().min(3).max(255).optional(),
         summary: z.string().min(1).max(500),
         description: z.string().nullable().optional(),
         cover_image_url: z.string().url().nullable().optional(),
         beneficiary: z.string().max(255).nullable().optional(),
-        scope_type: z.enum(CAMPAIGN_SCOPE_TYPE_VALUES),
+        scope_type: z.enum(CAMPAIGN_SCOPE_TYPE_API_VALUES),
         organization_id: z.number().int().positive().optional(),
         faculty_id: z.number().int().positive().nullable().optional(),
         start_at: isoDatetime,
@@ -44,7 +44,7 @@ export const updateCampaignSchema: RequestValidationSchema = {
         description: z.string().nullable().optional(),
         cover_image_url: z.string().url().nullable().optional(),
         beneficiary: z.string().max(255).nullable().optional(),
-        scope_type: z.enum(CAMPAIGN_SCOPE_TYPE_VALUES).optional(),
+        scope_type: z.enum(CAMPAIGN_SCOPE_TYPE_API_VALUES).optional(),
         faculty_id: z.number().int().positive().nullable().optional(),
         start_at: isoDatetime.optional(),
         end_at: isoDatetime.optional(),
@@ -75,10 +75,12 @@ export const endCampaignSchema: RequestValidationSchema = {
 
 export const getCampaignsSchema: RequestValidationSchema = {
     query: z.object({
+        q: z.string().trim().optional(),
         page: z.string().regex(/^\d+$/).optional(),
         limit: z.string().regex(/^\d+$/).optional(),
         status: z.enum(CAMPAIGN_STATUS_VALUES).optional(),
-        scope_type: z.enum(CAMPAIGN_SCOPE_TYPE_VALUES).optional(),
+        scope_type: z.enum(CAMPAIGN_SCOPE_TYPE_API_VALUES).optional(),
+        module_type: z.enum(CAMPAIGN_MODULE_TYPE_API_VALUES).optional(),
         organization_id: z.string().regex(/^\d+$/).optional(),
         faculty_id: z.string().regex(/^\d+$/).optional(),
     }),
@@ -87,13 +89,14 @@ export const getCampaignsSchema: RequestValidationSchema = {
 export const createCampaignModuleSchema: RequestValidationSchema = {
     params: idParam,
     body: z.object({
-        type: z.enum(CAMPAIGN_MODULE_TYPE_VALUES),
+        type: z.enum(CAMPAIGN_MODULE_TYPE_API_VALUES),
         title: z.string().min(1).max(255),
         description: z.string().nullable().optional(),
         start_at: isoDatetime,
         end_at: isoDatetime,
         status: z.string().max(40).optional(),
         settings_json: z.record(z.string(), z.unknown()).optional(),
+        settings: z.record(z.string(), z.unknown()).optional(),
     }),
 }
 
@@ -106,5 +109,6 @@ export const updateCampaignModuleSchema: RequestValidationSchema = {
         end_at: isoDatetime.optional(),
         status: z.string().max(40).optional(),
         settings_json: z.record(z.string(), z.unknown()).optional(),
+        settings: z.record(z.string(), z.unknown()).optional(),
     }),
 }

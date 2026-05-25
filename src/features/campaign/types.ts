@@ -12,11 +12,21 @@ export const CAMPAIGN_STATUS_VALUES = [
 ] as const
 
 export const CAMPAIGN_SCOPE_TYPE_VALUES = ['SCHOOL', 'FACULTY'] as const
+export const CAMPAIGN_SCOPE_TYPE_API_VALUES = [
+    'SCHOOL',
+    'FACULTY',
+    'PUBLIC',
+] as const
 
 export const CAMPAIGN_MODULE_TYPE_VALUES = [
     'FUNDRAISING',
     'ITEM_DONATION',
     'EVENT',
+] as const
+export const CAMPAIGN_MODULE_TYPE_API_VALUES = [
+    'fundraising',
+    'item_donation',
+    'event',
 ] as const
 
 export type CampaignStatus = (typeof CAMPAIGN_STATUS_VALUES)[number]
@@ -25,12 +35,12 @@ export type CampaignModuleType = (typeof CAMPAIGN_MODULE_TYPE_VALUES)[number]
 
 export interface CreateCampaignInput {
     title: string
-    slug: string
+    slug?: string
     summary: string
     description?: string | null
     cover_image_url?: string | null
     beneficiary?: string | null
-    scope_type: CampaignScopeType
+    scope_type: (typeof CAMPAIGN_SCOPE_TYPE_API_VALUES)[number]
     organization_id?: number
     faculty_id?: number | null
     start_at: string
@@ -44,7 +54,7 @@ export interface UpdateCampaignInput {
     description?: string | null
     cover_image_url?: string | null
     beneficiary?: string | null
-    scope_type?: CampaignScopeType
+    scope_type?: (typeof CAMPAIGN_SCOPE_TYPE_API_VALUES)[number]
     faculty_id?: number | null
     start_at?: string
     end_at?: string
@@ -55,13 +65,14 @@ export interface CampaignReviewInput {
 }
 
 export interface CreateCampaignModuleInput {
-    type: CampaignModuleType
+    type: CampaignModuleType | (typeof CAMPAIGN_MODULE_TYPE_API_VALUES)[number]
     title: string
     description?: string | null
     start_at: string
     end_at: string
     status?: string
     settings_json?: Record<string, unknown>
+    settings?: Record<string, unknown>
 }
 
 export interface UpdateCampaignModuleInput {
@@ -71,13 +82,16 @@ export interface UpdateCampaignModuleInput {
     end_at?: string
     status?: string
     settings_json?: Record<string, unknown>
+    settings?: Record<string, unknown>
 }
 
 export interface CampaignQuery {
+    q?: string
     page?: string
     limit?: string
     status?: CampaignStatus
-    scope_type?: CampaignScopeType
+    scope_type?: (typeof CAMPAIGN_SCOPE_TYPE_API_VALUES)[number]
+    module_type?: (typeof CAMPAIGN_MODULE_TYPE_API_VALUES)[number]
     organization_id?: string
     faculty_id?: string
 }

@@ -7,15 +7,18 @@ import * as adminOrgController from './admin-org.controller'
 import {
     createAdminOrganizationSchema,
     deleteAdminOrganizationSchema,
+    listAdminOrganizationsSchema,
     listAuditLogsSchema,
     listBackgroundJobsSchema,
+    retryBackgroundJobSchema,
+    runBackgroundJobsSchema,
     updateAdminOrganizationSchema,
 } from './admin.validation'
 
 const adminRouter = Router()
 
 adminRouter.use(isAuth)
-adminRouter.use(restrictTo('OPERATOR'))
+adminRouter.use(restrictTo('DOANTRUONG'))
 
 /**
  * @openapi
@@ -205,6 +208,18 @@ adminRouter.get(
     adminController.listBackgroundJobs
 )
 
+adminRouter.post(
+    '/background-jobs/run',
+    validate(runBackgroundJobsSchema),
+    adminController.runBackgroundJobs
+)
+
+adminRouter.post(
+    '/background-jobs/:id/retry',
+    validate(retryBackgroundJobSchema),
+    adminController.retryBackgroundJob
+)
+
 /**
  * @openapi
  * /admin/organizations:
@@ -231,7 +246,11 @@ adminRouter.get(
  *       201:
  *         description: Organization created
  */
-adminRouter.get('/organizations', adminOrgController.listOrganizations)
+adminRouter.get(
+    '/organizations',
+    validate(listAdminOrganizationsSchema),
+    adminOrgController.listOrganizations
+)
 
 adminRouter.post(
     '/organizations',

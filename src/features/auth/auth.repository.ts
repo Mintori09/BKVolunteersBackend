@@ -3,6 +3,22 @@ import { UserRole } from './types'
 
 const toBigIntId = (id: string) => BigInt(id)
 
+const normalizeOperatorRole = (role: string | null | undefined): UserRole => {
+    switch (role) {
+        case 'ORG_ADMIN':
+        case 'CLB':
+            return 'CLB'
+        case 'SCHOOL_REVIEWER':
+        case 'LCD':
+            return 'LCD'
+        case 'SCHOOL_ADMIN':
+        case 'DOANTRUONG':
+            return 'DOANTRUONG'
+        default:
+            return 'CLB'
+    }
+}
+
 const mapOperatorAccount = (account: any) => {
     if (!account) return null
 
@@ -13,6 +29,7 @@ const mapOperatorAccount = (account: any) => {
         organizationId: account.organizationId
             ? account.organizationId.toString()
             : null,
+        role: normalizeOperatorRole(account.role),
         password: account.passwordHash,
         fullName: account.fullName,
     }

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import { catchAsync } from 'src/utils/catchAsync'
 import { ApiResponse } from 'src/utils/ApiResponse'
+import { serializeId } from 'src/common/serializers'
 import * as notificationService from './notification.service'
 import { NotificationQuery, NotificationRecipient } from './types'
 
@@ -15,6 +16,24 @@ const getRecipient = (req: Request): NotificationRecipient => {
     }
 }
 
+const toNotificationItem = (notification: {
+    id: bigint
+    type: string
+    title: string
+    body: string
+    dataJson?: unknown
+    readAt?: Date | null
+    createdAt: Date
+}) => ({
+    id: serializeId(notification.id)!,
+    type: notification.type,
+    title: notification.title,
+    body: notification.body,
+    data: notification.dataJson ?? undefined,
+    read_at: notification.readAt?.toISOString() ?? null,
+    created_at: notification.createdAt.toISOString(),
+})
+
 export const getMyNotifications = catchAsync(
     async (req: Request, res: Response) => {
         const query: NotificationQuery = {
@@ -27,7 +46,10 @@ export const getMyNotifications = catchAsync(
             query
         )
 
-        return ApiResponse.success(res, notifications)
+        return ApiResponse.success(res, {
+            items: notifications.items.map(toNotificationItem),
+            meta: notifications.meta,
+        })
     }
 )
 
@@ -37,7 +59,14 @@ export const markAsRead = catchAsync(async (req: Request, res: Response) => {
         getRecipient(req)
     )
 
-    return ApiResponse.success(res, notification, 'Đánh dấu đã đọc thành công')
+    return ApiResponse.success(
+        res,
+        {
+            id: serializeId(notification.id)!,
+            read_at: notification.readAt!.toISOString(),
+        },
+        'Đánh dấu đã đọc thành công'
+    )
 })
 
 export const markAllAsRead = catchAsync(

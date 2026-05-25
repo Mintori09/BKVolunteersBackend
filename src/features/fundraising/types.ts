@@ -6,13 +6,39 @@ export interface FundraisingDonationParams {
     id: string
 }
 
+export interface FundraisingTransactionParams {
+    id: string
+}
+
 export interface FundraisingDonationListQuery {
     page?: number
     limit?: number
+    status?: string
+    q?: string
+    from?: string
+    to?: string
+}
+
+export interface FundraisingTransactionListQuery {
+    page?: number
+    limit?: number
+    match_status?: 'MATCHED' | 'UNMATCHED'
+    q?: string
+    from?: string
+    to?: string
+    module_id?: string
+    campaign_id?: string
 }
 
 export interface FundraisingModuleConfigBody {
     settings_json?: Record<string, unknown> | null
+    target_amount?: number
+    receiver_name?: string
+    bank_name?: string
+    bank_account_no?: string
+    currency?: string
+    sepay_enabled?: boolean
+    sepay_account_id?: string | null
     status?: string
 }
 
@@ -26,6 +52,12 @@ export interface CreateFundraisingDonationBody {
 export interface FundraisingDecisionBody {
     reason?: string
     reject_reason?: string
+    note?: string
+    transaction_id?: string
+}
+
+export interface AttachFundraisingTransactionBody {
+    donation_id: string
 }
 
 export interface SepayWebhookBody {
@@ -59,8 +91,8 @@ export interface FundraisingModuleOutput {
 }
 
 export interface FundraisingModuleConfigOutput {
-    id: number
-    settings_json: unknown
+    module_id: number
+    config: Record<string, unknown>
     status: string
 }
 
@@ -80,10 +112,50 @@ export interface FundraisingDonationOutput {
     reject_reason: string | null
     created_at: Date
     updated_at: Date
+    payment_instruction?: {
+        receiver_name: string | null
+        bank_name: string | null
+        bank_account_no: string | null
+        amount: number
+        currency: string
+    }
 }
 
 export interface FundraisingDonationListOutput {
     items: FundraisingDonationOutput[]
+    pagination: {
+        page: number
+        limit: number
+        total: number
+        totalPages: number
+    }
+}
+
+export interface FundraisingTransactionOutput {
+    id: number
+    provider: string
+    provider_transaction_id: string
+    campaign_id: number | null
+    module_id: number | null
+    amount: number
+    content: string | null
+    account_no: string | null
+    transaction_time: Date
+    match_status: string
+    matched_donation_id: number | null
+    created_at: Date
+    updated_at: Date
+    matched_donation: {
+        id: number
+        donor_name: string | null
+        amount: number
+        status: string
+        created_at: Date
+    } | null
+}
+
+export interface FundraisingTransactionListOutput {
+    items: FundraisingTransactionOutput[]
     pagination: {
         page: number
         limit: number

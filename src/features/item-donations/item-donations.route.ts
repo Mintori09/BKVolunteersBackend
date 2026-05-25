@@ -4,8 +4,16 @@ import validate from 'src/common/middleware/validate'
 import * as itemDonationsController from './item-donations.controller'
 import {
     confirmItemPledgeSchema,
+    createItemTargetSchema,
     createItemPledgeSchema,
+    getItemPledgesSchema,
+    getItemTargetsSchema,
+    handoverItemPledgeSchema,
     itemDonationModuleSchema,
+    itemTargetParamsSchema,
+    rejectItemPledgeSchema,
+    updateItemTargetSchema,
+    updateItemDonationConfigSchema,
 } from './item-donations.validation'
 
 const itemDonationsRouter = Router()
@@ -104,6 +112,40 @@ itemDonationsRouter.get(
     itemDonationsController.getItemDonationModule
 )
 
+itemDonationsRouter.patch(
+    '/modules/:moduleId/config',
+    isAuth,
+    validate(updateItemDonationConfigSchema),
+    itemDonationsController.updateModuleConfig
+)
+
+itemDonationsRouter.post(
+    '/modules/:moduleId/targets',
+    isAuth,
+    validate(createItemTargetSchema),
+    itemDonationsController.createTarget
+)
+
+itemDonationsRouter.get(
+    '/modules/:moduleId/targets',
+    validate(getItemTargetsSchema),
+    itemDonationsController.getTargets
+)
+
+itemDonationsRouter.patch(
+    '/targets/:id',
+    isAuth,
+    validate(updateItemTargetSchema),
+    itemDonationsController.updateTarget
+)
+
+itemDonationsRouter.delete(
+    '/targets/:id',
+    isAuth,
+    validate(itemTargetParamsSchema),
+    itemDonationsController.deleteTarget
+)
+
 /**
  * @openapi
  * /item-donations/modules/{moduleId}/pledges:
@@ -149,6 +191,13 @@ itemDonationsRouter.post(
     itemDonationsController.createPledge
 )
 
+itemDonationsRouter.get(
+    '/modules/:moduleId/pledges',
+    isAuth,
+    validate(getItemPledgesSchema),
+    itemDonationsController.getPledges
+)
+
 /**
  * @openapi
  * /item-donations/pledges/{id}/confirm:
@@ -186,6 +235,20 @@ itemDonationsRouter.patch(
     isAuth,
     validate(confirmItemPledgeSchema),
     itemDonationsController.confirmPledge
+)
+
+itemDonationsRouter.patch(
+    '/pledges/:id/reject',
+    isAuth,
+    validate(rejectItemPledgeSchema),
+    itemDonationsController.rejectPledge
+)
+
+itemDonationsRouter.post(
+    '/pledges/:id/handover',
+    isAuth,
+    validate(handoverItemPledgeSchema),
+    itemDonationsController.handoverPledge
 )
 
 export default itemDonationsRouter

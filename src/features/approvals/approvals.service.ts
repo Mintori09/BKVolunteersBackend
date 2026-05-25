@@ -6,6 +6,51 @@ import * as campaignRepository from 'src/features/campaign/campaign.repository'
 import { ApprovalQueueOutput, ApprovalQueueQuery } from './types'
 import type { JwtPayload } from 'jsonwebtoken'
 
+const normalizeOperatorRole = (role: string | null | undefined) => {
+    switch (role) {
+        case 'ORG_ADMIN':
+        case 'CLB':
+            return 'CLB'
+        case 'SCHOOL_REVIEWER':
+        case 'LCD':
+            return 'LCD'
+        case 'SCHOOL_ADMIN':
+        case 'DOANTRUONG':
+            return 'DOANTRUONG'
+        default:
+            return role ?? 'CLB'
+    }
+}
+
+const moduleTypeToApi = (value: string) => {
+    switch (value) {
+        case 'FUNDRAISING':
+        case 'fundraising':
+            return 'fundraising'
+        case 'ITEM_DONATION':
+        case 'item_donation':
+            return 'item_donation'
+        case 'EVENT':
+        case 'event':
+            return 'event'
+        default:
+            return value.toLowerCase()
+    }
+}
+
+const moduleTypeFromApi = (value: string) => {
+    switch (value) {
+        case 'fundraising':
+            return 'fundraising'
+        case 'item_donation':
+            return 'item_donation'
+        case 'event':
+            return 'event'
+        default:
+            return value.toLowerCase()
+    }
+}
+
 export const addApprovalComment = async (
     campaignId: string,
     body: { body: string; visibility?: string; module_id?: string },
@@ -53,6 +98,18 @@ export const getApprovalQueue = async (
     if (query.faculty_id) {
         where.facultyId = BigInt(query.faculty_id)
     }
+    if (query.module_type) {
+        where.modules = {
+            some: { type: moduleTypeFromApi(query.module_type) },
+        }
+    }
+    if (query.q) {
+        where.OR = [
+            { title: { contains: query.q } },
+            { summary: { contains: query.q } },
+            { organization: { name: { contains: query.q } } },
+        ]
+    }
     if (principal.role !== 'DOANTRUONG' && principal.role !== 'LCD') {
         if (principal.organizationId) {
             where.organizationId = BigInt(principal.organizationId)
@@ -76,6 +133,8 @@ export const getApprovalQueue = async (
             summary: item.summary,
             scope_type: item.scopeType,
             status: item.status,
+            module_types: item.modules?.map((module) => moduleTypeToApi(module.type)) ?? [],
+            submitted_at: item.updatedAt,
             organization: item.organization
                 ? {
                       id: serializeId(item.organization.id)!,
@@ -96,7 +155,7 @@ export const getApprovalQueue = async (
                       id: serializeId(item.creator.id)!,
                       full_name: item.creator.fullName,
                       email: item.creator.email,
-                      role: item.creator.role,
+                      role: normalizeOperatorRole(item.creator.role),
                   }
                 : null,
             last_review: item.reviews[0]

@@ -37,11 +37,25 @@ campaignRouter.get(
     campaignController.getCampaign
 )
 
+campaignRouter.get(
+    '/:id/preview',
+    isAuth,
+    validate(campaignIdSchema),
+    campaignController.getCampaign
+)
+
 campaignRouter.patch(
     '/:id',
     isAuth,
     validate(updateCampaignSchema),
     campaignController.updateCampaign
+)
+
+campaignRouter.delete(
+    '/:id',
+    isAuth,
+    validate(campaignIdSchema),
+    campaignController.deleteCampaign
 )
 
 campaignRouter.post(
