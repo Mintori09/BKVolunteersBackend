@@ -1,6 +1,7 @@
 import { HttpStatus } from 'src/common/constants'
 import * as fundraisingRepository from '../fundraising.repository'
 import * as fundraisingService from '../fundraising.service'
+import crypto from 'crypto'
 
 jest.mock('src/config', () => ({
     prismaClient: {},
@@ -697,6 +698,91 @@ describe('fundraising.service', () => {
             })
         })
 
+        it('should accept valid SePay HMAC-SHA256 signature', async () => {
+            process.env.SEPAY_WEBHOOK_SECRET = 'expected-secret'
+            ;(fundraisingRepository.upsertPaymentTransaction as jest.Mock).mockResolvedValue({
+                id: 88n,
+            })
+            ;(fundraisingRepository.findPendingDonationMatch as jest.Mock).mockResolvedValue(
+                null
+            )
+            ;(
+                fundraisingRepository.updatePaymentTransactionMatch as jest.Mock
+            ).mockResolvedValue({
+                id: 88n,
+                matchStatus: 'UNMATCHED',
+                matchedDonationId: null,
+            })
+
+            const rawBody =
+                '{"transaction_id":"tx_1","amount":1000,"module_id":"11","campaign_id":"7"}'
+            const timestamp = Math.floor(Date.now() / 1000).toString()
+            const signature = `sha256=${crypto
+                .createHmac('sha256', 'expected-secret')
+                .update(`${timestamp}.${rawBody}`)
+                .digest('hex')}`
+
+            const result = await fundraisingService.handleSepayWebhook(
+                {
+                    transaction_id: 'tx_1',
+                    amount: 1000,
+                    module_id: '11',
+                    campaign_id: '7',
+                },
+                {
+                    signature,
+                    timestamp,
+                    rawBody,
+                }
+            )
+
+            expect(result).toMatchObject({
+                accepted: true,
+                transaction_id: 88,
+                match_status: 'UNMATCHED',
+            })
+        })
+
+        it('should reject invalid SePay HMAC-SHA256 signature', async () => {
+            process.env.SEPAY_WEBHOOK_SECRET = 'expected-secret'
+
+            await expect(
+                fundraisingService.handleSepayWebhook(
+                    { transaction_id: 'tx_1', amount: 1000 },
+                    {
+                        signature: 'sha256=invalid',
+                        timestamp: Math.floor(Date.now() / 1000).toString(),
+                        rawBody: '{"transaction_id":"tx_1","amount":1000}',
+                    }
+                )
+            ).rejects.toMatchObject({
+                statusCode: HttpStatus.FORBIDDEN,
+            })
+        })
+
+        it('should reject stale SePay HMAC-SHA256 timestamp', async () => {
+            process.env.SEPAY_WEBHOOK_SECRET = 'expected-secret'
+            const rawBody = '{"transaction_id":"tx_1","amount":1000}'
+            const timestamp = `${Math.floor(Date.now() / 1000) - 600}`
+            const signature = `sha256=${crypto
+                .createHmac('sha256', 'expected-secret')
+                .update(`${timestamp}.${rawBody}`)
+                .digest('hex')}`
+
+            await expect(
+                fundraisingService.handleSepayWebhook(
+                    { transaction_id: 'tx_1', amount: 1000 },
+                    {
+                        signature,
+                        timestamp,
+                        rawBody,
+                    }
+                )
+            ).rejects.toMatchObject({
+                statusCode: HttpStatus.UNAUTHORIZED,
+            })
+        })
+
         it('should mark unmatched transaction without auto-verifying donation', async () => {
             ;(fundraisingRepository.upsertPaymentTransaction as jest.Mock).mockResolvedValue({
                 id: 88n,
@@ -733,6 +819,59 @@ describe('fundraising.service', () => {
                     amount: 1000,
                     module_id: '11',
                     campaign_id: '7',
+                },
+            })
+        })
+
+        it('should accept SePay dashboard camelCase payload and keep unmatched when module id is absent', async () => {
+            ;(fundraisingRepository.upsertPaymentTransaction as jest.Mock).mockResolvedValue({
+                id: 89n,
+            })
+            ;(fundraisingRepository.updatePaymentTransactionMatch as jest.Mock).mockResolvedValue({
+                id: 89n,
+                matchStatus: 'UNMATCHED',
+                matchedDonationId: null,
+            })
+
+            const result = await fundraisingService.handleSepayWebhook(
+                {
+                    gateway: 'BIDV',
+                    transactionDate: '2026-05-26 11:44:10',
+                    accountNumber: '0000000001',
+                    content: 'Giao dich thu nghiem 11h43m58s',
+                    description: 'Giao dich thu nghiem 11h43m58s',
+                    transferAmount: 100000,
+                    referenceCode: 'SB9C79C3AABC1D',
+                    id: 4159,
+                },
+                {}
+            )
+
+            expect(fundraisingRepository.upsertPaymentTransaction).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    providerTransactionId: '4159',
+                    amount: 100000,
+                    content: 'Giao dich thu nghiem 11h43m58s',
+                    accountNo: '0000000001',
+                })
+            )
+            expect(
+                fundraisingRepository.findPendingDonationMatch
+            ).not.toHaveBeenCalled()
+            expect(result).toEqual({
+                accepted: true,
+                transaction_id: 89,
+                match_status: 'UNMATCHED',
+                matched_donation_id: null,
+                raw_payload: {
+                    gateway: 'BIDV',
+                    transactionDate: '2026-05-26 11:44:10',
+                    accountNumber: '0000000001',
+                    content: 'Giao dich thu nghiem 11h43m58s',
+                    description: 'Giao dich thu nghiem 11h43m58s',
+                    transferAmount: 100000,
+                    referenceCode: 'SB9C79C3AABC1D',
+                    id: 4159,
                 },
             })
         })

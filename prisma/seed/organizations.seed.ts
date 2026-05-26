@@ -15,7 +15,7 @@ export const seedOrganizations = async (prisma: PrismaClient) => {
         create: {
             code: 'BKV-SCHOOL',
             name: 'BK Volunteers',
-            type: 'SCHOOL',
+            type: 'SCHOOL_UNION',
             description: 'Canonical pilot organization',
             status: 'ACTIVE',
         },
@@ -27,7 +27,7 @@ export const seedOrganizations = async (prisma: PrismaClient) => {
         create: {
             code: 'BKV-IT',
             name: 'IT Faculty Volunteers',
-            type: 'FACULTY_CLUB',
+            type: 'CLUB',
             facultyId: faculty.id,
             description: 'Faculty volunteer operator',
             status: 'ACTIVE',

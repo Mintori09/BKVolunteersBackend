@@ -37,11 +37,11 @@ export const seedCampaigns = async (prisma: PrismaClient) => {
         update: {},
         create: {
             campaignId: campaign.id,
-            type: 'FUNDRAISING',
+            type: 'fundraising',
             title: 'Demo Fundraising',
             startAt: new Date(),
             endAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-            status: 'PUBLISHED',
+            status: 'OPEN',
             settingsJson: { target_amount: 5000000, bank_account: '123456789' },
         },
     })
@@ -51,11 +51,11 @@ export const seedCampaigns = async (prisma: PrismaClient) => {
         update: {},
         create: {
             campaignId: campaign.id,
-            type: 'EVENT',
+            type: 'event',
             title: 'Demo Event',
             startAt: new Date(),
             endAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-            status: 'PUBLISHED',
+            status: 'OPEN',
             settingsJson: { max_participants: 100, location: 'Campus Hall' },
         },
     })

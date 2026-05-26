@@ -11,6 +11,7 @@ import {
     fundraisingTransactionSchema,
     listFundraisingTransactionsSchema,
     listFundraisingDonationsSchema,
+    fundraisingDonationSchema,
     sepayWebhookSchema,
 } from './fundraising.validation'
 
@@ -321,6 +322,13 @@ fundraisingRouter.get(
     fundraisingController.listDonations
 )
 
+fundraisingRouter.get(
+    '/donations/:id',
+    isAuth,
+    validate(fundraisingDonationSchema),
+    fundraisingController.getDonation
+)
+
 /**
  * @openapi
  * /fundraising/transactions:
@@ -547,6 +555,17 @@ fundraisingRouter.patch(
  *         name: x-sepay-secret
  *         required: false
  *         schema: { type: string }
+ *         description: Legacy shared-secret header kept for backward compatibility
+ *       - in: header
+ *         name: x-sepay-signature
+ *         required: false
+ *         schema: { type: string }
+ *         description: SePay HMAC-SHA256 signature in the format `sha256={hex_hash}`
+ *       - in: header
+ *         name: x-sepay-timestamp
+ *         required: false
+ *         schema: { type: string }
+ *         description: Unix timestamp (seconds) used in the HMAC payload `{timestamp}.{raw_body}`
  *     requestBody:
  *       required: true
  *       content:

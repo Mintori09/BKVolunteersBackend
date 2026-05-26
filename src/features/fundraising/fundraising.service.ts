@@ -1,6 +1,8 @@
 import { HttpStatus } from 'src/common/constants'
 import { serializeId, serializePagination } from 'src/common/serializers'
 import { ApiError } from 'src/utils/ApiError'
+import crypto from 'crypto'
+import { generateVietQrUrl } from 'src/utils/qr-generator'
 import * as fundraisingRepository from './fundraising.repository'
 import {
     AttachFundraisingTransactionBody,
@@ -11,6 +13,7 @@ import {
     FundraisingModuleConfigBody,
     FundraisingTransactionListQuery,
     SepayWebhookBody,
+    SepayWebhookHeaders,
 } from './types'
 
 const serializeDonation = (donation: any) => {
@@ -22,10 +25,13 @@ const serializeDonation = (donation: any) => {
         student_id: serializeId(donation.studentId)!,
         donor_name: donation.donorName,
         amount: Number(donation.amount),
+        payment_code: donation.paymentCode ?? null,
+        payment_expires_at: donation.paymentExpiresAt ?? null,
         message: donation.message,
         evidence_url: donation.evidenceUrl,
         status: donation.status,
         matched_transaction_id: serializeId(donation.matchedTransactionId),
+        matched_at: donation.matchedAt ?? null,
         verified_by: serializeId(donation.verifiedBy),
         verified_at: donation.verifiedAt,
         reject_reason: donation.rejectReason,
@@ -65,6 +71,9 @@ const serializeTransaction = (transaction: any) => {
 
 const isFundraisingModuleType = (value: string | null | undefined) =>
     value === 'FUNDRAISING' || value === 'fundraising'
+
+const sepaySignaturePrefix = 'sha256='
+const sepayWebhookMaxSkewSeconds = 300
 
 type Principal = {
     accountType?: string
@@ -273,14 +282,45 @@ export const createDonation = async (
         evidenceUrl: body.evidence_url ?? null,
     })
 
+    // Generate payment_code and expires_at, persist to donation record
+    const paymentCode = `BKV-${String(donation.id)}`
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 60 minutes TTL
+
+    await fundraisingRepository.updateDonationPaymentInfo({
+        id: donation.id,
+        paymentCode,
+        paymentExpiresAt: expiresAt,
+    })
+
+    // Update in-memory donation object to satisfy callers/mocks without re-fetch
+    try {
+        // Some implementations return BigInt for id fields; keep original donation object
+        ;(donation as any).paymentCode = paymentCode
+        ;(donation as any).paymentExpiresAt = expiresAt
+    } catch (e) {
+        // ignore
+    }
+
+    const receiverName = String(config.receiver_name ?? '').trim() || ''
+    const bankName = String(config.bank_name ?? '').trim() || ''
+    const bankAccountNo = String(config.bank_account_no ?? '').trim() || ''
+
+    const vietqrUrl = bankName && bankAccountNo
+        ? generateVietQrUrl(bankName, bankAccountNo, receiverName, (donation as any).amount)
+        : null
+
     return {
         ...serializeDonation(donation),
         payment_instruction: {
-            receiver_name: String(config.receiver_name ?? '').trim() || null,
-            bank_name: String(config.bank_name ?? '').trim() || null,
-            bank_account_no: String(config.bank_account_no ?? '').trim() || null,
+            receiver_name: receiverName || null,
+            bank_name: bankName || null,
+            bank_account_no: bankAccountNo || null,
             amount: body.amount,
             currency: String(config.currency ?? 'VND'),
+            payment_code: paymentCode,
+            transfer_content: paymentCode,
+            expires_at: expiresAt,
+            vietqr_url: vietqrUrl,
         },
     }
 }
@@ -337,6 +377,51 @@ export const listDonations = async (
             totalPages: Math.max(1, Math.ceil(total / limit)),
         }
     )
+}
+
+export const getDonation = async (idRaw: string, payload?: Principal) => {
+    const donationId = BigInt(idRaw)
+    const donation = await fundraisingRepository.findDonationById(donationId)
+
+    if (!donation) {
+        throw new ApiError(HttpStatus.NOT_FOUND, 'Donation not found')
+    }
+
+    // Access control: student can only view own donation, operator must have scope
+    if (payload?.accountType === 'STUDENT' && payload.userId) {
+        if (BigInt(payload.userId) !== donation.studentId) {
+            throw new ApiError(HttpStatus.FORBIDDEN, 'Không có quyền xem donation này')
+        }
+    } else if (payload?.accountType === 'OPERATOR') {
+        const operator = requireOperator(payload)
+        assertOperatorScope(operator, donation.module?.campaign.organizationId)
+    } else {
+        throw new ApiError(HttpStatus.FORBIDDEN, 'Unauthorized')
+    }
+
+    const config = getFundraisingConfig(donation.module?.settingsJson)
+    const receiverName = String(config.receiver_name ?? '').trim() || ''
+    const bankName = String(config.bank_name ?? '').trim() || ''
+    const bankAccountNo = String(config.bank_account_no ?? '').trim() || ''
+
+    const vietqrUrl = bankName && bankAccountNo
+        ? generateVietQrUrl(bankName, bankAccountNo, receiverName, donation.amount)
+        : null
+
+    return {
+        ...serializeDonation(donation),
+        payment_instruction: {
+            receiver_name: receiverName || null,
+            bank_name: bankName || null,
+            bank_account_no: bankAccountNo || null,
+            amount: donation.amount,
+            currency: String(config.currency ?? 'VND'),
+            payment_code: donation.paymentCode ?? null,
+            transfer_content: donation.paymentCode ?? null,
+            expires_at: donation.paymentExpiresAt ?? null,
+            vietqr_url: vietqrUrl,
+        },
+    }
 }
 
 export const listTransactions = async (
@@ -611,48 +696,151 @@ export const rejectDonation = async (
     payload?: { accountType?: string; userId?: string }
 ) => decideDonation(idRaw, payload, 'REJECTED', body)
 
-export const handleSepayWebhook = async (body: SepayWebhookBody, headers: {
-    secret?: string
-}) => {
-    const configuredSecret = process.env.SEPAY_WEBHOOK_SECRET
-    if (configuredSecret && headers.secret !== configuredSecret) {
-        throw new ApiError(HttpStatus.FORBIDDEN, 'Invalid webhook secret')
+const verifySepayHmacSignature = (
+    configuredSecret: string,
+    headers: SepayWebhookHeaders
+) => {
+    if (!headers.signature || !headers.timestamp) {
+        throw new ApiError(
+            HttpStatus.FORBIDDEN,
+            'Missing SePay HMAC authentication headers'
+        )
     }
+
+    if (!headers.rawBody) {
+        throw new ApiError(
+            HttpStatus.BAD_REQUEST,
+            'Missing raw webhook body for SePay signature verification'
+        )
+    }
+
+    const timestamp = Number(headers.timestamp)
+    if (!Number.isInteger(timestamp) || timestamp <= 0) {
+        throw new ApiError(HttpStatus.BAD_REQUEST, 'Invalid SePay timestamp')
+    }
+
+    const nowInSeconds = Math.floor(Date.now() / 1000)
+    if (Math.abs(nowInSeconds - timestamp) > sepayWebhookMaxSkewSeconds) {
+        throw new ApiError(HttpStatus.UNAUTHORIZED, 'Expired SePay webhook request')
+    }
+
+    const expectedSignature = `${sepaySignaturePrefix}${crypto
+        .createHmac('sha256', configuredSecret)
+        .update(`${headers.timestamp}.${headers.rawBody}`)
+        .digest('hex')}`
+
+    const providedSignature = headers.signature.trim()
+    const providedBuffer = Buffer.from(providedSignature)
+    const expectedBuffer = Buffer.from(expectedSignature)
+
+    if (
+        providedBuffer.length !== expectedBuffer.length ||
+        !crypto.timingSafeEqual(providedBuffer, expectedBuffer)
+    ) {
+        throw new ApiError(HttpStatus.FORBIDDEN, 'Invalid SePay HMAC signature')
+    }
+}
+
+const verifySepayWebhookAuth = (
+    configuredSecret: string | undefined,
+    headers: SepayWebhookHeaders
+) => {
+    if (!configuredSecret) {
+        return
+    }
+
+    if (headers.signature || headers.timestamp) {
+        verifySepayHmacSignature(configuredSecret, headers)
+        return
+    }
+
+    if (headers.secret === configuredSecret) {
+        return
+    }
+
+    throw new ApiError(HttpStatus.FORBIDDEN, 'Invalid webhook secret')
+}
+
+export const handleSepayWebhook = async (
+    body: SepayWebhookBody,
+    headers: SepayWebhookHeaders
+) => {
+    const configuredSecret = process.env.SEPAY_WEBHOOK_SECRET
+    verifySepayWebhookAuth(configuredSecret, headers)
 
     const provider = 'SEPAY'
     const providerTransactionId = String(
-        body.transaction_id ?? body.id ?? body.gateway_transaction_id ?? ''
+        body.transaction_id ??
+            body.id ??
+            body.gateway_transaction_id ??
+            body.referenceCode ??
+            ''
     )
     if (!providerTransactionId) {
         throw new ApiError(HttpStatus.BAD_REQUEST, 'Missing provider_transaction_id')
     }
 
-    const amount = Number(body.amount ?? 0)
+    const amount = Number(body.amount ?? body.transferAmount ?? 0)
     const moduleId = body.module_id ? BigInt(body.module_id) : null
     const transaction = await fundraisingRepository.upsertPaymentTransaction({
         provider,
         providerTransactionId,
         amount,
-        content: body.content ? String(body.content) : null,
-        accountNo: body.account_number ? String(body.account_number) : null,
+        content: body.content
+            ? String(body.content)
+            : body.description
+              ? String(body.description)
+              : null,
+        accountNo: body.account_number
+            ? String(body.account_number)
+            : body.accountNumber
+              ? String(body.accountNumber)
+              : null,
         transactionTime: new Date(
-            body.transaction_time ?? body.created_at ?? Date.now()
+            body.transaction_time ??
+                body.created_at ??
+                body.transactionDate ??
+                Date.now()
         ),
         rawPayload: body,
         campaignId: body.campaign_id ? BigInt(body.campaign_id) : null,
         moduleId,
     })
 
-    const matchedDonation = moduleId
-        ? await fundraisingRepository.findPendingDonationMatch({ moduleId, amount })
-        : null
-    const updatedTransaction = await fundraisingRepository.updatePaymentTransactionMatch(
-        {
-            id: transaction.id,
-            matchStatus: matchedDonation ? 'MATCHED' : 'UNMATCHED',
-            matchedDonationId: matchedDonation?.id,
+    // Try to exact-match by payment_code in the transaction content first
+    let matchedDonation: any = null
+    const content = transaction.content ? String(transaction.content) : null
+    if (content) {
+        const codeMatch = content.match(/BKV-\d+/i)
+        if (codeMatch) {
+            const paymentCode = codeMatch[0]
+            const donationByCode = await fundraisingRepository.findDonationByPaymentCode(
+                paymentCode
+            )
+            if (
+                donationByCode &&
+                donationByCode.status === 'PENDING' &&
+                Number(donationByCode.amount) === amount &&
+                !donationByCode.matchedTransactionId
+            ) {
+                matchedDonation = donationByCode
+            }
         }
-    )
+    }
+
+    // Fallback: old-module based match by amount (existing logic)
+    if (!matchedDonation && moduleId) {
+        matchedDonation = await fundraisingRepository.findPendingDonationMatch({
+            moduleId,
+            amount,
+        })
+    }
+
+    const updatedTransaction = await fundraisingRepository.updatePaymentTransactionMatch({
+        id: transaction.id,
+        matchStatus: matchedDonation ? 'MATCHED' : 'UNMATCHED',
+        matchedDonationId: matchedDonation?.id,
+    })
 
     if (matchedDonation) {
         await fundraisingRepository.attachDonationMatch({

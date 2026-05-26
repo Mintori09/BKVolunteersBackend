@@ -106,4 +106,9 @@ describe('logoutSchema', () => {
         const result = schema.safeParse({})
         expect(result.success).toBe(true)
     })
+
+    it('should accept null refresh token and fallback to cookie flow', () => {
+        const result = schema.safeParse({ refresh_token: null })
+        expect(result.success).toBe(true)
+    })
 })

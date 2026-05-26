@@ -96,15 +96,26 @@ export const sepayWebhookSchema: RequestValidationSchema = {
     body: z
         .object({
             transaction_id: z.string().optional(),
-            id: z.string().optional(),
+            id: z.union([z.string(), z.number()]).optional(),
             gateway_transaction_id: z.string().optional(),
             amount: z.coerce.number().optional(),
+            transferAmount: z.coerce.number().optional(),
             content: z.string().optional(),
+            description: z.string().optional(),
             account_number: z.string().optional(),
+            accountNumber: z.string().optional(),
             transaction_time: z.string().optional(),
             created_at: z.string().optional(),
+            transactionDate: z.string().optional(),
+            referenceCode: z.string().optional(),
             module_id: z.string().regex(/^\d+$/).optional(),
             campaign_id: z.string().regex(/^\d+$/).optional(),
         })
         .passthrough(),
+}
+
+export const fundraisingDonationSchema: RequestValidationSchema = {
+    params: z.object({
+        id: z.string().regex(/^\d+$/),
+    }),
 }

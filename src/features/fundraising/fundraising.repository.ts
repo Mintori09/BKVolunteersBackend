@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client'
 import { prismaClient } from 'src/config'
+import { CreateDonationRecordInput } from './types'
 
 export const toJsonValue = (value: unknown) =>
     value === null || value === undefined
@@ -62,15 +63,33 @@ export const updateModuleConfig = async (args: {
     })
 }
 
-export const createDonation = async (args: {
-    campaignId: bigint
-    moduleId: bigint
-    studentId: bigint
-    donorName: string
-    amount: number
-    message: string | null
-    evidenceUrl: string | null
-}) => prismaClient.moneyDonation.create({ data: args })
+export const createDonation = async (args: CreateDonationRecordInput) =>
+    prismaClient.moneyDonation.create({
+        data: {
+            campaignId: args.campaignId,
+            moduleId: args.moduleId,
+            studentId: args.studentId,
+            donorName: args.donorName,
+            amount: args.amount,
+            paymentCode: args.paymentCode ?? null,
+            paymentExpiresAt: args.paymentExpiresAt ?? null,
+            message: args.message,
+            evidenceUrl: args.evidenceUrl,
+        },
+    })
+
+export const updateDonationPaymentInfo = async (args: {
+    id: bigint
+    paymentCode: string
+    paymentExpiresAt: Date
+}) =>
+    prismaClient.moneyDonation.update({
+        where: { id: args.id },
+        data: {
+            paymentCode: args.paymentCode,
+            paymentExpiresAt: args.paymentExpiresAt,
+        },
+    })
 
 export const findDonations = async (args: {
     page: number
@@ -92,6 +111,24 @@ export const findDonations = async (args: {
 export const findDonationById = async (id: bigint) =>
     prismaClient.moneyDonation.findUnique({
         where: { id },
+        include: {
+            module: {
+                select: {
+                    id: true,
+                    settingsJson: true,
+                    campaign: {
+                        select: {
+                            organizationId: true,
+                        },
+                    },
+                },
+            },
+        },
+    })
+
+export const findDonationByPaymentCode = async (paymentCode: string) =>
+    prismaClient.moneyDonation.findUnique({
+        where: { paymentCode },
         include: {
             module: {
                 select: {
@@ -293,6 +330,7 @@ export const attachDonationMatch = async (args: {
         where: { id: args.donationId },
         data: {
             matchedTransactionId: args.transactionId,
+            matchedAt: new Date(),
             status: 'MATCHED',
         },
     })
@@ -305,6 +343,7 @@ export const clearDonationMatch = async (args: {
         where: { id: args.donationId },
         data: {
             matchedTransactionId: null,
+            matchedAt: null,
             ...(args.status ? { status: args.status } : {}),
         },
     })

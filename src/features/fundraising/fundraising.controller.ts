@@ -14,6 +14,7 @@ import {
     FundraisingTransactionListQuery,
     FundraisingTransactionParams,
     SepayWebhookBody,
+    SepayWebhookHeaders,
 } from './types'
 import { HttpStatus } from 'src/common/constants'
 
@@ -66,6 +67,20 @@ export const createDonation = catchAsync(
             HttpStatus.CREATED
         )
     }
+
+    export const getDonation = catchAsync(
+        async (
+            req: TypedRequest<EmptyBody, EmptyQuery, FundraisingDonationParams>,
+            res: Response
+        ) => {
+            const result = await fundraisingService.getDonation(
+                req.params.id!,
+                req.payload
+            )
+
+            return ApiResponse.success(res, result)
+        }
+    )
 )
 
 export const listDonations = catchAsync(
@@ -173,12 +188,21 @@ export const handleSepayWebhook = catchAsync(
     ) => {
         const result = await fundraisingService.handleSepayWebhook(
             req.body as SepayWebhookBody,
-            {
+            ({
                 secret:
                     typeof req.headers['x-sepay-secret'] === 'string'
                         ? req.headers['x-sepay-secret']
                         : undefined,
-            }
+                signature:
+                    typeof req.headers['x-sepay-signature'] === 'string'
+                        ? req.headers['x-sepay-signature']
+                        : undefined,
+                timestamp:
+                    typeof req.headers['x-sepay-timestamp'] === 'string'
+                        ? req.headers['x-sepay-timestamp']
+                        : undefined,
+                rawBody: req.rawBody,
+            } satisfies SepayWebhookHeaders)
         )
         return ApiResponse.success(res, result)
     }

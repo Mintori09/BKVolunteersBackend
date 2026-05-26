@@ -62,16 +62,28 @@ export interface AttachFundraisingTransactionBody {
 
 export interface SepayWebhookBody {
     transaction_id?: string
-    id?: string
+    id?: string | number
     gateway_transaction_id?: string
     amount?: number
+    transferAmount?: number
     content?: string
+    description?: string
     account_number?: string
+    accountNumber?: string
     transaction_time?: string
     created_at?: string
+    transactionDate?: string
+    referenceCode?: string
     module_id?: string
     campaign_id?: string
     [key: string]: unknown
+}
+
+export interface SepayWebhookHeaders {
+    secret?: string
+    signature?: string
+    timestamp?: string
+    rawBody?: string
 }
 
 export interface FundraisingModuleOutput {
@@ -103,10 +115,13 @@ export interface FundraisingDonationOutput {
     student_id: number
     donor_name: string | null
     amount: number
+    payment_code: string | null
+    payment_expires_at: Date | null
     message: string | null
     evidence_url: string | null
     status: string
     matched_transaction_id: number | null
+    matched_at: Date | null
     verified_by: number | null
     verified_at: Date | null
     reject_reason: string | null
@@ -118,6 +133,10 @@ export interface FundraisingDonationOutput {
         bank_account_no: string | null
         amount: number
         currency: string
+        payment_code?: string | null
+        transfer_content?: string | null
+        expires_at?: Date | null
+        vietqr_url?: string | null
     }
 }
 
@@ -162,6 +181,18 @@ export interface FundraisingTransactionListOutput {
         total: number
         totalPages: number
     }
+}
+
+export interface CreateDonationRecordInput {
+    campaignId: bigint
+    moduleId: bigint
+    studentId: bigint
+    donorName: string
+    amount: number
+    paymentCode?: string | null
+    paymentExpiresAt?: Date | null
+    message: string | null
+    evidenceUrl: string | null
 }
 
 export interface SepayWebhookOutput {

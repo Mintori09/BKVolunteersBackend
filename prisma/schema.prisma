@@ -258,10 +258,13 @@ model MoneyDonation {
   studentId            BigInt               @map("student_id") @db.UnsignedBigInt
   donorName            String               @map("donor_name") @db.VarChar(255)
   amount               Decimal              @db.Decimal(15, 2)
+  paymentCode          String?              @unique @map("payment_code") @db.VarChar(120)
+  paymentExpiresAt     DateTime?            @map("payment_expires_at")
   message              String?              @db.VarChar(500)
   evidenceUrl          String?              @map("evidence_url") @db.VarChar(500)
   status               String               @default("PENDING") @db.VarChar(40)
   matchedTransactionId BigInt?              @unique @map("matched_transaction_id") @db.UnsignedBigInt
+  matchedAt            DateTime?            @map("matched_at")
   verifiedBy           BigInt?              @map("verified_by") @db.UnsignedBigInt
   verifiedAt           DateTime?            @map("verified_at")
   rejectReason         String?              @map("reject_reason") @db.VarChar(500)

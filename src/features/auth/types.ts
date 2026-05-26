@@ -15,7 +15,7 @@ export interface RefreshInput {
 }
 
 export interface LogoutInput {
-    refresh_token: string
+    refresh_token?: string | null
 }
 
 export interface ChangePasswordInput {
