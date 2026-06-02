@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client'
 export const seedCampaigns = async (prisma: PrismaClient) => {
     const org = await prisma.organization.findUnique({ where: { code: 'BKV-IT' } })
     const operator = await prisma.operatorAccount.findUnique({
-        where: { email: 'club@bkvolunteers.local' },
+        where: { email: 'clb.cntt@dut.udn.vn' },
     })
     const student = await prisma.student.findUnique({
         where: { studentCode: '102210001' },

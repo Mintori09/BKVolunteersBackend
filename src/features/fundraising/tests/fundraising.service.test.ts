@@ -1,12 +1,21 @@
 import { HttpStatus } from 'src/common/constants'
 import * as fundraisingRepository from '../fundraising.repository'
 import * as fundraisingService from '../fundraising.service'
+import * as sepayClient from '../sepay.client'
 import crypto from 'crypto'
 
 jest.mock('src/config', () => ({
     prismaClient: {},
     config: {
         node_env: 'test',
+        sepay: {
+            apiEnabled: true,
+            apiToken: 'test-token',
+            apiMode: 'sandbox',
+            apiBaseUrl: 'https://userapi-sandbox.sepay.vn/v2',
+            vaEnabled: true,
+            orderVaEnabled: true,
+        },
         email: {
             smtp: {
                 host: 'localhost',
@@ -21,11 +30,14 @@ jest.mock('src/config', () => ({
 }))
 
 jest.mock('../fundraising.repository')
+jest.mock('../sepay.client')
 
 describe('fundraising.service', () => {
     beforeEach(() => {
         jest.clearAllMocks()
         delete process.env.SEPAY_WEBHOOK_SECRET
+        process.env.SEPAY_API_ENABLED = 'true'
+        process.env.SEPAY_API_TOKEN = 'test-token'
     })
 
     describe('createDonation', () => {
@@ -77,6 +89,9 @@ describe('fundraising.service', () => {
                 createdAt: new Date('2025-01-01T00:00:00.000Z'),
                 updatedAt: new Date('2025-01-01T00:00:00.000Z'),
             })
+            ;(fundraisingRepository.updateDonationPaymentInfo as jest.Mock).mockResolvedValue(
+                {}
+            )
 
             const result = await fundraisingService.createDonation(
                 '11',
@@ -90,21 +105,38 @@ describe('fundraising.service', () => {
                 studentId: 42n,
                 donorName: 'Sinh viên ẩn danh',
                 amount: 100000,
+                paymentMode: 'TRANSFER_CODE',
+                sepayBankAccountRefId: null,
                 message: null,
                 evidenceUrl: null,
             })
+            expect(
+                fundraisingRepository.updateDonationPaymentInfo
+            ).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    id: 51n,
+                    paymentCode: 'BKV-51',
+                    paymentExpiresAt: expect.any(Date),
+                })
+            )
             expect(result).toMatchObject({
                 id: 51,
                 status: 'PENDING',
                 student_id: 42,
+                payment_code: 'BKV-51',
                 payment_instruction: {
                     receiver_name: 'CLB ITV',
                     bank_name: 'VCB',
                     bank_account_no: '123456',
                     amount: 100000,
                     currency: 'VND',
+                    payment_code: 'BKV-51',
+                    transfer_content: 'BKV-51',
+                    vietqr_url:
+                        'https://img.vietqr.io/image/VCB-123456-compact.png?accountName=CLB%20ITV&amount=100000',
                 },
             })
+            expect(result.payment_instruction?.expires_at).toBeInstanceOf(Date)
         })
 
         it('should accept lowercase fundraising module type from seeded fixtures', async () => {
@@ -143,6 +175,9 @@ describe('fundraising.service', () => {
                 createdAt: new Date('2025-01-01T00:00:00.000Z'),
                 updatedAt: new Date('2025-01-01T00:00:00.000Z'),
             })
+            ;(fundraisingRepository.updateDonationPaymentInfo as jest.Mock).mockResolvedValue(
+                {}
+            )
 
             const result = await fundraisingService.createDonation(
                 '11',
@@ -153,8 +188,11 @@ describe('fundraising.service', () => {
             expect(result).toMatchObject({
                 id: 52,
                 status: 'PENDING',
+                payment_code: 'BKV-52',
                 payment_instruction: {
                     receiver_name: 'CLB ITV',
+                    payment_code: 'BKV-52',
+                    transfer_content: 'BKV-52',
                 },
             })
         })
@@ -184,6 +222,113 @@ describe('fundraising.service', () => {
                 statusCode: HttpStatus.CONFLICT,
             })
         })
+
+        it('should create order-based VA donation when module config enables ORDER_VA', async () => {
+            ;(fundraisingRepository.findModuleBaseById as jest.Mock).mockResolvedValue({
+                id: 11n,
+                campaignId: 7n,
+                type: 'FUNDRAISING',
+                status: 'OPEN',
+                startAt: new Date('2025-01-01T00:00:00.000Z'),
+                endAt: new Date('2027-01-01T00:00:00.000Z'),
+                settingsJson: {
+                    receiver_name: 'CLB ITV',
+                    bank_name: 'BIDV',
+                    bank_account_no: '0000000001',
+                    currency: 'VND',
+                    sepay_enabled: true,
+                    sepay_mode: 'ORDER_VA',
+                    sepay_bank_account_id: 'acc_1',
+                },
+                campaign: {
+                    status: 'ONGOING',
+                    organizationId: 5n,
+                },
+            })
+            ;(
+                fundraisingRepository.findSepayBankAccountBySepayId as jest.Mock
+            ).mockResolvedValue({
+                id: 901n,
+                sepayAccountId: 'acc_1',
+                bankShortName: 'BIDV',
+            })
+            ;(fundraisingRepository.createDonation as jest.Mock).mockResolvedValue({
+                id: 53n,
+                campaignId: 7n,
+                moduleId: 11n,
+                studentId: 42n,
+                donorName: 'Sinh viên ẩn danh',
+                amount: 100000,
+                status: 'PENDING',
+                matchedTransactionId: null,
+                verifiedBy: null,
+                verifiedAt: null,
+                rejectReason: null,
+                createdAt: new Date('2025-01-01T00:00:00.000Z'),
+                updatedAt: new Date('2025-01-01T00:00:00.000Z'),
+            })
+            ;(fundraisingRepository.updateDonationPaymentInfo as jest.Mock).mockResolvedValue(
+                {}
+            )
+            ;(sepayClient.createOrder as jest.Mock).mockResolvedValue({
+                data: {
+                    id: 'ord_1',
+                    order_code: 'BKV-53',
+                    amount: 100000,
+                    paid_amount: 0,
+                    status: 'Pending',
+                },
+            })
+            ;(sepayClient.createOrderVirtualAccount as jest.Mock).mockResolvedValue({
+                data: {
+                    id: 'va_1',
+                    va_number: '990000053',
+                    va_holder_name: 'Sinh viên ẩn danh',
+                    expired_at: '2026-05-26T18:00:00.000Z',
+                },
+            })
+            ;(fundraisingRepository.upsertSepayOrderPayment as jest.Mock)
+                .mockResolvedValueOnce({
+                    sepayOrderId: 'ord_1',
+                    orderCode: 'BKV-53',
+                    amount: 100000,
+                    paidAmount: 0,
+                    status: 'PENDING',
+                    vaPrefix: null,
+                    expiresAt: new Date('2026-05-26T18:00:00.000Z'),
+                    payloadJson: {},
+                })
+                .mockResolvedValueOnce({
+                    sepayOrderId: 'ord_1',
+                    orderCode: 'BKV-53',
+                    status: 'PENDING',
+                    providerQrUrl:
+                        'https://img.vietqr.io/image/BIDV-990000053-compact.png?accountName=Sinh%20vi%C3%AAn%20%E1%BA%A9n%20danh&amount=100000',
+                })
+            ;(fundraisingRepository.upsertSepayVirtualAccount as jest.Mock).mockResolvedValue({
+                id: 801n,
+                sepayVaId: 'va_1',
+                vaNumber: '990000053',
+                subHolderName: 'Sinh viên ẩn danh',
+            })
+
+            const result = await fundraisingService.createDonation(
+                '11',
+                { amount: 100000 },
+                { accountType: 'STUDENT', userId: '42' }
+            )
+
+            expect(sepayClient.createOrder).toHaveBeenCalled()
+            expect(result).toMatchObject({
+                payment_mode: 'ORDER_VA',
+                payment_instruction: {
+                    sepay_order_id: 'ord_1',
+                    virtual_account: {
+                        va_number: '990000053',
+                    },
+                },
+            })
+        })
     })
 
     describe('updateModuleConfig', () => {
@@ -206,6 +351,7 @@ describe('fundraising.service', () => {
                     currency: 'VND',
                     sepay_enabled: true,
                     sepay_account_id: 'sp-01',
+                    sepay_bank_account_id: 'acc_1',
                 },
                 status: 'OPEN',
             })
@@ -220,6 +366,7 @@ describe('fundraising.service', () => {
                     currency: 'VND',
                     sepay_enabled: true,
                     sepay_account_id: 'sp-01',
+                    sepay_bank_account_id: 'acc_1',
                     status: 'OPEN',
                 },
                 {
@@ -240,6 +387,7 @@ describe('fundraising.service', () => {
                     currency: 'VND',
                     sepay_enabled: true,
                     sepay_account_id: 'sp-01',
+                    sepay_bank_account_id: 'acc_1',
                 },
                 status: 'OPEN',
             })
@@ -253,6 +401,7 @@ describe('fundraising.service', () => {
                     currency: 'VND',
                     sepay_enabled: true,
                     sepay_account_id: 'sp-01',
+                    sepay_bank_account_id: 'acc_1',
                 },
                 status: 'OPEN',
             })
@@ -876,12 +1025,20 @@ describe('fundraising.service', () => {
             })
         })
 
-        it('should mark donation as matched when webhook finds pending donation', async () => {
+        it('should exact-match donation by payment code and backfill transaction context', async () => {
             ;(fundraisingRepository.upsertPaymentTransaction as jest.Mock).mockResolvedValue({
                 id: 88n,
+                content: 'Nap tien BKV-51',
             })
-            ;(fundraisingRepository.findPendingDonationMatch as jest.Mock).mockResolvedValue({
+            ;(
+                fundraisingRepository.findDonationByPaymentCode as jest.Mock
+            ).mockResolvedValue({
                 id: 51n,
+                campaignId: 7n,
+                moduleId: 11n,
+                amount: 1000,
+                status: 'PENDING',
+                matchedTransactionId: null,
             })
             ;(
                 fundraisingRepository.updatePaymentTransactionMatch as jest.Mock
@@ -889,6 +1046,8 @@ describe('fundraising.service', () => {
                 id: 88n,
                 matchStatus: 'MATCHED',
                 matchedDonationId: 51n,
+                campaignId: 7n,
+                moduleId: 11n,
             })
             ;(fundraisingRepository.attachDonationMatch as jest.Mock).mockResolvedValue({})
 
@@ -896,12 +1055,26 @@ describe('fundraising.service', () => {
                 {
                     transaction_id: 'tx_1',
                     amount: 1000,
-                    module_id: '11',
-                    campaign_id: '7',
+                    content: 'Nap tien BKV-51',
                 },
                 {}
             )
 
+            expect(
+                fundraisingRepository.findDonationByPaymentCode
+            ).toHaveBeenCalledWith('BKV-51')
+            expect(
+                fundraisingRepository.findPendingDonationMatch
+            ).not.toHaveBeenCalled()
+            expect(
+                fundraisingRepository.updatePaymentTransactionMatch
+            ).toHaveBeenCalledWith({
+                id: 88n,
+                matchStatus: 'MATCHED',
+                matchedDonationId: 51n,
+                campaignId: 7n,
+                moduleId: 11n,
+            })
             expect(fundraisingRepository.attachDonationMatch).toHaveBeenCalledWith({
                 donationId: 51n,
                 transactionId: 88n,
@@ -914,9 +1087,186 @@ describe('fundraising.service', () => {
                 raw_payload: {
                     transaction_id: 'tx_1',
                     amount: 1000,
-                    module_id: '11',
-                    campaign_id: '7',
+                    content: 'Nap tien BKV-51',
                 },
+            })
+        })
+
+        it('should exact-match donation by SePay order code before payment code parsing', async () => {
+            ;(fundraisingRepository.upsertPaymentTransaction as jest.Mock).mockResolvedValue({
+                id: 90n,
+                content: 'khong can parse',
+                sepayOrderCode: 'BKV-ORDER-01',
+                sepayVaId: null,
+            })
+            ;(
+                fundraisingRepository.findSepayOrderPaymentByOrderCode as jest.Mock
+            ).mockResolvedValue({
+                donation: {
+                    id: 61n,
+                    campaignId: 7n,
+                    moduleId: 11n,
+                    amount: 1000,
+                    status: 'PENDING',
+                    matchedTransactionId: null,
+                },
+            })
+            ;(
+                fundraisingRepository.updatePaymentTransactionMatch as jest.Mock
+            ).mockResolvedValue({
+                id: 90n,
+                matchStatus: 'MATCHED',
+                matchedDonationId: 61n,
+            })
+            ;(fundraisingRepository.attachDonationMatch as jest.Mock).mockResolvedValue({})
+
+            const result = await fundraisingService.handleSepayWebhook(
+                {
+                    transaction_id: 'tx_order_1',
+                    amount: 1000,
+                    code: 'BKV-ORDER-01',
+                },
+                {}
+            )
+
+            expect(
+                fundraisingRepository.findSepayOrderPaymentByOrderCode
+            ).toHaveBeenCalledWith('BKV-ORDER-01')
+            expect(result).toMatchObject({
+                match_status: 'MATCHED',
+                matched_donation_id: 61,
+            })
+        })
+    })
+
+    describe('SePay API v2 sync', () => {
+        it('should scope list sepay accounts by organization for LCD', async () => {
+            ;(fundraisingRepository.findScopedSepayBankAccounts as jest.Mock).mockResolvedValue(
+                []
+            )
+
+            await fundraisingService.listSepayAccounts(
+                {},
+                {
+                    accountType: 'OPERATOR',
+                    userId: '2',
+                    role: 'LCD',
+                    organizationId: '4',
+                }
+            )
+
+            expect(
+                fundraisingRepository.findScopedSepayBankAccounts
+            ).toHaveBeenCalledWith({
+                organizationId: 4n,
+                where: {},
+            })
+            expect(fundraisingRepository.findSepayBankAccounts).not.toHaveBeenCalled()
+        })
+
+        it('should reject non-school-admin sync accounts', async () => {
+            await expect(
+                fundraisingService.syncSepayAccounts(
+                    {},
+                    {
+                        accountType: 'OPERATOR',
+                        userId: '2',
+                        role: 'CLB',
+                        organizationId: '4',
+                    }
+                )
+            ).rejects.toMatchObject({
+                statusCode: HttpStatus.FORBIDDEN,
+            })
+        })
+
+        it('should sync bank accounts from SePay API v2', async () => {
+            ;(sepayClient.listBankAccounts as jest.Mock).mockResolvedValue({
+                data: [
+                    {
+                        id: 'acc_1',
+                        account_holder_name: 'DOAN THANH NIEN',
+                        account_number: '0000000001',
+                        accumulated: 100000,
+                        active: 1,
+                        bank_short_name: 'BIDV',
+                    },
+                ],
+            })
+            ;(fundraisingRepository.upsertSepayBankAccount as jest.Mock).mockResolvedValue({
+                id: 1n,
+                sepayAccountId: 'acc_1',
+                accountHolderName: 'DOAN THANH NIEN',
+                accountNumber: '0000000001',
+                accumulated: 100000,
+                lastTransaction: null,
+                label: null,
+                active: true,
+                bankShortName: 'BIDV',
+                bankFullName: null,
+                bankCode: null,
+                apiMode: 'sandbox',
+                metadataJson: null,
+                createdAt: new Date('2026-05-26T00:00:00.000Z'),
+                updatedAt: new Date('2026-05-26T00:00:00.000Z'),
+            })
+            ;(fundraisingRepository.upsertSepaySyncCursor as jest.Mock).mockResolvedValue({})
+
+            const result = await fundraisingService.syncSepayAccounts(
+                {},
+                {
+                    accountType: 'OPERATOR',
+                    userId: '1',
+                    role: 'DOANTRUONG',
+                }
+            )
+
+            expect(sepayClient.listBankAccounts).toHaveBeenCalled()
+            expect(result).toMatchObject({
+                synced_count: 1,
+                failed_count: 0,
+            })
+        })
+
+        it('should create sepay operation request for CLB', async () => {
+            ;(fundraisingRepository.createSepayOperationRequest as jest.Mock).mockResolvedValue({
+                id: 77n,
+                organizationId: 4n,
+                requesterId: 2n,
+                requesterRole: 'CLB',
+                requestType: 'MAP_ACCOUNT',
+                status: 'PENDING',
+                sepayBankAccount: null,
+                campaignId: null,
+                moduleId: 11n,
+                donationId: null,
+                note: 'test',
+                decisionNote: null,
+                decidedBy: null,
+                decidedAt: null,
+                createdAt: new Date('2026-05-27T00:00:00.000Z'),
+                updatedAt: new Date('2026-05-27T00:00:00.000Z'),
+            })
+
+            const result = await fundraisingService.createSepayOperationRequest(
+                {
+                    request_type: 'MAP_ACCOUNT',
+                    module_id: '11',
+                    note: 'test',
+                },
+                {
+                    accountType: 'OPERATOR',
+                    userId: '2',
+                    role: 'CLB',
+                    organizationId: '4',
+                }
+            )
+
+            expect(result).toMatchObject({
+                id: 77,
+                request_type: 'MAP_ACCOUNT',
+                status: 'PENDING',
+                organization_id: 4,
             })
         })
     })

@@ -46,3 +46,6 @@ export const findBackgroundJobs = async (args: {
         }),
     ])
 }
+
+export const findBackgroundJobById = async (id: bigint) =>
+    prismaClient.backgroundJob.findUnique({ where: { id } })

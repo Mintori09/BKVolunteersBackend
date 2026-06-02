@@ -212,7 +212,7 @@ export const getMyProfile = async (
                       description: student.currentTitle.description,
                       minPoints: student.currentTitle.minPoints,
                       iconUrl: student.currentTitle.iconUrl,
-                      badgeColor: null,
+                      badgeColor: student.currentTitle.badgeColor,
                       unlockedAt: null,
                   },
               ]
@@ -254,7 +254,7 @@ export const getMyTitles = async (
             description: student.currentTitle.description,
             minPoints: student.currentTitle.minPoints,
             iconUrl: student.currentTitle.iconUrl,
-            badgeColor: null,
+            badgeColor: student.currentTitle.badgeColor,
             unlockedAt: null,
         },
     ]
@@ -397,6 +397,7 @@ export const getStudentById = async (studentId: string) => {
                       name: student.currentTitle.name,
                       minPoints: student.currentTitle.minPoints,
                       iconUrl: student.currentTitle.iconUrl,
+                      badgeColor: student.currentTitle.badgeColor,
                       unlockedAt: null,
                   },
               ]

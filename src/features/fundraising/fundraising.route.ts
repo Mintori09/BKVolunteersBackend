@@ -13,6 +13,13 @@ import {
     listFundraisingDonationsSchema,
     fundraisingDonationSchema,
     sepayWebhookSchema,
+    sepayAccountListSchema,
+    sepaySyncTransactionsSchema,
+    sepaySyncVirtualAccountsSchema,
+    sepayCreateOrderVaSchema,
+    sepayOperationRequestSchema,
+    sepayOperationRequestListSchema,
+    sepayOperationRequestDecisionSchema,
 } from './fundraising.validation'
 
 const fundraisingRouter = Router()
@@ -54,6 +61,9 @@ const fundraisingRouter = Router()
  *         currency: { type: string, example: "VND" }
  *         sepay_enabled: { type: boolean, example: true }
  *         sepay_account_id: { type: string, nullable: true, example: "sp-01" }
+ *         sepay_bank_account_id: { type: string, nullable: true, example: "acc_demo_bidv_1" }
+ *         sepay_mode: { type: string, enum: [TRANSFER_CODE, ORDER_VA], example: ORDER_VA }
+ *         sepay_va_prefix: { type: string, nullable: true, example: BKVVA }
  *         status: { type: string, example: ACTIVE }
  *     FundraisingModuleConfigOutput:
  *       type: object
@@ -78,15 +88,53 @@ const fundraisingRouter = Router()
  *         student_id: { type: integer, example: 42 }
  *         donor_name: { type: string, nullable: true }
  *         amount: { type: number, example: 100000 }
+ *         payment_code: { type: string, nullable: true, example: BKV-501 }
+ *         payment_mode: { type: string, example: TRANSFER_CODE }
+ *         payment_expires_at: { type: string, format: date-time, nullable: true }
  *         message: { type: string, nullable: true }
  *         evidence_url: { type: string, nullable: true }
  *         status: { type: string, example: PENDING }
  *         matched_transaction_id: { type: integer, nullable: true }
+ *         matched_at: { type: string, format: date-time, nullable: true }
+ *         sepay_bank_account_id: { type: string, nullable: true }
  *         verified_by: { type: integer, nullable: true }
  *         verified_at: { type: string, format: date-time, nullable: true }
  *         reject_reason: { type: string, nullable: true }
  *         created_at: { type: string, format: date-time }
  *         updated_at: { type: string, format: date-time }
+ *         ingest_state: { type: string, nullable: true, example: matched_pending_verification }
+ *         provider_references:
+ *           type: object
+ *           nullable: true
+ *           properties:
+ *             sepay_order_id: { type: string, nullable: true }
+ *             sepay_bank_account_id: { type: string, nullable: true }
+ *             sepay_virtual_account_id: { type: string, nullable: true }
+ *         payment_instruction:
+ *           type: object
+ *           nullable: true
+ *           properties:
+ *             receiver_name: { type: string, nullable: true }
+ *             bank_name: { type: string, nullable: true }
+ *             bank_account_no: { type: string, nullable: true }
+ *             amount: { type: number, example: 100000 }
+ *             currency: { type: string, example: VND }
+ *             payment_code: { type: string, nullable: true, example: BKV-501 }
+ *             transfer_content: { type: string, nullable: true, example: BKV-501 }
+ *             expires_at: { type: string, format: date-time, nullable: true }
+ *             vietqr_url: { type: string, nullable: true, example: "https://img.vietqr.io/..." }
+ *             sepay_order_id: { type: string, nullable: true, example: order_0001 }
+ *             virtual_account:
+ *               type: object
+ *               nullable: true
+ *               properties:
+ *                 id: { type: string, nullable: true, example: va_0001 }
+ *                 va_number: { type: string, example: BKVVA1000000002 }
+ *                 holder_name: { type: string, nullable: true, example: Nguyen Van A }
+ *                 amount: { type: number, example: 100000 }
+ *                 expires_at: { type: string, format: date-time, nullable: true }
+ *                 status: { type: string, nullable: true, example: ACTIVE }
+ *             provider_qr_url: { type: string, nullable: true, example: "https://img.vietqr.io/..." }
  *     FundraisingDonationListOutput:
  *       type: object
  *       properties:
@@ -114,6 +162,12 @@ const fundraisingRouter = Router()
  *         content: { type: string, nullable: true }
  *         account_no: { type: string, nullable: true }
  *         transaction_time: { type: string, format: date-time }
+ *         ingest_source: { type: string, example: API_PULL }
+ *         sepay_account_id: { type: string, nullable: true }
+ *         sepay_va_id: { type: string, nullable: true }
+ *         sepay_order_code: { type: string, nullable: true }
+ *         reference_number: { type: string, nullable: true }
+ *         webhook_success: { type: boolean, nullable: true }
  *         match_status: { type: string, example: MATCHED }
  *         matched_donation_id: { type: integer, nullable: true, example: 501 }
  *         created_at: { type: string, format: date-time }
@@ -145,13 +199,21 @@ const fundraisingRouter = Router()
  *       type: object
  *       properties:
  *         transaction_id: { type: string, example: tx_001 }
- *         id: { type: string, example: tx_001 }
+ *         id:
+ *           oneOf:
+ *             - { type: string, example: tx_001 }
+ *             - { type: integer, example: 4159 }
  *         gateway_transaction_id: { type: string, example: bank_001 }
  *         amount: { type: number, example: 100000 }
+ *         transferAmount: { type: number, example: 100000 }
  *         content: { type: string, example: ung ho module 11 }
+ *         description: { type: string, example: ung ho BKV-501 }
  *         account_number: { type: string, example: '9704xxxx' }
+ *         accountNumber: { type: string, example: '0000000001' }
  *         transaction_time: { type: string, format: date-time }
  *         created_at: { type: string, format: date-time }
+ *         transactionDate: { type: string, format: date-time }
+ *         referenceCode: { type: string, example: SB9C79C3AABC1D }
  *         module_id: { type: string, example: '11' }
  *         campaign_id: { type: string, example: '7' }
  *     SepayWebhookOutput:
@@ -320,6 +382,13 @@ fundraisingRouter.get(
     isAuth,
     validate(listFundraisingDonationsSchema),
     fundraisingController.listDonations
+)
+
+fundraisingRouter.get(
+    '/modules/:moduleId/donations/export',
+    isAuth,
+    validate(fundraisingModuleSchema),
+    fundraisingController.exportDonations
 )
 
 fundraisingRouter.get(
@@ -542,6 +611,81 @@ fundraisingRouter.patch(
     isAuth,
     validate(fundraisingTransactionSchema),
     fundraisingController.unmatchTransaction
+)
+
+fundraisingRouter.get(
+    '/sepay/accounts',
+    isAuth,
+    validate(sepayAccountListSchema),
+    fundraisingController.listSepayAccounts
+)
+
+fundraisingRouter.post(
+    '/sepay/accounts/sync',
+    isAuth,
+    validate(sepayAccountListSchema),
+    fundraisingController.syncSepayAccounts
+)
+
+fundraisingRouter.get(
+    '/sepay/sync-status',
+    isAuth,
+    fundraisingController.getSepaySyncStatus
+)
+
+fundraisingRouter.post(
+    '/sepay/transactions/sync',
+    isAuth,
+    validate(sepaySyncTransactionsSchema),
+    fundraisingController.syncSepayTransactions
+)
+
+fundraisingRouter.get(
+    '/sepay/transactions/unmatched',
+    isAuth,
+    fundraisingController.listSepayUnmatchedTransactions
+)
+
+fundraisingRouter.post(
+    '/sepay/virtual-accounts/sync',
+    isAuth,
+    validate(sepaySyncVirtualAccountsSchema),
+    fundraisingController.syncSepayVirtualAccounts
+)
+
+fundraisingRouter.post(
+    '/sepay/order-va/create',
+    isAuth,
+    validate(sepayCreateOrderVaSchema),
+    fundraisingController.createSepayOrderVa
+)
+
+fundraisingRouter.get(
+    '/sepay/requests',
+    isAuth,
+    validate(sepayOperationRequestListSchema),
+    fundraisingController.listSepayOperationRequests
+)
+
+fundraisingRouter.post(
+    '/sepay/requests',
+    isAuth,
+    validate(sepayOperationRequestSchema),
+    fundraisingController.createSepayOperationRequest
+)
+
+fundraisingRouter.post(
+    '/sepay/requests/:id/approve',
+    isAuth,
+    validate(sepayOperationRequestDecisionSchema),
+    fundraisingController.approveSepayOperationRequest
+)
+
+fundraisingRouter.post(
+    '/sepay/requests/:id/reject',
+    isAuth,
+    validate(sepayOperationRequestDecisionSchema),
+    fundraisingController.rejectSepayOperationRequest
 )
 
 /**

@@ -6,6 +6,7 @@ export interface CreateTitleInput {
     description?: string
     minPoints: number
     iconUrl?: string
+    badgeColor?: string
 }
 
 export interface UpdateTitleInput {
@@ -13,11 +14,14 @@ export interface UpdateTitleInput {
     description?: string
     minPoints?: number
     iconUrl?: string
+    badgeColor?: string
+    isActive?: boolean
 }
 
 export interface TitleFilter {
     page?: number
     limit?: number
+    isActive?: boolean
 }
 
 export interface TitleDetail extends Title {}

@@ -1,5 +1,5 @@
 import { Response } from 'express'
-import { EmptyBody, EmptyQuery, TypedRequest } from 'src/types/request'
+import { EmptyBody, EmptyParams, EmptyQuery, TypedRequest } from 'src/types/request'
 import { ApiResponse } from 'src/utils/ApiResponse'
 import { catchAsync } from 'src/utils/catchAsync'
 import * as fundraisingService from './fundraising.service'
@@ -13,6 +13,13 @@ import {
     FundraisingModuleParams,
     FundraisingTransactionListQuery,
     FundraisingTransactionParams,
+    SepayApiSyncAccountsQuery,
+    SepayApiSyncTransactionsBody,
+    SepayApiSyncVirtualAccountsBody,
+    SepayCreateOrderVaBody,
+    SepayOperationRequestBody,
+    SepayOperationRequestDecisionBody,
+    SepayOperationRequestQuery,
     SepayWebhookBody,
     SepayWebhookHeaders,
 } from './types'
@@ -67,20 +74,20 @@ export const createDonation = catchAsync(
             HttpStatus.CREATED
         )
     }
+)
 
-    export const getDonation = catchAsync(
-        async (
-            req: TypedRequest<EmptyBody, EmptyQuery, FundraisingDonationParams>,
-            res: Response
-        ) => {
-            const result = await fundraisingService.getDonation(
-                req.params.id!,
-                req.payload
-            )
+export const getDonation = catchAsync(
+    async (
+        req: TypedRequest<EmptyBody, EmptyQuery, FundraisingDonationParams>,
+        res: Response
+    ) => {
+        const result = await fundraisingService.getDonation(
+            req.params.id!,
+            req.payload
+        )
 
-            return ApiResponse.success(res, result)
-        }
-    )
+        return ApiResponse.success(res, result)
+    }
 )
 
 export const listDonations = catchAsync(
@@ -98,6 +105,28 @@ export const listDonations = catchAsync(
             req.payload
         )
         return ApiResponse.success(res, result)
+    }
+)
+
+export const exportDonations = catchAsync(
+    async (
+        req: TypedRequest<
+            EmptyBody,
+            EmptyQuery,
+            FundraisingModuleParams
+        >,
+        res: Response
+    ) => {
+        const csvData = await fundraisingService.exportDonationsAsCsv(
+            req.params.moduleId!,
+            req.payload
+        )
+        
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+        res.setHeader('Content-Disposition', `attachment; filename="donations_${req.params.moduleId}.csv"`)
+        
+        // Add BOM for Excel UTF-8 support
+        res.send('\uFEFF' + csvData)
     }
 )
 
@@ -205,5 +234,151 @@ export const handleSepayWebhook = catchAsync(
             } satisfies SepayWebhookHeaders)
         )
         return ApiResponse.success(res, result)
+    }
+)
+
+export const listSepayAccounts = catchAsync(
+    async (
+        req: TypedRequest<EmptyBody, SepayApiSyncAccountsQuery, EmptyParams>,
+        res: Response
+    ) => {
+        const result = await fundraisingService.listSepayAccounts(
+            req.query,
+            req.payload
+        )
+        return ApiResponse.success(res, result)
+    }
+)
+
+export const syncSepayAccounts = catchAsync(
+    async (
+        req: TypedRequest<EmptyBody, SepayApiSyncAccountsQuery, EmptyParams>,
+        res: Response
+    ) => {
+        const result = await fundraisingService.syncSepayAccounts(
+            req.query,
+            req.payload
+        )
+        return ApiResponse.success(res, result)
+    }
+)
+
+export const getSepaySyncStatus = catchAsync(async (req, res: Response) => {
+    const result = await fundraisingService.getSepaySyncStatus(req.payload)
+    return ApiResponse.success(res, result)
+})
+
+export const syncSepayTransactions = catchAsync(
+    async (
+        req: TypedRequest<SepayApiSyncTransactionsBody>,
+        res: Response
+    ) => {
+        const result = await fundraisingService.syncSepayTransactions(
+            req.body as SepayApiSyncTransactionsBody,
+            req.payload
+        )
+        return ApiResponse.success(res, result)
+    }
+)
+
+export const listSepayUnmatchedTransactions = catchAsync(
+    async (req, res: Response) => {
+        const result = await fundraisingService.listSepayUnmatchedTransactions(
+            req.payload
+        )
+        return ApiResponse.success(res, result)
+    }
+)
+
+export const syncSepayVirtualAccounts = catchAsync(
+    async (
+        req: TypedRequest<SepayApiSyncVirtualAccountsBody>,
+        res: Response
+    ) => {
+        const result = await fundraisingService.syncSepayVirtualAccounts(
+            req.body as SepayApiSyncVirtualAccountsBody,
+            req.payload
+        )
+        return ApiResponse.success(res, result)
+    }
+)
+
+export const createSepayOrderVa = catchAsync(
+    async (
+        req: TypedRequest<SepayCreateOrderVaBody>,
+        res: Response
+    ) => {
+        const result = await fundraisingService.createOrderVaForDonation(
+            req.body as SepayCreateOrderVaBody,
+            req.payload
+        )
+        return ApiResponse.success(res, result, 'Tạo SePay order/VA thành công')
+    }
+)
+
+export const createSepayOperationRequest = catchAsync(
+    async (
+        req: TypedRequest<SepayOperationRequestBody>,
+        res: Response
+    ) => {
+        const result = await fundraisingService.createSepayOperationRequest(
+            req.body as SepayOperationRequestBody,
+            req.payload
+        )
+        return ApiResponse.success(
+            res,
+            result,
+            'Đã tạo SePay request',
+            HttpStatus.CREATED
+        )
+    }
+)
+
+export const listSepayOperationRequests = catchAsync(
+    async (
+        req: TypedRequest<EmptyBody, SepayOperationRequestQuery>,
+        res: Response
+    ) => {
+        const result = await fundraisingService.listSepayOperationRequests(
+            req.query,
+            req.payload
+        )
+        return ApiResponse.success(res, result)
+    }
+)
+
+export const approveSepayOperationRequest = catchAsync(
+    async (
+        req: TypedRequest<
+            SepayOperationRequestDecisionBody,
+            EmptyQuery,
+            FundraisingTransactionParams
+        >,
+        res: Response
+    ) => {
+        const result = await fundraisingService.approveSepayOperationRequest(
+            req.params.id!,
+            req.body as SepayOperationRequestDecisionBody,
+            req.payload
+        )
+        return ApiResponse.success(res, result, 'Đã phê duyệt SePay request')
+    }
+)
+
+export const rejectSepayOperationRequest = catchAsync(
+    async (
+        req: TypedRequest<
+            SepayOperationRequestDecisionBody,
+            EmptyQuery,
+            FundraisingTransactionParams
+        >,
+        res: Response
+    ) => {
+        const result = await fundraisingService.rejectSepayOperationRequest(
+            req.params.id!,
+            req.body as SepayOperationRequestDecisionBody,
+            req.payload
+        )
+        return ApiResponse.success(res, result, 'Đã từ chối SePay request')
     }
 )

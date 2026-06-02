@@ -2,6 +2,7 @@ import {
     createFundraisingDonationSchema,
     fundraisingDecisionSchema,
     listFundraisingDonationsSchema,
+    sepayCreateOrderVaSchema,
     sepayWebhookSchema,
 } from '../fundraising.validation'
 
@@ -78,6 +79,28 @@ describe('fundraising.validation', () => {
                 amount: 50000,
                 module_id: '11',
                 extra_field: 'keep-me',
+            })
+        })
+    })
+
+    describe('sepayCreateOrderVaSchema', () => {
+        it('should accept donation_id as number and normalize to string', () => {
+            const parsed = sepayCreateOrderVaSchema.body!.parse({
+                donation_id: 123,
+            })
+
+            expect(parsed).toEqual({
+                donation_id: '123',
+            })
+        })
+
+        it('should accept donation_id prefixed with #', () => {
+            const parsed = sepayCreateOrderVaSchema.body!.parse({
+                donation_id: '  #456  ',
+            })
+
+            expect(parsed).toEqual({
+                donation_id: '456',
             })
         })
     })

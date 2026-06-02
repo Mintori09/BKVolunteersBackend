@@ -38,7 +38,7 @@ export const updateTitleSchema: RequestValidationSchema = {
         isActive: z.boolean().optional(),
     }),
     params: z.object({
-        id: z.coerce.number().int().positive(),
+        id: z.string().regex(/^\d+$/),
     }),
 }
 
@@ -52,6 +52,6 @@ export const getTitlesSchema: RequestValidationSchema = {
 
 export const titleIdSchema: RequestValidationSchema = {
     params: z.object({
-        id: z.coerce.number().int().positive(),
+        id: z.string().regex(/^\d+$/),
     }),
 }

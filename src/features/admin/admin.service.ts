@@ -1,5 +1,6 @@
 import { serializeId, serializePagination } from 'src/common/serializers'
 import * as certificatesService from 'src/features/certificates/certificates.service'
+import * as fundraisingService from 'src/features/fundraising/fundraising.service'
 import * as adminRepository from './admin.repository'
 import {
     AdminAuditLogListOutput,
@@ -97,6 +98,13 @@ export const listBackgroundJobs = async (
 export const runBackgroundJobs = async (
     body: AdminRunBackgroundJobsBody
 ) => {
+    if (body.type?.startsWith('SEPAY_')) {
+        return fundraisingService.processDueBackgroundJobs({
+            type: body.type,
+            limit: body.limit,
+        })
+    }
+
     return certificatesService.processDueBackgroundJobs({
         type: body.type,
         limit: body.limit,
@@ -104,5 +112,10 @@ export const runBackgroundJobs = async (
 }
 
 export const retryBackgroundJob = async (idRaw: string) => {
+    const job = await adminRepository.findBackgroundJobById(BigInt(idRaw))
+    if (job?.type?.startsWith('SEPAY_')) {
+        return fundraisingService.retryBackgroundJob(idRaw)
+    }
+
     return certificatesService.retryBackgroundJob(idRaw)
 }

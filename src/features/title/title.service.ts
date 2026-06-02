@@ -18,7 +18,10 @@ export const createTitle = async (data: CreateTitleInput) => {
     return titleRepo.create(data)
 }
 
-export const updateTitle = async (id: number, data: UpdateTitleInput) => {
+export const updateTitle = async (
+    id: string | bigint,
+    data: UpdateTitleInput
+) => {
     const existing = await titleRepo.findById(id)
     if (!existing) {
         throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy danh hiệu')
@@ -27,7 +30,7 @@ export const updateTitle = async (id: number, data: UpdateTitleInput) => {
     return titleRepo.updateById(id, data)
 }
 
-export const deleteTitle = async (id: number) => {
+export const deleteTitle = async (id: string | bigint) => {
     const existing = await titleRepo.findById(id)
     if (!existing) {
         throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy danh hiệu')
@@ -43,7 +46,7 @@ export const getAllTitles = async (query: TitleFilter) => {
     })
 }
 
-export const getTitleById = async (id: number) => {
+export const getTitleById = async (id: string | bigint) => {
     const title = await titleRepo.findById(id)
     if (!title) {
         throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy danh hiệu')

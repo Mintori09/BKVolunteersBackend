@@ -26,6 +26,9 @@ export const fundraisingModuleConfigSchema: RequestValidationSchema = {
         currency: z.string().trim().min(1).optional(),
         sepay_enabled: z.boolean().optional(),
         sepay_account_id: z.string().trim().nullable().optional(),
+        sepay_bank_account_id: z.string().trim().nullable().optional(),
+        sepay_mode: z.enum(['TRANSFER_CODE', 'ORDER_VA']).optional(),
+        sepay_va_prefix: z.string().trim().nullable().optional(),
         status: z.string().trim().optional(),
     }),
 }
@@ -108,6 +111,11 @@ export const sepayWebhookSchema: RequestValidationSchema = {
             created_at: z.string().optional(),
             transactionDate: z.string().optional(),
             referenceCode: z.string().optional(),
+            code: z.string().optional(),
+            va: z.string().optional(),
+            bank_account_id: z.string().optional(),
+            va_id: z.string().optional(),
+            webhook_success: z.union([z.number(), z.boolean()]).optional(),
             module_id: z.string().regex(/^\d+$/).optional(),
             campaign_id: z.string().regex(/^\d+$/).optional(),
         })
@@ -117,5 +125,98 @@ export const sepayWebhookSchema: RequestValidationSchema = {
 export const fundraisingDonationSchema: RequestValidationSchema = {
     params: z.object({
         id: z.string().regex(/^\d+$/),
+    }),
+}
+
+export const sepayAccountListSchema: RequestValidationSchema = {
+    query: z.object({
+        q: z.string().trim().optional(),
+        bank_short_name: z.string().trim().optional(),
+        active: z.enum(['0', '1']).optional(),
+        page: z.coerce.number().int().min(1).optional(),
+        per_page: z.coerce.number().int().min(1).max(100).optional(),
+    }),
+}
+
+export const sepaySyncTransactionsSchema: RequestValidationSchema = {
+    body: z.object({
+        sepay_bank_account_id: z.string().trim().optional(),
+        transaction_date_from: z.string().optional(),
+        transaction_date_to: z.string().optional(),
+        since_id: z.string().trim().optional(),
+        q: z.string().trim().optional(),
+        per_page: z.coerce.number().int().min(1).max(100).optional(),
+    }),
+}
+
+export const sepaySyncVirtualAccountsSchema: RequestValidationSchema = {
+    body: z.object({
+        sepay_bank_account_id: z.string().trim().optional(),
+        q: z.string().trim().optional(),
+        active: z.enum(['0', '1']).optional(),
+        official: z.enum(['0', '1']).optional(),
+        static: z.enum(['0', '1']).optional(),
+        per_page: z.coerce.number().int().min(1).max(100).optional(),
+    }),
+}
+
+export const sepayCreateOrderVaSchema: RequestValidationSchema = {
+    body: z.object({
+        donation_id: z
+            .union([z.string(), z.number(), z.bigint()])
+            .transform((value) => {
+                if (typeof value === 'string') {
+                    const trimmed = value.trim()
+                    return trimmed.startsWith('#')
+                        ? trimmed.slice(1).trim()
+                        : trimmed
+                }
+                return String(value)
+            })
+            .pipe(z.string().regex(/^\d+$/)),
+    }),
+}
+
+export const sepayOperationRequestSchema: RequestValidationSchema = {
+    body: z.object({
+        request_type: z.enum([
+            'SYNC_ACCOUNTS',
+            'SYNC_TRANSACTIONS',
+            'SYNC_VIRTUAL_ACCOUNTS',
+            'CREATE_ORDER_VA',
+            'MAP_ACCOUNT',
+        ]),
+        sepay_bank_account_id: z.string().trim().optional(),
+        campaign_id: z.string().regex(/^\d+$/).optional(),
+        module_id: z.string().regex(/^\d+$/).optional(),
+        donation_id: z
+            .union([z.string(), z.number(), z.bigint()])
+            .transform((value) => {
+                if (typeof value === 'string') {
+                    const trimmed = value.trim()
+                    return trimmed.startsWith('#')
+                        ? trimmed.slice(1).trim()
+                        : trimmed
+                }
+                return String(value)
+            })
+            .pipe(z.string().regex(/^\d+$/))
+            .optional(),
+        note: z.string().trim().max(2000).optional(),
+    }),
+}
+
+export const sepayOperationRequestListSchema: RequestValidationSchema = {
+    query: z.object({
+        status: z.enum(['PENDING', 'APPROVED', 'REJECTED']).optional(),
+    }),
+}
+
+export const sepayOperationRequestDecisionSchema: RequestValidationSchema = {
+    params: z.object({
+        id: z.string().regex(/^\d+$/),
+    }),
+    body: z.object({
+        decision_note: z.string().trim().max(2000).optional(),
     }),
 }

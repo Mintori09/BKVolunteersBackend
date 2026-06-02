@@ -35,6 +35,8 @@ model Organization {
   faculty          Faculty?           @relation(fields: [facultyId], references: [id], onDelete: SetNull)
   operatorAccounts OperatorAccount[]
   campaigns        Campaign[]
+  sepayAccountScopes SepayOrganizationScope[]
+  sepayOperationRequests SepayOperationRequest[]
 
   @@index([type])
   @@map("organizations")
@@ -65,6 +67,8 @@ model OperatorAccount {
   certificatesRevoked  Certificate[]           @relation("CertificateRevokedBy")
   verifiedMoneyDonations MoneyDonation[]       @relation("MoneyDonationVerifiedBy")
   notifications        Notification[]
+  sepayOperationRequestsCreated SepayOperationRequest[] @relation("SepayOperationRequestCreatedBy")
+  sepayOperationRequestsDecided SepayOperationRequest[] @relation("SepayOperationRequestDecidedBy")
 
   @@index([role])
   @@map("operator_accounts")
@@ -76,6 +80,8 @@ model Title {
   description String?   @db.Text
   minPoints   Int       @default(0) @map("min_points")
   iconUrl     String?   @map("icon_url") @db.VarChar(500)
+  badgeColor  String?   @map("badge_color") @db.VarChar(7)
+  isActive    Boolean   @default(true) @map("is_active")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   students    Student[]
@@ -181,6 +187,7 @@ model Campaign {
   itemPledges        ItemPledge[]
   eventRegistrations EventRegistration[]
   certificates       Certificate[]
+  sepayOperationRequests SepayOperationRequest[]
 
   @@index([status])
   @@index([scopeType])
@@ -209,6 +216,7 @@ model CampaignModule {
   itemPledges        ItemPledge[]
   eventRegistrations EventRegistration[]
   certificates       Certificate[]
+  sepayOperationRequests SepayOperationRequest[]
 
   @@index([campaignId])
   @@index([type])
@@ -259,12 +267,14 @@ model MoneyDonation {
   donorName            String               @map("donor_name") @db.VarChar(255)
   amount               Decimal              @db.Decimal(15, 2)
   paymentCode          String?              @unique @map("payment_code") @db.VarChar(120)
+  paymentMode          String               @default("TRANSFER_CODE") @map("payment_mode") @db.VarChar(40)
   paymentExpiresAt     DateTime?            @map("payment_expires_at")
   message              String?              @db.VarChar(500)
   evidenceUrl          String?              @map("evidence_url") @db.VarChar(500)
   status               String               @default("PENDING") @db.VarChar(40)
   matchedTransactionId BigInt?              @unique @map("matched_transaction_id") @db.UnsignedBigInt
   matchedAt            DateTime?            @map("matched_at")
+  sepayBankAccountRefId BigInt?             @map("sepay_bank_account_ref_id") @db.UnsignedBigInt
   verifiedBy           BigInt?              @map("verified_by") @db.UnsignedBigInt
   verifiedAt           DateTime?            @map("verified_at")
   rejectReason         String?              @map("reject_reason") @db.VarChar(500)
@@ -276,6 +286,9 @@ model MoneyDonation {
   verifier             OperatorAccount?     @relation("MoneyDonationVerifiedBy", fields: [verifiedBy], references: [id], onDelete: SetNull)
   matchedTransaction   PaymentTransaction?  @relation("MatchedTransaction", fields: [matchedTransactionId], references: [id], onDelete: SetNull)
   paymentTransactions  PaymentTransaction[] @relation("TransactionMatchedDonation")
+  sepayBankAccount     SepayBankAccount?    @relation(fields: [sepayBankAccountRefId], references: [id], onDelete: SetNull)
+  sepayOrderPayment    SepayOrderPayment?
+  sepayOperationRequests SepayOperationRequest[]
 
   @@map("money_donations")
 }
@@ -291,6 +304,14 @@ model PaymentTransaction {
   accountNo             String?          @map("account_no") @db.VarChar(100)
   transactionTime       DateTime         @map("transaction_time")
   rawPayload            Json?            @map("raw_payload")
+  ingestSource          String           @default("WEBHOOK") @map("ingest_source") @db.VarChar(40)
+  sepayAccountId        String?          @map("sepay_account_id") @db.VarChar(120)
+  sepayVaId             String?          @map("sepay_va_id") @db.VarChar(120)
+  sepayOrderCode        String?          @map("sepay_order_code") @db.VarChar(120)
+  referenceNumber       String?          @map("reference_number") @db.VarChar(255)
+  webhookSuccess        Boolean?         @map("webhook_success")
+  sepayBankAccountRefId BigInt?          @map("sepay_bank_account_ref_id") @db.UnsignedBigInt
+  sepayVirtualAccountRefId BigInt?       @map("sepay_virtual_account_ref_id") @db.UnsignedBigInt
   matchStatus           String           @default("UNMATCHED") @map("match_status") @db.VarChar(40)
   matchedDonationId     BigInt?          @map("matched_donation_id") @db.UnsignedBigInt
   createdAt             DateTime         @default(now()) @map("created_at")
@@ -299,9 +320,149 @@ model PaymentTransaction {
   module                CampaignModule?  @relation(fields: [moduleId], references: [id], onDelete: SetNull)
   matchedDonation       MoneyDonation?   @relation("TransactionMatchedDonation", fields: [matchedDonationId], references: [id], onDelete: SetNull)
   donationMatch         MoneyDonation?   @relation("MatchedTransaction")
+  sepayBankAccount      SepayBankAccount? @relation(fields: [sepayBankAccountRefId], references: [id], onDelete: SetNull)
+  sepayVirtualAccount   SepayVirtualAccount? @relation(fields: [sepayVirtualAccountRefId], references: [id], onDelete: SetNull)
 
   @@unique([provider, providerTransactionId])
   @@map("payment_transactions")
+}
+
+model SepayBankAccount {
+  id                BigInt               @id @default(autoincrement()) @db.UnsignedBigInt
+  sepayAccountId    String               @unique @map("sepay_account_id") @db.VarChar(120)
+  accountHolderName String               @map("account_holder_name") @db.VarChar(255)
+  accountNumber     String               @map("account_number") @db.VarChar(100)
+  accumulated       Decimal?             @db.Decimal(15, 2)
+  lastTransaction   DateTime?            @map("last_transaction")
+  label             String?              @db.VarChar(255)
+  active            Boolean              @default(true)
+  bankShortName     String?              @map("bank_short_name") @db.VarChar(40)
+  bankFullName      String?              @map("bank_full_name") @db.VarChar(255)
+  bankCode          String?              @map("bank_code") @db.VarChar(40)
+  apiMode           String               @default("sandbox") @map("api_mode") @db.VarChar(20)
+  metadataJson      Json?                @map("metadata_json")
+  createdAt         DateTime             @default(now()) @map("created_at")
+  updatedAt         DateTime             @updatedAt @map("updated_at")
+  syncCursors       SepaySyncCursor[]
+  virtualAccounts   SepayVirtualAccount[]
+  orderPayments     SepayOrderPayment[]
+  moneyDonations    MoneyDonation[]
+  paymentTransactions PaymentTransaction[]
+  organizationScopes  SepayOrganizationScope[]
+  operationRequests   SepayOperationRequest[]
+
+  @@index([accountNumber])
+  @@index([bankShortName])
+  @@map("sepay_bank_accounts")
+}
+
+model SepayOrganizationScope {
+  id                 BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  sepayBankAccountId BigInt          @map("sepay_bank_account_id") @db.UnsignedBigInt
+  organizationId     BigInt          @map("organization_id") @db.UnsignedBigInt
+  source             String          @default("MODULE_CONFIG") @db.VarChar(40)
+  metadataJson       Json?           @map("metadata_json")
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+  sepayBankAccount   SepayBankAccount @relation(fields: [sepayBankAccountId], references: [id], onDelete: Cascade)
+  organization       Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([sepayBankAccountId, organizationId])
+  @@index([organizationId])
+  @@map("sepay_organization_scopes")
+}
+
+model SepayOperationRequest {
+  id                 BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  organizationId     BigInt          @map("organization_id") @db.UnsignedBigInt
+  requesterId        BigInt          @map("requester_id") @db.UnsignedBigInt
+  requesterRole      String          @map("requester_role") @db.VarChar(40)
+  requestType        String          @map("request_type") @db.VarChar(60)
+  status             String          @default("PENDING") @db.VarChar(40)
+  sepayBankAccountId BigInt?         @map("sepay_bank_account_id") @db.UnsignedBigInt
+  campaignId         BigInt?         @map("campaign_id") @db.UnsignedBigInt
+  moduleId           BigInt?         @map("module_id") @db.UnsignedBigInt
+  donationId         BigInt?         @map("donation_id") @db.UnsignedBigInt
+  note               String?         @db.Text
+  decisionNote       String?         @map("decision_note") @db.Text
+  decidedBy          BigInt?         @map("decided_by") @db.UnsignedBigInt
+  decidedAt          DateTime?       @map("decided_at")
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+  organization       Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  requester          OperatorAccount @relation("SepayOperationRequestCreatedBy", fields: [requesterId], references: [id], onDelete: Cascade)
+  decider            OperatorAccount? @relation("SepayOperationRequestDecidedBy", fields: [decidedBy], references: [id], onDelete: SetNull)
+  sepayBankAccount   SepayBankAccount? @relation(fields: [sepayBankAccountId], references: [id], onDelete: SetNull)
+  campaign           Campaign?       @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  module             CampaignModule? @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  donation           MoneyDonation?  @relation(fields: [donationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status])
+  @@index([requestType, status])
+  @@map("sepay_operation_requests")
+}
+
+model SepaySyncCursor {
+  id                BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  type              String            @db.VarChar(60)
+  sepayBankAccountId BigInt?          @map("sepay_bank_account_id") @db.UnsignedBigInt
+  cursorValue       String?           @map("cursor_value") @db.VarChar(255)
+  lastSyncedAt      DateTime?         @map("last_synced_at")
+  lastError         String?           @map("last_error") @db.Text
+  metadataJson      Json?             @map("metadata_json")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+  sepayBankAccount  SepayBankAccount? @relation(fields: [sepayBankAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([type, sepayBankAccountId])
+  @@map("sepay_sync_cursors")
+}
+
+model SepayVirtualAccount {
+  id                 BigInt               @id @default(autoincrement()) @db.UnsignedBigInt
+  sepayVaId          String               @unique @map("sepay_va_id") @db.VarChar(120)
+  sepayBankAccountId BigInt               @map("sepay_bank_account_id") @db.UnsignedBigInt
+  vaNumber           String               @map("va_number") @db.VarChar(120)
+  subHolderName      String?              @map("sub_holder_name") @db.VarChar(255)
+  label              String?              @db.VarChar(255)
+  active             Boolean              @default(true)
+  official           Boolean              @default(false)
+  isStatic           Boolean              @default(false) @map("is_static")
+  sourceType         String               @default("DIRECT") @map("source_type") @db.VarChar(40)
+  metadataJson       Json?                @map("metadata_json")
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+  sepayBankAccount   SepayBankAccount     @relation(fields: [sepayBankAccountId], references: [id], onDelete: Cascade)
+  orderPayments      SepayOrderPayment[]
+  paymentTransactions PaymentTransaction[]
+
+  @@index([vaNumber])
+  @@map("sepay_virtual_accounts")
+}
+
+model SepayOrderPayment {
+  id                  BigInt              @id @default(autoincrement()) @db.UnsignedBigInt
+  moneyDonationId     BigInt              @unique @map("money_donation_id") @db.UnsignedBigInt
+  sepayBankAccountId  BigInt              @map("sepay_bank_account_id") @db.UnsignedBigInt
+  sepayVirtualAccountId BigInt?           @map("sepay_virtual_account_id") @db.UnsignedBigInt
+  sepayOrderId        String              @unique @map("sepay_order_id") @db.VarChar(120)
+  orderCode           String              @unique @map("order_code") @db.VarChar(120)
+  amount              Decimal             @db.Decimal(15, 2)
+  paidAmount          Decimal             @default(0) @map("paid_amount") @db.Decimal(15, 2)
+  status              String              @default("PENDING") @db.VarChar(40)
+  vaPrefix            String?             @map("va_prefix") @db.VarChar(120)
+  providerQrUrl       String?             @map("provider_qr_url") @db.VarChar(500)
+  expiresAt           DateTime?           @map("expires_at")
+  paidAt              DateTime?           @map("paid_at")
+  payloadJson         Json?               @map("payload_json")
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+  donation            MoneyDonation       @relation(fields: [moneyDonationId], references: [id], onDelete: Cascade)
+  sepayBankAccount    SepayBankAccount    @relation(fields: [sepayBankAccountId], references: [id], onDelete: Cascade)
+  sepayVirtualAccount SepayVirtualAccount? @relation(fields: [sepayVirtualAccountId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@map("sepay_order_payments")
 }
 
 model ItemTarget {

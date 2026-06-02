@@ -135,6 +135,20 @@ Các biến môi trường thường dùng:
 pnpm exec prisma generate
 ```
 
+### Migrate Database
+
+Áp migration lên database hiện tại:
+
+```bash
+pnpm run db:migrate
+```
+
+Nếu cần môi trường local mới hoàn toàn để phát triển:
+
+```bash
+pnpm exec prisma migrate dev --name init_local
+```
+
 ### Chạy API
 
 ```bash
@@ -151,7 +165,7 @@ Pilot hiện được thiết kế để chạy trên canonical schema sạch.
 
 Entrypoint seed hiện tại:
 
-- [prisma/seed/index.ts](/home/mintori/Projects/Personal/BKVolunteersBackend/fix-implement/prisma/seed/index.ts)
+- `prisma/seed/index.ts`
 
 Dữ liệu demo hiện được seed gồm:
 
@@ -161,18 +175,44 @@ Dữ liệu demo hiện được seed gồm:
 - operator accounts
 - students
 - demo campaign và modules
+- SePay API v2 integration state (bank account sync, cursor, order/VA)
+
+### Đồng Bộ DB Đề Xuất
+
+```bash
+pnpm run db:migrate
+pnpm run db:seed
+```
+
+Schema hiện có thêm các bảng SePay ops:
+
+- `sepay_bank_accounts`
+- `sepay_sync_cursors`
+- `sepay_virtual_accounts`
+- `sepay_order_payments`
+- `sepay_organization_scopes`
+- `sepay_operation_requests`
 
 ### Tài Khoản Demo
 
 Tài khoản operator:
 
-- `operator@bkv.local` / `Password123`
-- `club@bkvolunteers.local` / `Password123`
+- `doantruong.bkv@dut.udn.vn` / `Password123` (`DOANTRUONG` - BK Volunteers)
+- `clb.cntt@dut.udn.vn` / `Password123` (`CLB` - IT Faculty Volunteers)
+- `doantruong.dut@dut.udn.vn` / `Password123` (`DOANTRUONG` - Đoàn Trường)
+- `lcd.reviewer@dut.udn.vn` / `Password123` (`LCD` - Reviewer)
+- `clb.lcdcntt@dut.udn.vn` / `Password123` (`CLB` - Liên Chi Đoàn CNTT)
 
 Tài khoản sinh viên:
 
 - `102210001@sv1.dut.udn.vn` / `102210001`
 - `102210002@sv1.dut.udn.vn` / `102210002`
+- `102210003@sv1.dut.udn.vn` / `102210003`
+
+Lưu ý role:
+
+- Seed hiện ghi trực tiếp role app-level cho operator: `CLB`, `LCD`, `DOANTRUONG`
+- Sinh viên dùng role `SINHVIEN` theo account type `STUDENT`
 
 ### Campaign Demo
 

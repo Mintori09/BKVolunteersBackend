@@ -3,6 +3,26 @@ import { PrismaClient } from '@prisma/client'
 
 export async function seedContractFixtures(prisma: PrismaClient): Promise<void> {
     console.log('Seeding contract organizations and campaign fixtures...')
+    const renameIfNeeded = async (oldEmail: string, newEmail: string) => {
+        const oldAccount = await prisma.operatorAccount.findUnique({
+            where: { email: oldEmail },
+            select: { id: true },
+        })
+        const newAccount = await prisma.operatorAccount.findUnique({
+            where: { email: newEmail },
+            select: { id: true },
+        })
+        if (oldAccount && !newAccount) {
+            await prisma.operatorAccount.update({
+                where: { email: oldEmail },
+                data: { email: newEmail },
+            })
+        }
+    }
+
+    await renameIfNeeded('school.admin@dut.udn.vn', 'doantruong.dut@dut.udn.vn')
+    await renameIfNeeded('reviewer@dut.udn.vn', 'lcd.reviewer@dut.udn.vn')
+    await renameIfNeeded('lcd.cntt@dut.udn.vn', 'clb.lcdcntt@dut.udn.vn')
 
     const faculty = await prisma.faculty.findUnique({ where: { code: '102' } })
     if (!faculty) {
@@ -35,49 +55,58 @@ export async function seedContractFixtures(prisma: PrismaClient): Promise<void> 
     })
 
     const schoolAdmin = await prisma.operatorAccount.upsert({
-        where: { email: 'school.admin@dut.udn.vn' },
+        where: { email: 'doantruong.dut@dut.udn.vn' },
         update: {
             organizationId: schoolUnion.id,
-            role: 'SCHOOL_ADMIN',
+            fullName: 'Đoàn Trường Đại học Bách khoa',
+            role: 'DOANTRUONG',
+            status: 'ACTIVE',
         },
         create: {
-            email: 'school.admin@dut.udn.vn',
-            passwordHash: await argon2.hash('Password@123'),
-            fullName: 'School Admin',
-            role: 'SCHOOL_ADMIN',
+            email: 'doantruong.dut@dut.udn.vn',
+            passwordHash: await argon2.hash('Password123'),
+            fullName: 'Đoàn Trường Đại học Bách khoa',
+            role: 'DOANTRUONG',
             organizationId: schoolUnion.id,
+            status: 'ACTIVE',
         },
     })
 
     await prisma.operatorAccount.upsert({
-        where: { email: 'reviewer@dut.udn.vn' },
+        where: { email: 'lcd.reviewer@dut.udn.vn' },
         update: {
             organizationId: schoolUnion.id,
-            role: 'SCHOOL_REVIEWER',
+            fullName: 'Reviewer Liên Chi Đoàn',
+            role: 'LCD',
+            status: 'ACTIVE',
         },
         create: {
-            email: 'reviewer@dut.udn.vn',
-            passwordHash: await argon2.hash('Password@123'),
-            fullName: 'School Reviewer',
-            role: 'SCHOOL_REVIEWER',
+            email: 'lcd.reviewer@dut.udn.vn',
+            passwordHash: await argon2.hash('Password123'),
+            fullName: 'Reviewer Liên Chi Đoàn',
+            role: 'LCD',
             organizationId: schoolUnion.id,
+            status: 'ACTIVE',
         },
     })
 
     const orgAdmin = await prisma.operatorAccount.upsert({
-        where: { email: 'lcd.cntt@dut.udn.vn' },
+        where: { email: 'clb.lcdcntt@dut.udn.vn' },
         update: {
             organizationId: facultyUnion.id,
             facultyId: faculty.id,
-            role: 'ORG_ADMIN',
+            fullName: 'CLB Liên Chi Đoàn CNTT',
+            role: 'CLB',
+            status: 'ACTIVE',
         },
         create: {
-            email: 'lcd.cntt@dut.udn.vn',
-            passwordHash: await argon2.hash('Password@123'),
-            fullName: 'LCD CNTT Admin',
-            role: 'ORG_ADMIN',
+            email: 'clb.lcdcntt@dut.udn.vn',
+            passwordHash: await argon2.hash('Password123'),
+            fullName: 'CLB Liên Chi Đoàn CNTT',
+            role: 'CLB',
             organizationId: facultyUnion.id,
             facultyId: faculty.id,
+            status: 'ACTIVE',
         },
     })
 
@@ -168,7 +197,7 @@ export async function seedContractFixtures(prisma: PrismaClient): Promise<void> 
                 status: 'OPEN',
                 settingsJson: {
                     receiver_address: 'Khu F, Dai hoc Bach khoa',
-                    receiver_contact: 'lcd.cntt@dut.udn.vn',
+                    receiver_contact: 'clb.lcdcntt@dut.udn.vn',
                     allow_over_target: false,
                 },
             },

@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals'
 import * as certificatesService from 'src/features/certificates/certificates.service'
+import * as fundraisingService from 'src/features/fundraising/fundraising.service'
 import * as adminRepository from '../admin.repository'
 import * as adminService from '../admin.service'
 
 jest.mock('../admin.repository')
 jest.mock('src/features/certificates/certificates.service')
+jest.mock('src/features/fundraising/fundraising.service')
 
 describe('admin.service', () => {
     beforeEach(() => {
@@ -92,6 +94,49 @@ describe('admin.service', () => {
         expect(certificatesService.retryBackgroundJob).toHaveBeenCalledWith('501')
         expect(result).toMatchObject({
             id: 501,
+            status: 'COMPLETED',
+        })
+    })
+
+    it('delegates SePay background jobs to fundraising service', async () => {
+        ;(fundraisingService.processDueBackgroundJobs as jest.Mock).mockResolvedValue({
+            queued: 1,
+            processed_count: 1,
+            failed_count: 0,
+            items: [],
+            failed: [],
+        })
+
+        const result = await adminService.runBackgroundJobs({
+            type: 'SEPAY_SYNC_TRANSACTIONS',
+            limit: 2,
+        })
+
+        expect(fundraisingService.processDueBackgroundJobs).toHaveBeenCalledWith({
+            type: 'SEPAY_SYNC_TRANSACTIONS',
+            limit: 2,
+        })
+        expect(result).toMatchObject({
+            queued: 1,
+            processed_count: 1,
+        })
+    })
+
+    it('delegates SePay background-job retry to fundraising service', async () => {
+        ;(adminRepository.findBackgroundJobById as jest.Mock).mockResolvedValue({
+            id: 801n,
+            type: 'SEPAY_SYNC_TRANSACTIONS',
+        })
+        ;(fundraisingService.retryBackgroundJob as jest.Mock).mockResolvedValue({
+            id: 801,
+            status: 'COMPLETED',
+        })
+
+        const result = await adminService.retryBackgroundJob('801')
+
+        expect(fundraisingService.retryBackgroundJob).toHaveBeenCalledWith('801')
+        expect(result).toMatchObject({
+            id: 801,
             status: 'COMPLETED',
         })
     })

@@ -1,9 +1,67 @@
+import { Prisma } from '@prisma/client'
 import { prismaClient } from 'src/config'
 import { UpdateProfileInput } from './types'
 
 const toBigIntId = (id: string) => BigInt(id)
 
-export const findById = async (id: string) => {
+type StudentWithCurrentTitle = Prisma.StudentGetPayload<{
+    include: {
+        currentTitle: true
+    }
+}>
+
+type StudentWithTitleSummary = Prisma.StudentGetPayload<{
+    select: {
+        id: true
+        studentCode: true
+        fullName: true
+        email: true
+        facultyId: true
+        classCode: true
+        phone: true
+        avatarUrl: true
+        major: true
+        year: true
+        totalPoints: true
+        createdAt: true
+        updatedAt: true
+        currentTitle: {
+            select: {
+                id: true
+                name: true
+                description: true
+                minPoints: true
+                iconUrl: true
+                badgeColor: true
+            }
+        }
+    }
+}>
+
+type StudentPublicWithTitle = Prisma.StudentGetPayload<{
+    select: {
+        id: true
+        studentCode: true
+        fullName: true
+        email: true
+        facultyId: true
+        classCode: true
+        totalPoints: true
+        createdAt: true
+        updatedAt: true
+        currentTitle: {
+            select: {
+                id: true
+                name: true
+                minPoints: true
+                iconUrl: true
+                badgeColor: true
+            }
+        }
+    }
+}>
+
+export const findById = async (id: string): Promise<StudentWithCurrentTitle | null> => {
     return prismaClient.student.findUnique({
         where: { id: toBigIntId(id) },
         include: {
@@ -12,7 +70,9 @@ export const findById = async (id: string) => {
     })
 }
 
-export const findByIdWithTitles = async (id: string) => {
+export const findByIdWithTitles = async (
+    id: string
+): Promise<StudentWithTitleSummary | null> => {
     return prismaClient.student.findUnique({
         where: { id: toBigIntId(id) },
         select: {
@@ -36,13 +96,16 @@ export const findByIdWithTitles = async (id: string) => {
                     description: true,
                     minPoints: true,
                     iconUrl: true,
+                    badgeColor: true,
                 },
             },
         },
     })
 }
 
-export const findByIdPublic = async (id: string) => {
+export const findByIdPublic = async (
+    id: string
+): Promise<StudentPublicWithTitle | null> => {
     return prismaClient.student.findUnique({
         where: { id: toBigIntId(id) },
         select: {
@@ -61,6 +124,7 @@ export const findByIdPublic = async (id: string) => {
                     name: true,
                     minPoints: true,
                     iconUrl: true,
+                    badgeColor: true,
                 },
             },
         },

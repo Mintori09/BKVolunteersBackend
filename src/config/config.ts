@@ -68,6 +68,16 @@ const envSchema = z.object({
     FRONTEND_URL: withEmptyAsUndefined(
         z.string().optional().default('http://localhost:3000')
     ),
+    SEPAY_API_ENABLED: withEmptyAsUndefined(z.string().default('false')),
+    SEPAY_API_BASE_URL: withEmptyAsUndefined(
+        z.string().default('https://userapi.sepay.vn/v2')
+    ),
+    SEPAY_API_TOKEN: withEmptyAsUndefined(z.string().optional().default('')),
+    SEPAY_API_MODE: withEmptyAsUndefined(
+        z.enum(['sandbox', 'live']).default('sandbox')
+    ),
+    SEPAY_VA_ENABLED: withEmptyAsUndefined(z.string().default('false')),
+    SEPAY_ORDER_VA_ENABLED: withEmptyAsUndefined(z.string().default('false')),
 })
 
 const parsedEnv = envSchema.safeParse(process.env)
@@ -138,6 +148,14 @@ const config = {
     },
     frontend: {
         url: env.FRONTEND_URL,
+    },
+    sepay: {
+        apiEnabled: env.SEPAY_API_ENABLED === 'true',
+        apiBaseUrl: env.SEPAY_API_BASE_URL,
+        apiToken: env.SEPAY_API_TOKEN,
+        apiMode: env.SEPAY_API_MODE,
+        vaEnabled: env.SEPAY_VA_ENABLED === 'true',
+        orderVaEnabled: env.SEPAY_ORDER_VA_ENABLED === 'true',
     },
 } as const
 
