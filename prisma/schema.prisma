@@ -10,21 +10,17 @@ datasource db {
 // ENUMS
 //////////////////////////////////////////////////////
 
-enum UserAccountType {
-  STUDENT
-  MANAGER
-}
-
 enum UserAccountStatus {
   ACTIVE
   LOCKED
   DISABLED
 }
 
-enum ManagerRoleType {
-  CLB_MANAGER
-  LCD_MANAGER
-  DOANTRUONG_ADMIN
+enum UserRole {
+  SINHVIEN
+  LCD
+  CLB
+  DOANTRUONG
 }
 
 enum ClubStatus {
@@ -317,7 +313,7 @@ model User {
   username     String            @unique @db.VarChar(50)
   email        String            @unique @db.VarChar(255)
   passwordHash String            @db.VarChar(255)
-  accountType  UserAccountType
+  role         UserRole
   status       UserAccountStatus @default(ACTIVE)
   avatarFileId String?           @db.Char(36)
   lastLoginAt  DateTime?
@@ -337,7 +333,7 @@ model User {
 
   @@index([email])
   @@index([username])
-  @@index([accountType])
+  @@index([role])
   @@index([status])
   @@map("users")
 }
@@ -345,7 +341,6 @@ model User {
 model ManagerAccount {
   id            String          @id @default(uuid()) @db.Char(36)
   userId        String          @unique @db.Char(36)
-  roleType      ManagerRoleType
   facultyId     Int?
   managedClubId String?         @db.Char(36)
   createdAt     DateTime        @default(now())
@@ -378,7 +373,6 @@ model ManagerAccount {
   @@index([userId])
   @@index([facultyId])
   @@index([managedClubId])
-  @@index([roleType])
   @@map("manager_accounts")
 }
 

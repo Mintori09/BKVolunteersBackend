@@ -12,7 +12,7 @@ describe('restrictTo middleware', () => {
         req = {
             payload: {
                 userId: '1',
-                role: 'USER',
+                role: 'SINHVIEN',
             },
         }
         res = {}
@@ -20,7 +20,7 @@ describe('restrictTo middleware', () => {
     })
 
     it('should allow access if user has the correct role', () => {
-        const middleware = restrictTo('USER', 'ADMIN')
+        const middleware = restrictTo('SINHVIEN', 'DOANTRUONG')
         middleware(req as Request, res as Response, next)
 
         expect(next).toHaveBeenCalledWith()
@@ -28,7 +28,7 @@ describe('restrictTo middleware', () => {
     })
 
     it('should call next with ApiError (403) if user has incorrect role', () => {
-        const middleware = restrictTo('ADMIN')
+        const middleware = restrictTo('DOANTRUONG')
         middleware(req as Request, res as Response, next)
 
         expect(next).toHaveBeenCalledWith(expect.any(ApiError))
@@ -41,7 +41,7 @@ describe('restrictTo middleware', () => {
 
     it('should call next with ApiError (403) if req.payload is missing', () => {
         req.payload = undefined
-        const middleware = restrictTo('USER')
+        const middleware = restrictTo('SINHVIEN')
         middleware(req as Request, res as Response, next)
 
         expect(next).toHaveBeenCalledWith(expect.any(ApiError))
@@ -50,8 +50,8 @@ describe('restrictTo middleware', () => {
     })
 
     it('should allow access for multi-role support', () => {
-        req.payload.role = 'ADMIN'
-        const middleware = restrictTo('USER', 'ADMIN', 'MODERATOR')
+        req.payload.role = 'DOANTRUONG'
+        const middleware = restrictTo('SINHVIEN', 'DOANTRUONG', 'LCD')
         middleware(req as Request, res as Response, next)
 
         expect(next).toHaveBeenCalledWith()

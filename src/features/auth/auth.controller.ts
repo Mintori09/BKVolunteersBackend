@@ -3,8 +3,8 @@ import {
     LoginInput,
     LoginOutput,
     ChangePasswordInput,
-    UserRole,
     MeOutput,
+    AuthUser,
 } from './types'
 import { TypedRequest } from 'src/types/request'
 import * as argon2 from 'argon2'
@@ -19,6 +19,41 @@ import { catchAsync } from 'src/utils/catchAsync'
 import { ApiError } from 'src/utils/ApiError'
 import { ApiResponse } from 'src/utils/ApiResponse'
 
+const mapPublicUser = (user: AuthUser): MeOutput => {
+    if (user.role === 'SINHVIEN') {
+        return {
+            id: user.id,
+            username: user.username,
+            mssv: user.mssv || user.username,
+            fullName: user.fullName || `${user.lastName} ${user.firstName}`.trim(),
+            email: user.email,
+            role: user.role,
+            facultyId: user.facultyId,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            status: user.status,
+            className: user.className ?? null,
+            phone: user.phone ?? null,
+            totalPoints: user.totalPoints ?? 0,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+        }
+    }
+
+    return {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        facultyId: user.facultyId,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        status: user.status,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+    }
+}
+
 export const handleLogin = catchAsync(
     async (req: TypedRequest<LoginInput>, res: Response) => {
         const cookies = req.cookies
@@ -27,7 +62,7 @@ export const handleLogin = catchAsync(
         if (!username || !password) {
             throw new ApiError(
                 HttpStatus.BAD_REQUEST,
-                'Email và mật khẩu là bắt buộc!'
+                'Identifier va mat khau la bat buoc'
             )
         }
 
@@ -36,41 +71,35 @@ export const handleLogin = catchAsync(
         if (!user) {
             throw new ApiError(
                 HttpStatus.UNAUTHORIZED,
-                'Email hoặc mật khẩu không hợp lệ'
+                'Identifier hoac mat khau khong hop le'
             )
         }
 
-        const isPasswordValid = await argon2.verify(user.password, password)
+        if (user.status !== 'ACTIVE') {
+            throw new ApiError(
+                HttpStatus.FORBIDDEN,
+                'Tai khoan da bi khoa hoac vo hieu hoa'
+            )
+        }
+
+        const isPasswordValid = await argon2.verify(user.passwordHash, password)
 
         if (!isPasswordValid) {
             throw new ApiError(
                 HttpStatus.UNAUTHORIZED,
-                'Email hoặc mật khẩu không hợp lệ'
+                'Identifier hoac mat khau khong hop le'
             )
         }
-
-        const userRole: UserRole = 'mssv' in user ? 'SINHVIEN' : user.role
 
         if (cookies?.[config.jwt.refresh_token.cookie_name]) {
             const refreshToken = cookies[config.jwt.refresh_token.cookie_name]
             const checkRefreshToken =
                 await authService.getRefreshTokenByToken(refreshToken)
 
-            if (!checkRefreshToken) {
-                await authService.deleteAllUserRefreshTokens(user.id, userRole)
+            if (!checkRefreshToken || checkRefreshToken.userId !== user.id) {
+                await authService.deleteAllUserRefreshTokens(user.id)
             } else {
-                const tokenId =
-                    checkRefreshToken.userType === 'student'
-                        ? checkRefreshToken.studentId
-                        : checkRefreshToken.userId
-                if (tokenId !== user.id) {
-                    await authService.deleteAllUserRefreshTokens(
-                        user.id,
-                        userRole
-                    )
-                } else {
-                    await authService.deleteRefreshToken(refreshToken, userRole)
-                }
+                await authService.deleteRefreshToken(refreshToken)
             }
 
             res.clearCookie(
@@ -81,8 +110,10 @@ export const handleLogin = catchAsync(
 
         const { accessToken, refreshToken } = await authService.createSession(
             user.id,
-            userRole
+            user.role
         )
+
+        await authService.updateLastLoginAt(user.id)
 
         res.cookie(
             config.jwt.refresh_token.cookie_name,
@@ -90,7 +121,10 @@ export const handleLogin = catchAsync(
             refreshTokenCookieConfig
         )
 
-        return ApiResponse.success<LoginOutput>(res, { accessToken })
+        return ApiResponse.success<LoginOutput>(res, {
+            accessToken,
+            user: mapPublicUser(user),
+        })
     }
 )
 
@@ -126,11 +160,9 @@ export const handleRefresh = catchAsync(async (req: Request, res: Response) => {
     const refreshToken: string | undefined =
         req.cookies[config.jwt.refresh_token.cookie_name]
 
-    if (!refreshToken)
-        throw new ApiError(
-            HttpStatus.UNAUTHORIZED,
-            'Không tìm thấy refresh token'
-        )
+    if (!refreshToken) {
+        throw new ApiError(HttpStatus.UNAUTHORIZED, 'Khong tim thay refresh token')
+    }
 
     res.clearCookie(
         config.jwt.refresh_token.cookie_name,
@@ -146,78 +178,60 @@ export const handleRefresh = catchAsync(async (req: Request, res: Response) => {
                 refreshToken,
                 config.jwt.refresh_token.secret
             )
-            await authService.deleteAllUserRefreshTokens(
-                payload.userId,
-                payload.role
-            )
+            await authService.deleteAllUserRefreshTokens(payload.userId)
         } catch {
-            // Ignore verify errors here, just forbidden
+            // ignore
         }
-        throw new ApiError(HttpStatus.FORBIDDEN, 'Refresh token không hợp lệ')
+        throw new ApiError(HttpStatus.FORBIDDEN, 'Refresh token khong hop le')
     }
 
     await authService.deleteRefreshToken(refreshToken)
 
-    try {
-        const payload = await authService.verifyToken(
-            refreshToken,
-            config.jwt.refresh_token.secret
-        )
+    const payload = await authService.verifyToken(
+        refreshToken,
+        config.jwt.refresh_token.secret
+    )
 
-        const tokenUserId =
-            foundRefreshToken.userType === 'student'
-                ? foundRefreshToken.studentId
-                : foundRefreshToken.userId
-
-        if (tokenUserId !== payload.userId) {
-            throw new ApiError(HttpStatus.FORBIDDEN, 'Không khớp người dùng')
-        }
-
-        const user = await authService.getUserById(payload.userId, payload.role)
-
-        if (!user) {
-            throw new ApiError(
-                HttpStatus.FORBIDDEN,
-                'Không tìm thấy người dùng'
-            )
-        }
-
-        const { accessToken, refreshToken: newRefreshToken } =
-            await authService.createSession(payload.userId, payload.role)
-
-        res.cookie(
-            config.jwt.refresh_token.cookie_name,
-            newRefreshToken,
-            refreshTokenCookieConfig
-        )
-
-        return ApiResponse.success<LoginOutput>(res, { accessToken })
-    } catch {
-        throw new ApiError(HttpStatus.FORBIDDEN, 'Refresh token không hợp lệ')
+    if (foundRefreshToken.userId !== payload.userId) {
+        throw new ApiError(HttpStatus.FORBIDDEN, 'Refresh token khong khop user')
     }
+
+    const user = await authService.getUserById(payload.userId, payload.role)
+
+    if (!user || user.status !== 'ACTIVE') {
+        throw new ApiError(HttpStatus.FORBIDDEN, 'Nguoi dung khong hop le')
+    }
+
+    const { accessToken, refreshToken: newRefreshToken } =
+        await authService.createSession(payload.userId, payload.role)
+
+    res.cookie(
+        config.jwt.refresh_token.cookie_name,
+        newRefreshToken,
+        refreshTokenCookieConfig
+    )
+
+    return ApiResponse.success<LoginOutput>(res, {
+        accessToken,
+        user: mapPublicUser(user),
+    })
 })
 
 export const getMe = catchAsync(async (req: Request, res: Response) => {
     const userId = req.payload?.userId
     const role = req.payload?.role
 
-    if (!userId) {
-        throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chưa xác thực người dùng!')
-    }
-
-    if (!role) {
-        throw new ApiError(HttpStatus.UNAUTHORIZED, 'Không có role!')
+    if (!userId || !role) {
+        throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chua xac thuc nguoi dung')
     }
 
     const user = await authService.getUserById(userId, role)
 
     if (!user) {
-        throw new ApiError(HttpStatus.NOT_FOUND, 'Không tìm thấy người dùng!')
+        throw new ApiError(HttpStatus.NOT_FOUND, 'Khong tim thay nguoi dung')
     }
 
-    const { password: _password, ...userWithoutPassword } = user
-
-    return ApiResponse.success<MeOutput>(res, userWithoutPassword)
+    return ApiResponse.success<MeOutput>(res, mapPublicUser(user))
 })
 
 export const handleChangePassword = catchAsync(
@@ -225,15 +239,8 @@ export const handleChangePassword = catchAsync(
         const userId = req.payload?.userId
         const role = req.payload?.role
 
-        if (!userId) {
-            throw new ApiError(
-                HttpStatus.UNAUTHORIZED,
-                'Chưa xác thực người dùng'
-            )
-        }
-
-        if (!role) {
-            throw new ApiError(HttpStatus.UNAUTHORIZED, 'Không có role!')
+        if (!userId || !role) {
+            throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chua xac thuc nguoi dung')
         }
 
         await authService.changePassword(
@@ -242,6 +249,6 @@ export const handleChangePassword = catchAsync(
             req.body as ChangePasswordInput
         )
 
-        return ApiResponse.success(res, null, 'Đổi mật khẩu thành công')
+        return ApiResponse.success(res, null, 'Doi mat khau thanh cong')
     }
 )

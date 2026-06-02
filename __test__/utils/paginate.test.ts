@@ -100,13 +100,13 @@ describe('paginate util', () => {
         await paginate(
             mockModel,
             { search: 'test', searchFields: ['email'] },
-            { where: { role: 'ADMIN' } }
+            { where: { role: 'DOANTRUONG' } }
         )
 
         expect(mockModel.findMany).toHaveBeenCalledWith(
             expect.objectContaining({
                 where: {
-                    role: 'ADMIN',
+                    role: 'DOANTRUONG',
                     OR: [{ email: { contains: 'test' } }],
                 },
             })

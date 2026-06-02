@@ -1,81 +1,170 @@
+import { UserAccountStatus, type Prisma } from '@prisma/client'
 import { prismaClient } from 'src/config'
-import { UserRole } from './types'
+import { AuthUser, UserRole } from './types'
+
+type UserWithProfiles = Prisma.UserGetPayload<{
+    include: {
+        managerProfile: true
+        studentProfile: true
+    }
+}>
+
+type StudentWithUser = Prisma.StudentGetPayload<{
+    include: {
+        user: true
+    }
+}>
+
+const splitName = (fullName: string) => {
+    const normalized = fullName.trim()
+    if (!normalized) {
+        return { firstName: '', lastName: '' }
+    }
+    const parts = normalized.split(/\s+/)
+    const lastName = parts.shift() || ''
+    const firstName = parts.join(' ')
+    return { firstName, lastName }
+}
+
+const mapManagerUser = (user: UserWithProfiles): AuthUser | null => {
+    const manager = user.managerProfile
+    if (!manager) return null
+
+    return {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role as UserRole,
+        facultyId: manager.facultyId ?? null,
+        firstName: user.username,
+        lastName: '',
+        status: user.status,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        passwordHash: user.passwordHash,
+    }
+}
+
+const mapStudentUser = (
+    user: Pick<
+        UserWithProfiles,
+        'id' | 'email' | 'status' | 'createdAt' | 'updatedAt' | 'passwordHash'
+    >,
+    student: Pick<
+        StudentWithUser,
+        'mssv' | 'fullName' | 'facultyId' | 'className' | 'phone' | 'totalPoints'
+    >
+): AuthUser => {
+    const { firstName, lastName } = splitName(student.fullName)
+    return {
+        id: user.id,
+        username: student.mssv,
+        email: user.email,
+        role: 'SINHVIEN',
+        facultyId: student.facultyId,
+        firstName,
+        lastName,
+        status: user.status,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        passwordHash: user.passwordHash,
+        mssv: student.mssv,
+        fullName: student.fullName,
+        className: student.className,
+        phone: student.phone,
+        totalPoints: student.totalPoints,
+    }
+}
+
+const mapUserToAuthUser = (user: UserWithProfiles): AuthUser | null => {
+    const student = user.studentProfile
+    if (student) {
+        return mapStudentUser(user, student)
+    }
+    return mapManagerUser(user)
+}
 
 export const getUserByEmail = async (email: string) => {
-    return prismaClient.user.findUnique({ where: { email } })
+    const user = await prismaClient.user.findUnique({
+        where: { email },
+        include: {
+            managerProfile: true,
+            studentProfile: true,
+        },
+    })
+    if (!user) return null
+    return mapUserToAuthUser(user)
 }
 
 export const getUserByUsername = async (username: string) => {
-    return prismaClient.user.findUnique({ where: { username } })
+    const user = await prismaClient.user.findUnique({
+        where: { username },
+        include: {
+            managerProfile: true,
+            studentProfile: true,
+        },
+    })
+    if (!user) return null
+    return mapUserToAuthUser(user)
 }
 
 export const getUserByMssv = async (mssv: string) => {
-    return prismaClient.student.findUnique({ where: { mssv } })
+    const student = await prismaClient.student.findUnique({
+        where: { mssv },
+        include: { user: true },
+    })
+
+    if (!student) return null
+
+    return mapStudentUser(student.user, student)
 }
 
-export const getUserById = async (userId: string, role: UserRole) => {
-    if (role === 'SINHVIEN') {
-        return prismaClient.student.findUnique({ where: { id: userId } })
+export const getUserById = async (userId: string, role?: UserRole) => {
+    const user = await prismaClient.user.findUnique({
+        where: { id: userId },
+        include: {
+            managerProfile: true,
+            studentProfile: true,
+        },
+    })
+    if (!user) return null
+
+    const mappedUser = mapUserToAuthUser(user)
+    if (!mappedUser) return null
+
+    if (role && mappedUser.role !== role) {
+        return null
     }
-    return prismaClient.user.findUnique({ where: { id: userId } })
+
+    return mappedUser
 }
 
 export const getRefreshTokenByToken = async (token: string) => {
-    const userToken = await prismaClient.refreshToken.findUnique({
+    const refreshToken = await prismaClient.userRefreshToken.findUnique({
         where: { token },
     })
-    if (userToken) {
-        return { ...userToken, userType: 'user' as const }
-    }
+    if (!refreshToken) return null
 
-    const studentToken = await prismaClient.studentRefreshToken.findUnique({
-        where: { token },
-    })
-    if (studentToken) {
-        return { ...studentToken, userType: 'student' as const }
-    }
-
-    return null
+    return { ...refreshToken, userType: 'user' as const }
 }
 
-export const deleteRefreshToken = async (token: string, role?: UserRole) => {
-    if (role === 'SINHVIEN') {
-        return prismaClient.studentRefreshToken.deleteMany({ where: { token } })
-    }
-    if (role !== undefined) {
-        return prismaClient.refreshToken.deleteMany({ where: { token } })
-    }
-
-    await prismaClient.refreshToken.deleteMany({ where: { token } })
-    await prismaClient.studentRefreshToken.deleteMany({ where: { token } })
+export const deleteRefreshToken = async (token: string, _role?: UserRole) => {
+    return prismaClient.userRefreshToken.deleteMany({ where: { token } })
 }
 
 export const deleteAllUserRefreshTokens = async (
     userId: string,
-    role: UserRole
+    _role?: UserRole
 ) => {
-    if (role === 'SINHVIEN') {
-        return prismaClient.studentRefreshToken.deleteMany({
-            where: { studentId: userId },
-        })
-    }
-    return prismaClient.refreshToken.deleteMany({ where: { userId } })
+    return prismaClient.userRefreshToken.deleteMany({ where: { userId } })
 }
 
 export const createRefreshToken = async (
     userId: string,
     token: string,
-    role: UserRole
+    _role?: UserRole
 ) => {
-    if (role === 'SINHVIEN') {
-        return prismaClient.studentRefreshToken.create({
-            data: {
-                token,
-                studentId: userId,
-            },
-        })
-    }
-    return prismaClient.refreshToken.create({
+    return prismaClient.userRefreshToken.create({
         data: {
             token,
             userId,
@@ -86,16 +175,20 @@ export const createRefreshToken = async (
 export const updatePassword = async (
     userId: string,
     hashedPassword: string,
-    role: UserRole
+    _role?: UserRole
 ) => {
-    if (role === 'SINHVIEN') {
-        return prismaClient.student.update({
-            where: { id: userId },
-            data: { password: hashedPassword },
-        })
-    }
     return prismaClient.user.update({
         where: { id: userId },
-        data: { password: hashedPassword },
+        data: { passwordHash: hashedPassword },
     })
 }
+
+export const updateLastLoginAt = async (userId: string) => {
+    return prismaClient.user.update({
+        where: { id: userId },
+        data: { lastLoginAt: new Date() },
+    })
+}
+
+export const isUserActive = (status: UserAccountStatus): boolean =>
+    status === 'ACTIVE'

@@ -14,7 +14,7 @@ export type TypedRequest<
 >
 
 export type RequestValidationSchema = RequireAtLeastOne<{
-    body?: z.ZodObject<any, any>
-    query?: z.ZodObject<any, any>
-    params?: z.ZodObject<any, any>
+    body?: z.ZodTypeAny
+    query?: z.ZodTypeAny
+    params?: z.ZodTypeAny
 }>

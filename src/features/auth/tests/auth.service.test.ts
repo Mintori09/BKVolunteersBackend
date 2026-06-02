@@ -55,7 +55,7 @@ describe('Auth Service', () => {
     describe('getUserbyUsernameOrMssv', () => {
         it('should call getUserByMssv when username is MSSV format (9 digits starting with 1)', async () => {
             const mssv = '123456789'
-            const expectedUser = { id: '1', mssv, password: 'hashed' }
+            const expectedUser = { id: '1', mssv, passwordHash: 'hashed' }
             ;(authRepository.getUserByMssv as jest.Mock).mockResolvedValue(
                 expectedUser
             )
@@ -69,7 +69,7 @@ describe('Auth Service', () => {
 
         it('should call getUserByUsername when username is not MSSV format', async () => {
             const username = 'testuser'
-            const expectedUser = { id: '1', username, password: 'hashed' }
+            const expectedUser = { id: '1', username, passwordHash: 'hashed' }
             ;(authRepository.getUserByUsername as jest.Mock).mockResolvedValue(
                 expectedUser
             )
@@ -233,7 +233,7 @@ describe('Auth Service', () => {
                 role,
                 undefined
             )
-            expect(createRefreshToken).toHaveBeenCalledWith(userId)
+            expect(createRefreshToken).toHaveBeenCalledWith(userId, role)
             expect(authRepository.createRefreshToken).toHaveBeenCalledWith(
                 userId,
                 refreshToken,
@@ -279,7 +279,11 @@ describe('Auth Service', () => {
 
             const result = await authService.createSession(userId, role)
 
-            expect(createAccessToken).toHaveBeenCalledWith(userId, role, null)
+            expect(createAccessToken).toHaveBeenCalledWith(
+                userId,
+                role,
+                undefined
+            )
             expect(result).toEqual({ accessToken, refreshToken })
         })
 
@@ -339,7 +343,11 @@ describe('Auth Service', () => {
 
             const result = await authService.createSession(userId, role)
 
-            expect(createAccessToken).toHaveBeenCalledWith(userId, role, null)
+            expect(createAccessToken).toHaveBeenCalledWith(
+                userId,
+                role,
+                undefined
+            )
             expect(result).toEqual({ accessToken, refreshToken })
         })
     })
@@ -428,7 +436,7 @@ describe('Auth Service', () => {
         })
 
         it('should throw ApiError if old password is invalid', async () => {
-            const user = { id: userId, password: 'hashed-old-password' }
+            const user = { id: userId, passwordHash: 'hashed-old-password' }
             ;(authRepository.getUserById as jest.Mock).mockResolvedValue(user)
             ;(argon2.verify as jest.Mock).mockResolvedValue(false)
 
@@ -440,7 +448,7 @@ describe('Auth Service', () => {
         })
 
         it('should update password if old password is valid', async () => {
-            const user = { id: userId, password: 'hashed-old-password' }
+            const user = { id: userId, passwordHash: 'hashed-old-password' }
             ;(authRepository.getUserById as jest.Mock).mockResolvedValue(user)
             ;(argon2.verify as jest.Mock).mockResolvedValue(true)
             ;(argon2.hash as jest.Mock).mockResolvedValue('hashed-new-password')
@@ -456,8 +464,7 @@ describe('Auth Service', () => {
             )
             expect(authRepository.updatePassword).toHaveBeenCalledWith(
                 userId,
-                'hashed-new-password',
-                role
+                'hashed-new-password'
             )
         })
     })

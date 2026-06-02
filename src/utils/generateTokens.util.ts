@@ -22,8 +22,11 @@ export const createAccessToken = (
     } as jwt.SignOptions)
 }
 
-export const createRefreshToken = (userId: number | string): string => {
-    return jwt.sign({ userId }, config.jwt.refresh_token.secret, {
+export const createRefreshToken = (
+    userId: number | string,
+    role?: UserRole
+): string => {
+    return jwt.sign({ userId, role }, config.jwt.refresh_token.secret, {
         expiresIn: config.jwt.refresh_token.expire,
     } as jwt.SignOptions)
 }

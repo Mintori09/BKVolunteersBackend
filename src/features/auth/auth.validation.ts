@@ -14,8 +14,8 @@ export const loginSchema: RequestValidationSchema = {
     body: z.object({
         username: z
             .string()
-            .min(9, 'Username phải có ít nhất 9 ký tự')
-            .max(40, 'Username không được quá 40 ký tự'),
+            .min(3, 'Username phải có ít nhất 3 ký tự')
+            .max(80, 'Username không được quá 80 ký tự'),
         password: z
             .string()
             .min(6, 'Mật khẩu phải có ít nhất 6 ký tự')

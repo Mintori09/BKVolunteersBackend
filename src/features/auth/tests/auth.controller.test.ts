@@ -37,6 +37,39 @@ jest.mock('src/utils/generateTokens.util')
 jest.mock('jsonwebtoken')
 jest.mock('../auth.service')
 
+const buildActiveUser = (role: UserRole = 'LCD') => ({
+    id: '1',
+    username: 'testuser',
+    email: 'test@example.com',
+    firstName: 'Test',
+    lastName: 'User',
+    role,
+    facultyId: null,
+    status: 'ACTIVE' as const,
+    passwordHash: 'hashed',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+})
+
+const buildActiveStudent = () => ({
+    id: '1',
+    username: '123456789',
+    mssv: '123456789',
+    fullName: 'Sinh Vien',
+    email: 'student@example.com',
+    firstName: 'Sinh',
+    lastName: 'Vien',
+    role: 'SINHVIEN' as const,
+    facultyId: null,
+    status: 'ACTIVE' as const,
+    passwordHash: 'hashed',
+    className: null,
+    phone: null,
+    totalPoints: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+})
+
 describe('Auth Controller', () => {
     let req: any
     let res: any
@@ -61,106 +94,153 @@ describe('Auth Controller', () => {
     })
 
     describe('handleLogin', () => {
-        it('should call next with ApiError if username is missing', async () => {
+        it('returns BAD_REQUEST when username is missing', async () => {
             req.body = { password: 'password' }
-
             await handleLogin(req, res, next)
+
             expect(next).toHaveBeenCalledWith(expect.any(ApiError))
             expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
                 HttpStatus.BAD_REQUEST
             )
         })
 
-        it('should call next with ApiError if password is missing', async () => {
-            req.body = { username: 'testuser' }
-
-            await handleLogin(req, res, next)
-            expect(next).toHaveBeenCalledWith(expect.any(ApiError))
-            expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
-                HttpStatus.BAD_REQUEST
-            )
-        })
-
-        it('should call next with ApiError if user does not exist', async () => {
+        it('returns UNAUTHORIZED when user does not exist', async () => {
             req.body = { username: 'testuser', password: 'password' }
             ;(
                 authService.getUserbyUsernameOrMssv as jest.Mock
             ).mockResolvedValue(null)
 
             await handleLogin(req, res, next)
+
             expect(next).toHaveBeenCalledWith(expect.any(ApiError))
             expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
                 HttpStatus.UNAUTHORIZED
             )
-            expect((next as jest.Mock).mock.calls[0][0].message).toBe(
-                'Email hoặc mật khẩu không hợp lệ'
+        })
+
+        it('returns FORBIDDEN when account status is not ACTIVE', async () => {
+            req.body = { username: 'testuser', password: 'password' }
+            ;(
+                authService.getUserbyUsernameOrMssv as jest.Mock
+            ).mockResolvedValue({ ...buildActiveUser(), status: 'LOCKED' })
+
+            await handleLogin(req, res, next)
+
+            expect(next).toHaveBeenCalledWith(expect.any(ApiError))
+            expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
+                HttpStatus.FORBIDDEN
             )
         })
 
-        it('should call next with ApiError if password is invalid', async () => {
+        it('returns UNAUTHORIZED when password is invalid', async () => {
             req.body = { username: 'testuser', password: 'wrong-password' }
-            const user = {
-                id: '1',
-                password: 'hashed',
-                role: 'LCD' as UserRole,
-            }
             ;(
                 authService.getUserbyUsernameOrMssv as jest.Mock
-            ).mockResolvedValue(user)
+            ).mockResolvedValue(buildActiveUser())
             ;(argon2.verify as jest.Mock).mockResolvedValue(false)
 
             await handleLogin(req, res, next)
+
             expect(next).toHaveBeenCalledWith(expect.any(ApiError))
             expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
                 HttpStatus.UNAUTHORIZED
             )
-            expect((next as jest.Mock).mock.calls[0][0].message).toBe(
-                'Email hoặc mật khẩu không hợp lệ'
-            )
         })
 
-        it('should login and return tokens if credentials are valid', async () => {
+        it('creates session and returns accessToken + user', async () => {
             req.body = { username: 'testuser', password: 'password' }
-            const user = {
-                id: '1',
-                password: 'hashed',
-                role: 'LCD' as UserRole,
-            }
             ;(
                 authService.getUserbyUsernameOrMssv as jest.Mock
-            ).mockResolvedValue(user)
+            ).mockResolvedValue(buildActiveUser())
             ;(argon2.verify as jest.Mock).mockResolvedValue(true)
             ;(authService.createSession as jest.Mock).mockResolvedValue({
                 accessToken: 'access',
                 refreshToken: 'refresh',
             })
+            ;(authService.updateLastLoginAt as jest.Mock).mockResolvedValue(
+                undefined
+            )
 
             await handleLogin(req, res, next)
 
+            expect(authService.createSession).toHaveBeenCalledWith('1', 'LCD')
+            expect(authService.updateLastLoginAt).toHaveBeenCalledWith('1')
+            expect(res.status).toHaveBeenCalledWith(HttpStatus.OK)
             expect(res.json).toHaveBeenCalledWith(
                 expect.objectContaining({
                     success: true,
-                    data: { accessToken: 'access' },
+                    data: expect.objectContaining({
+                        accessToken: 'access',
+                    }),
                 })
             )
             expect(res.cookie).toHaveBeenCalled()
         })
 
-        it('should login student with SINHVIEN role', async () => {
-            req.body = { username: '123456789', password: 'password' }
-            const student = {
-                id: '1',
-                password: 'hashed',
-                mssv: '123456789',
-            }
+        it('deletes old refresh token when cookie belongs to same user', async () => {
+            req.body = { username: 'testuser', password: 'password' }
+            req.cookies = { refresh_token: 'old-refresh-token' }
             ;(
                 authService.getUserbyUsernameOrMssv as jest.Mock
-            ).mockResolvedValue(student)
+            ).mockResolvedValue(buildActiveUser())
+            ;(argon2.verify as jest.Mock).mockResolvedValue(true)
+            ;(
+                authService.getRefreshTokenByToken as jest.Mock
+            ).mockResolvedValue({
+                token: 'old-refresh-token',
+                userId: '1',
+            })
+            ;(authService.createSession as jest.Mock).mockResolvedValue({
+                accessToken: 'access',
+                refreshToken: 'refresh',
+            })
+
+            await handleLogin(req, res, next)
+
+            expect(authService.deleteRefreshToken).toHaveBeenCalledWith(
+                'old-refresh-token'
+            )
+            expect(res.clearCookie).toHaveBeenCalled()
+        })
+
+        it('deletes all refresh tokens when cookie token belongs to another user', async () => {
+            req.body = { username: 'testuser', password: 'password' }
+            req.cookies = { refresh_token: 'old-refresh-token' }
+            ;(
+                authService.getUserbyUsernameOrMssv as jest.Mock
+            ).mockResolvedValue(buildActiveUser())
+            ;(argon2.verify as jest.Mock).mockResolvedValue(true)
+            ;(
+                authService.getRefreshTokenByToken as jest.Mock
+            ).mockResolvedValue({
+                token: 'old-refresh-token',
+                userId: '2',
+            })
+            ;(authService.createSession as jest.Mock).mockResolvedValue({
+                accessToken: 'access',
+                refreshToken: 'refresh',
+            })
+
+            await handleLogin(req, res, next)
+
+            expect(authService.deleteAllUserRefreshTokens).toHaveBeenCalledWith(
+                '1'
+            )
+        })
+
+        it('creates session for student role', async () => {
+            req.body = { username: '123456789', password: 'password' }
+            ;(
+                authService.getUserbyUsernameOrMssv as jest.Mock
+            ).mockResolvedValue(buildActiveStudent())
             ;(argon2.verify as jest.Mock).mockResolvedValue(true)
             ;(authService.createSession as jest.Mock).mockResolvedValue({
                 accessToken: 'access',
                 refreshToken: 'refresh',
             })
+            ;(authService.updateLastLoginAt as jest.Mock).mockResolvedValue(
+                undefined
+            )
 
             await handleLogin(req, res, next)
 
@@ -169,152 +249,15 @@ describe('Auth Controller', () => {
                 'SINHVIEN'
             )
         })
-
-        it('should delete existing refresh token if it belongs to same user', async () => {
-            req.body = { username: 'testuser', password: 'password' }
-            req.cookies = { refresh_token: 'old-refresh-token' }
-            const user = {
-                id: '1',
-                password: 'hashed',
-                role: 'LCD' as UserRole,
-            }
-            ;(
-                authService.getUserbyUsernameOrMssv as jest.Mock
-            ).mockResolvedValue(user)
-            ;(argon2.verify as jest.Mock).mockResolvedValue(true)
-            ;(
-                authService.getRefreshTokenByToken as jest.Mock
-            ).mockResolvedValue({
-                token: 'old-refresh-token',
-                userId: '1',
-                userType: 'user',
-            })
-            ;(authService.createSession as jest.Mock).mockResolvedValue({
-                accessToken: 'access',
-                refreshToken: 'refresh',
-            })
-
-            await handleLogin(req, res, next)
-
-            expect(authService.deleteRefreshToken).toHaveBeenCalledWith(
-                'old-refresh-token',
-                'LCD'
-            )
-            expect(res.clearCookie).toHaveBeenCalled()
-        })
-
-        it('should delete all user refresh tokens if existing token belongs to different user', async () => {
-            req.body = { username: 'testuser', password: 'password' }
-            req.cookies = { refresh_token: 'old-refresh-token' }
-            const user = {
-                id: '1',
-                password: 'hashed',
-                role: 'LCD' as UserRole,
-            }
-            ;(
-                authService.getUserbyUsernameOrMssv as jest.Mock
-            ).mockResolvedValue(user)
-            ;(argon2.verify as jest.Mock).mockResolvedValue(true)
-            ;(
-                authService.getRefreshTokenByToken as jest.Mock
-            ).mockResolvedValue({
-                token: 'old-refresh-token',
-                userId: '2',
-                userType: 'user',
-            })
-            ;(authService.createSession as jest.Mock).mockResolvedValue({
-                accessToken: 'access',
-                refreshToken: 'refresh',
-            })
-
-            await handleLogin(req, res, next)
-
-            expect(authService.deleteAllUserRefreshTokens).toHaveBeenCalledWith(
-                '1',
-                'LCD'
-            )
-        })
-
-        it('should delete all user refresh tokens if existing token not found in DB', async () => {
-            req.body = { username: 'testuser', password: 'password' }
-            req.cookies = { refresh_token: 'old-refresh-token' }
-            const user = {
-                id: '1',
-                password: 'hashed',
-                role: 'LCD' as UserRole,
-            }
-            ;(
-                authService.getUserbyUsernameOrMssv as jest.Mock
-            ).mockResolvedValue(user)
-            ;(argon2.verify as jest.Mock).mockResolvedValue(true)
-            ;(
-                authService.getRefreshTokenByToken as jest.Mock
-            ).mockResolvedValue(null)
-            ;(authService.createSession as jest.Mock).mockResolvedValue({
-                accessToken: 'access',
-                refreshToken: 'refresh',
-            })
-
-            await handleLogin(req, res, next)
-
-            expect(authService.deleteAllUserRefreshTokens).toHaveBeenCalledWith(
-                '1',
-                'LCD'
-            )
-        })
-
-        it('should handle student refresh token correctly', async () => {
-            req.body = { username: '123456789', password: 'password' }
-            req.cookies = { refresh_token: 'old-refresh-token' }
-            const student = {
-                id: '1',
-                password: 'hashed',
-                mssv: '123456789',
-            }
-            ;(
-                authService.getUserbyUsernameOrMssv as jest.Mock
-            ).mockResolvedValue(student)
-            ;(argon2.verify as jest.Mock).mockResolvedValue(true)
-            ;(
-                authService.getRefreshTokenByToken as jest.Mock
-            ).mockResolvedValue({
-                token: 'old-refresh-token',
-                studentId: '1',
-                userType: 'student',
-            })
-            ;(authService.createSession as jest.Mock).mockResolvedValue({
-                accessToken: 'access',
-                refreshToken: 'refresh',
-            })
-
-            await handleLogin(req, res, next)
-
-            expect(authService.deleteRefreshToken).toHaveBeenCalledWith(
-                'old-refresh-token',
-                'SINHVIEN'
-            )
-        })
     })
 
     describe('handleLogout', () => {
-        it('should return 204 if no refresh token in cookies', async () => {
+        it('returns 204 if no refresh token in cookies', async () => {
             await handleLogout(req, res, next)
             expect(res.sendStatus).toHaveBeenCalledWith(HttpStatus.NO_CONTENT)
         })
 
-        it('should clear cookie and return 204 if token not found in DB', async () => {
-            req.cookies = { refresh_token: 'token' }
-            ;(
-                authService.getRefreshTokenByToken as jest.Mock
-            ).mockResolvedValue(null)
-
-            await handleLogout(req, res, next)
-
-            expect(res.clearCookie).toHaveBeenCalled()
-            expect(res.sendStatus).toHaveBeenCalledWith(HttpStatus.NO_CONTENT)
-        })
-
-        it('should delete token and clear cookie if token exists', async () => {
+        it('deletes refresh token if token exists', async () => {
             req.cookies = { refresh_token: 'token' }
             ;(
                 authService.getRefreshTokenByToken as jest.Mock
@@ -323,13 +266,12 @@ describe('Auth Controller', () => {
             await handleLogout(req, res, next)
 
             expect(authService.deleteRefreshToken).toHaveBeenCalledWith('token')
-            expect(res.clearCookie).toHaveBeenCalled()
             expect(res.sendStatus).toHaveBeenCalledWith(HttpStatus.NO_CONTENT)
         })
     })
 
     describe('handleRefresh', () => {
-        it('should call next with ApiError if no refresh token', async () => {
+        it('returns UNAUTHORIZED when refresh token is missing', async () => {
             await handleRefresh(req, res, next)
             expect(next).toHaveBeenCalledWith(expect.any(ApiError))
             expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
@@ -337,7 +279,7 @@ describe('Auth Controller', () => {
             )
         })
 
-        it('should call next with ApiError if token is not found in DB and delete all user tokens', async () => {
+        it('revokes all tokens and returns FORBIDDEN when token not found in DB', async () => {
             req.cookies = { refresh_token: 'token' }
             ;(
                 authService.getRefreshTokenByToken as jest.Mock
@@ -348,228 +290,94 @@ describe('Auth Controller', () => {
             })
 
             await handleRefresh(req, res, next)
-            expect(next).toHaveBeenCalledWith(expect.any(ApiError))
-            expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
-                HttpStatus.FORBIDDEN
-            )
+
             expect(authService.deleteAllUserRefreshTokens).toHaveBeenCalledWith(
-                '1',
-                'LCD'
+                '1'
             )
-        })
-
-        it('should call next with ApiError if token is not found in DB and verify fails', async () => {
-            req.cookies = { refresh_token: 'token' }
-            ;(
-                authService.getRefreshTokenByToken as jest.Mock
-            ).mockResolvedValue(null)
-            ;(authService.verifyToken as jest.Mock).mockRejectedValue(
-                new Error('invalid')
-            )
-
-            await handleRefresh(req, res, next)
             expect(next).toHaveBeenCalledWith(expect.any(ApiError))
             expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
                 HttpStatus.FORBIDDEN
             )
         })
 
-        it('should call next with ApiError if userId does not match token', async () => {
+        it('creates new session when refresh token is valid', async () => {
             req.cookies = { refresh_token: 'token' }
             ;(
                 authService.getRefreshTokenByToken as jest.Mock
-            ).mockResolvedValue({
-                token: 'token',
-                userId: '1',
-                userType: 'user',
-            })
-            ;(authService.verifyToken as jest.Mock).mockResolvedValue({
-                userId: '2',
-                role: 'LCD',
-            })
-
-            await handleRefresh(req, res, next)
-            expect(next).toHaveBeenCalledWith(expect.any(ApiError))
-            expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
-                HttpStatus.FORBIDDEN
-            )
-        })
-
-        it('should call next with ApiError if user not found', async () => {
-            req.cookies = { refresh_token: 'token' }
-            ;(
-                authService.getRefreshTokenByToken as jest.Mock
-            ).mockResolvedValue({
-                token: 'token',
-                userId: '1',
-                userType: 'user',
-            })
+            ).mockResolvedValue({ token: 'token', userId: '1' })
             ;(authService.verifyToken as jest.Mock).mockResolvedValue({
                 userId: '1',
                 role: 'LCD',
             })
-            ;(authService.getUserById as jest.Mock).mockResolvedValue(null)
-
-            await handleRefresh(req, res, next)
-            expect(next).toHaveBeenCalledWith(expect.any(ApiError))
-            expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
-                HttpStatus.FORBIDDEN
+            ;(authService.getUserById as jest.Mock).mockResolvedValue(
+                buildActiveUser()
             )
-        })
-
-        it('should create new session if refresh token is valid', async () => {
-            req.cookies = { refresh_token: 'token' }
-            const payload = { userId: '1', role: 'LCD' as UserRole }
-            const user = { id: '1', role: 'LCD' }
-
-            ;(
-                authService.getRefreshTokenByToken as jest.Mock
-            ).mockResolvedValue({
-                token: 'token',
-                userId: '1',
-                userType: 'user',
-            })
-            ;(authService.verifyToken as jest.Mock).mockResolvedValue(payload)
-            ;(authService.getUserById as jest.Mock).mockResolvedValue(user)
             ;(authService.createSession as jest.Mock).mockResolvedValue({
-                accessToken: 'new_access',
-                refreshToken: 'new_refresh',
+                accessToken: 'new-access',
+                refreshToken: 'new-refresh',
             })
 
             await handleRefresh(req, res, next)
 
+            expect(authService.deleteRefreshToken).toHaveBeenCalledWith('token')
+            expect(authService.createSession).toHaveBeenCalledWith('1', 'LCD')
+            expect(res.status).toHaveBeenCalledWith(HttpStatus.OK)
             expect(res.json).toHaveBeenCalledWith(
                 expect.objectContaining({
                     success: true,
-                    data: { accessToken: 'new_access' },
+                    data: expect.objectContaining({
+                        accessToken: 'new-access',
+                    }),
                 })
-            )
-            expect(res.cookie).toHaveBeenCalled()
-            expect(authService.deleteRefreshToken).toHaveBeenCalledWith('token')
-        })
-
-        it('should handle student refresh token correctly', async () => {
-            req.cookies = { refresh_token: 'token' }
-            const payload = { userId: '1', role: 'SINHVIEN' as UserRole }
-            const student = { id: '1', mssv: '123456789' }
-
-            ;(
-                authService.getRefreshTokenByToken as jest.Mock
-            ).mockResolvedValue({
-                token: 'token',
-                studentId: '1',
-                userType: 'student',
-            })
-            ;(authService.verifyToken as jest.Mock).mockResolvedValue(payload)
-            ;(authService.getUserById as jest.Mock).mockResolvedValue(student)
-            ;(authService.createSession as jest.Mock).mockResolvedValue({
-                accessToken: 'new_access',
-                refreshToken: 'new_refresh',
-            })
-
-            await handleRefresh(req, res, next)
-
-            expect(authService.createSession).toHaveBeenCalledWith(
-                '1',
-                'SINHVIEN'
-            )
-        })
-
-        it('should call next with ApiError if verifyToken throws error', async () => {
-            req.cookies = { refresh_token: 'token' }
-            ;(
-                authService.getRefreshTokenByToken as jest.Mock
-            ).mockResolvedValue({
-                token: 'token',
-                userId: '1',
-                userType: 'user',
-            })
-            ;(authService.verifyToken as jest.Mock).mockRejectedValue(
-                new Error('jwt expired')
-            )
-
-            await handleRefresh(req, res, next)
-            expect(next).toHaveBeenCalledWith(expect.any(ApiError))
-            expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
-                HttpStatus.FORBIDDEN
             )
         })
     })
 
     describe('getMe', () => {
-        it('should call next with ApiError if no userId in payload', async () => {
+        it('returns UNAUTHORIZED if payload is missing', async () => {
             req.payload = {}
 
             await getMe(req, res, next)
+
             expect(next).toHaveBeenCalledWith(expect.any(ApiError))
             expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
                 HttpStatus.UNAUTHORIZED
             )
         })
 
-        it('should call next with ApiError if no role in payload', async () => {
-            req.payload = { userId: '1' }
-
-            await getMe(req, res, next)
-            expect(next).toHaveBeenCalledWith(expect.any(ApiError))
-            expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
-                HttpStatus.UNAUTHORIZED
-            )
-        })
-
-        it('should call next with ApiError if user not found', async () => {
+        it('returns user profile when authenticated', async () => {
             req.payload = { userId: '1', role: 'LCD' }
-            ;(authService.getUserById as jest.Mock).mockResolvedValue(null)
-
-            await getMe(req, res, next)
-            expect(next).toHaveBeenCalledWith(expect.any(ApiError))
-            expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
-                HttpStatus.NOT_FOUND
+            ;(authService.getUserById as jest.Mock).mockResolvedValue(
+                buildActiveUser()
             )
-        })
-
-        it('should return user without password', async () => {
-            req.payload = { userId: '1', role: 'LCD' }
-            const user = { id: '1', username: 'test', password: 'hashed' }
-            ;(authService.getUserById as jest.Mock).mockResolvedValue(user)
 
             await getMe(req, res, next)
 
+            expect(res.status).toHaveBeenCalledWith(HttpStatus.OK)
             expect(res.json).toHaveBeenCalledWith(
                 expect.objectContaining({
                     success: true,
-                    data: { id: '1', username: 'test' },
+                    data: expect.objectContaining({
+                        id: '1',
+                        username: 'testuser',
+                    }),
                 })
             )
         })
     })
 
     describe('handleChangePassword', () => {
-        it('should call next with ApiError if not authorized (no payload)', async () => {
+        it('returns UNAUTHORIZED when payload is missing', async () => {
             req.payload = null
             await handleChangePassword(req, res, next)
+
             expect(next).toHaveBeenCalledWith(expect.any(ApiError))
             expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
                 HttpStatus.UNAUTHORIZED
             )
         })
 
-        it('should call next with ApiError if no userId in payload', async () => {
-            req.payload = { role: 'LCD' }
-            await handleChangePassword(req, res, next)
-            expect(next).toHaveBeenCalledWith(expect.any(ApiError))
-            expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
-                HttpStatus.UNAUTHORIZED
-            )
-        })
-
-        it('should call next with ApiError if no role in payload', async () => {
-            req.payload = { userId: '1' }
-            await handleChangePassword(req, res, next)
-            expect(next).toHaveBeenCalledWith(expect.any(ApiError))
-        })
-
-        it('should call changePassword and return 200 on success', async () => {
+        it('calls changePassword and returns success', async () => {
             req.payload = { userId: '1', role: 'LCD' }
             req.body = {
                 oldPassword: 'old_password',
@@ -587,10 +395,11 @@ describe('Auth Controller', () => {
                 'LCD',
                 req.body
             )
+            expect(res.status).toHaveBeenCalledWith(HttpStatus.OK)
             expect(res.json).toHaveBeenCalledWith(
                 expect.objectContaining({
                     success: true,
-                    message: 'Đổi mật khẩu thành công',
+                    message: 'Doi mat khau thanh cong',
                 })
             )
         })

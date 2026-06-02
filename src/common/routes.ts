@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { authRouter } from 'src/features/auth'
+import { usersRouter } from 'src/features/users'
 import { authLimiter } from 'src/common/middleware'
 import { config } from 'src/config'
 
@@ -10,6 +11,10 @@ const defaultRoutes = [
         path: '/auth',
         route: authRouter,
         limiter: config.node_env === 'production' ? authLimiter : undefined,
+    },
+    {
+        path: '/users',
+        route: usersRouter,
     },
 ]
 

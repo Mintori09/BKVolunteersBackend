@@ -9,6 +9,9 @@ logs/
 .idea/
 generated/
 .aider*
-prisma/migrations
+prisma/migrations/*
+!prisma/migrations/20260602090000_unify_user_roles/
+prisma/migrations/20260602090000_unify_user_roles/*
+!prisma/migrations/20260602090000_unify_user_roles/migration.sql
 students.json
 session.json

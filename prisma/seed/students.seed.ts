@@ -119,7 +119,7 @@ export async function seedStudents(prisma: PrismaClient): Promise<void> {
         username: string
         email: string
         passwordHash: string
-        accountType: 'STUDENT'
+        role: 'SINHVIEN'
         status: 'ACTIVE'
     }> = []
 
@@ -136,7 +136,7 @@ export async function seedStudents(prisma: PrismaClient): Promise<void> {
             username: student.mssv,
             email: `${student.mssv}@sv1.dut.udn.vn`,
             passwordHash,
-            accountType: 'STUDENT',
+            role: 'SINHVIEN',
             status: 'ACTIVE',
         })
 
