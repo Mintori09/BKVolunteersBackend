@@ -4,28 +4,45 @@ import { catchAsync } from 'src/utils/catchAsync'
 import { ApiResponse } from 'src/utils/ApiResponse'
 import { ApiError } from 'src/utils/ApiError'
 import * as studentService from './student.service'
-import { TypedRequest } from 'src/types/request'
-import { UpdateProfileInput } from './types'
-import { PointTransactionFilter } from '../gamification/types'
+import { EmptyBody, TypedRequest } from 'src/types/request'
+import {
+    StudentActivityQuery,
+    StudentDonationQuery,
+    UpdateProfileInput,
+} from './types'
 
-export const getMe = catchAsync(async (req, res: Response) => {
+const requireStudentPrincipal = (req: {
+    payload?: { userId?: string; accountType?: string }
+}) => {
     const userId = req.payload?.userId
-    const role = req.payload?.role
+    const accountType = req.payload?.accountType
 
-    if (!userId || role !== 'SINHVIEN') {
+    if (!userId || accountType !== 'STUDENT') {
         throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chưa xác thực người dùng')
     }
+
+    return userId
+}
+
+export const getMe = catchAsync(async (req, res: Response) => {
+    const userId = requireStudentPrincipal(req)
 
     const profile = await studentService.getMyProfile(userId)
     return ApiResponse.success(res, profile)
 })
 
+export const getMyDashboard = catchAsync(async (req, res: Response) => {
+    const userId = requireStudentPrincipal(req)
+    const dashboard = await studentService.getMyDashboard(userId)
+    return ApiResponse.success(res, dashboard)
+})
+
 export const updateMe = catchAsync(
     async (req: TypedRequest<UpdateProfileInput>, res: Response) => {
         const userId = req.payload?.userId
-        const role = req.payload?.role
+        const accountType = req.payload?.accountType
 
-        if (!userId || role !== 'SINHVIEN') {
+        if (!userId || accountType !== 'STUDENT') {
             throw new ApiError(
                 HttpStatus.UNAUTHORIZED,
                 'Chưa xác thực người dùng'
@@ -37,37 +54,38 @@ export const updateMe = catchAsync(
     }
 )
 
-export const getPointsHistory = catchAsync(async (req, res: Response) => {
-    const userId = req.payload?.userId
-    const role = req.payload?.role
-
-    if (!userId || role !== 'SINHVIEN') {
-        throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chưa xác thực người dùng')
-    }
-
-    const { page, limit, sourceType, fromDate, toDate } = req.query as any
-
-    const history = await studentService.getPointsHistory(userId, {
-        page: page ? parseInt(page) : undefined,
-        limit: limit ? parseInt(limit) : undefined,
-        sourceType,
-        fromDate,
-        toDate,
-    })
-
-    return ApiResponse.success(res, history)
-})
-
 export const getMyTitles = catchAsync(async (req, res: Response) => {
-    const userId = req.payload?.userId
-    const role = req.payload?.role
-
-    if (!userId || role !== 'SINHVIEN') {
-        throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chưa xác thực người dùng')
-    }
+    const userId = requireStudentPrincipal(req)
 
     const titles = await studentService.getMyTitles(userId)
     return ApiResponse.success(res, titles)
+})
+
+export const getMyCertificates = catchAsync(async (req, res: Response) => {
+    const userId = requireStudentPrincipal(req)
+
+    const certificates = await studentService.getMyCertificates(userId)
+    return ApiResponse.success(res, certificates)
+})
+
+export const getMyActivities = catchAsync(
+    async (
+        req: TypedRequest<EmptyBody, StudentActivityQuery>,
+        res: Response
+    ) => {
+        const userId = requireStudentPrincipal(req)
+        const activities = await studentService.getMyActivities(userId, req.query)
+        return ApiResponse.success(res, activities)
+    }
+)
+
+export const getMyDonations = catchAsync(async (req, res: Response) => {
+    const userId = requireStudentPrincipal(req)
+    const donations = await studentService.getMyDonations(
+        userId,
+        req.query as StudentDonationQuery
+    )
+    return ApiResponse.success(res, donations)
 })
 
 export const getStudentById = catchAsync(async (req, res: Response) => {

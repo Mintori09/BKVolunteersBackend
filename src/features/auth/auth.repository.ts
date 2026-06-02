@@ -1,38 +1,151 @@
 import { prismaClient } from 'src/config'
 import { UserRole } from './types'
 
+const toBigIntId = (id: string) => BigInt(id)
+
+const normalizeOperatorRole = (role: string | null | undefined): UserRole => {
+    switch (role) {
+        case 'ORG_ADMIN':
+        case 'CLB':
+            return 'CLB'
+        case 'SCHOOL_REVIEWER':
+        case 'LCD':
+            return 'LCD'
+        case 'SCHOOL_ADMIN':
+        case 'DOANTRUONG':
+            return 'DOANTRUONG'
+        default:
+            return 'CLB'
+    }
+}
+
+const mapOperatorAccount = (account: any) => {
+    if (!account) return null
+
+    return {
+        ...account,
+        id: account.id.toString(),
+        facultyId: account.facultyId ? account.facultyId.toString() : null,
+        organizationId: account.organizationId
+            ? account.organizationId.toString()
+            : null,
+        role: normalizeOperatorRole(account.role),
+        password: account.passwordHash,
+        fullName: account.fullName,
+    }
+}
+
+const mapStudent = (student: any) => {
+    if (!student) return null
+
+    return {
+        ...student,
+        id: student.id.toString(),
+        facultyId: student.facultyId.toString(),
+        currentTitleId: student.currentTitleId
+            ? student.currentTitleId.toString()
+            : null,
+        mssv: student.studentCode,
+        studentCode: student.studentCode,
+        className: student.classCode,
+        classCode: student.classCode,
+        password: student.passwordHash,
+    }
+}
+
 export const getUserByEmail = async (email: string) => {
-    return prismaClient.user.findUnique({ where: { email } })
+    const account = await prismaClient.operatorAccount.findUnique({
+        where: { email },
+    })
+    return mapOperatorAccount(account)
 }
 
 export const getUserByUsername = async (username: string) => {
-    return prismaClient.user.findUnique({ where: { username } })
+    const account = await prismaClient.operatorAccount.findUnique({
+        where: { email: username },
+    })
+    return mapOperatorAccount(account)
+}
+
+export const getUserByStudentEmail = async (email: string) => {
+    const student = await prismaClient.student.findUnique({
+        where: { email },
+    })
+    return mapStudent(student)
 }
 
 export const getUserByMssv = async (mssv: string) => {
-    return prismaClient.student.findUnique({ where: { mssv } })
+    const student = await prismaClient.student.findUnique({
+        where: { studentCode: mssv },
+    })
+    return mapStudent(student)
 }
 
 export const getUserById = async (userId: string, role: UserRole) => {
     if (role === 'SINHVIEN') {
-        return prismaClient.student.findUnique({ where: { id: userId } })
+        const student = await prismaClient.student.findUnique({
+            where: { id: toBigIntId(userId) },
+            include: {
+                faculty: true,
+            },
+        })
+        return mapStudent(student)
     }
-    return prismaClient.user.findUnique({ where: { id: userId } })
+    const account = await prismaClient.operatorAccount.findUnique({
+        where: { id: toBigIntId(userId) },
+        include: {
+            faculty: true,
+            organization: true,
+        },
+    })
+    return mapOperatorAccount(account)
+}
+
+export const getUserByPrincipal = async (
+    userId: string,
+    accountType: 'STUDENT' | 'OPERATOR'
+) => {
+    if (accountType === 'STUDENT') {
+        const student = await prismaClient.student.findUnique({
+            where: { id: toBigIntId(userId) },
+            include: {
+                faculty: true,
+                currentTitle: true,
+            },
+        })
+        return mapStudent(student)
+    }
+
+    const account = await prismaClient.operatorAccount.findUnique({
+        where: { id: toBigIntId(userId) },
+        include: {
+            faculty: true,
+            organization: true,
+        },
+    })
+    return mapOperatorAccount(account)
 }
 
 export const getRefreshTokenByToken = async (token: string) => {
-    const userToken = await prismaClient.refreshToken.findUnique({
-        where: { token },
+    const refreshToken = await prismaClient.refreshToken.findUnique({
+        where: { tokenHash: token },
     })
-    if (userToken) {
-        return { ...userToken, userType: 'user' as const }
-    }
+    if (refreshToken) {
+        const role =
+            refreshToken.accountType === 'STUDENT' ? 'SINHVIEN' : undefined
 
-    const studentToken = await prismaClient.studentRefreshToken.findUnique({
-        where: { token },
-    })
-    if (studentToken) {
-        return { ...studentToken, userType: 'student' as const }
+        return {
+            ...refreshToken,
+            id: refreshToken.id.toString(),
+            studentId: refreshToken.studentId?.toString(),
+            userId: refreshToken.operatorAccountId?.toString(),
+            role,
+            accountType: refreshToken.accountType as 'STUDENT' | 'OPERATOR',
+            userType:
+                refreshToken.accountType === 'STUDENT'
+                    ? ('student' as const)
+                    : ('user' as const),
+        }
     }
 
     return null
@@ -40,14 +153,17 @@ export const getRefreshTokenByToken = async (token: string) => {
 
 export const deleteRefreshToken = async (token: string, role?: UserRole) => {
     if (role === 'SINHVIEN') {
-        return prismaClient.studentRefreshToken.deleteMany({ where: { token } })
+        return prismaClient.refreshToken.deleteMany({
+            where: { tokenHash: token, accountType: 'STUDENT' },
+        })
     }
     if (role !== undefined) {
-        return prismaClient.refreshToken.deleteMany({ where: { token } })
+        return prismaClient.refreshToken.deleteMany({
+            where: { tokenHash: token, accountType: 'OPERATOR' },
+        })
     }
 
-    await prismaClient.refreshToken.deleteMany({ where: { token } })
-    await prismaClient.studentRefreshToken.deleteMany({ where: { token } })
+    return prismaClient.refreshToken.deleteMany({ where: { tokenHash: token } })
 }
 
 export const deleteAllUserRefreshTokens = async (
@@ -55,11 +171,19 @@ export const deleteAllUserRefreshTokens = async (
     role: UserRole
 ) => {
     if (role === 'SINHVIEN') {
-        return prismaClient.studentRefreshToken.deleteMany({
-            where: { studentId: userId },
+        return prismaClient.refreshToken.deleteMany({
+            where: {
+                studentId: toBigIntId(userId),
+                accountType: 'STUDENT',
+            },
         })
     }
-    return prismaClient.refreshToken.deleteMany({ where: { userId } })
+    return prismaClient.refreshToken.deleteMany({
+        where: {
+            operatorAccountId: toBigIntId(userId),
+            accountType: 'OPERATOR',
+        },
+    })
 }
 
 export const createRefreshToken = async (
@@ -67,18 +191,15 @@ export const createRefreshToken = async (
     token: string,
     role: UserRole
 ) => {
-    if (role === 'SINHVIEN') {
-        return prismaClient.studentRefreshToken.create({
-            data: {
-                token,
-                studentId: userId,
-            },
-        })
-    }
     return prismaClient.refreshToken.create({
         data: {
-            token,
-            userId,
+            tokenHash: token,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            accountType: role === 'SINHVIEN' ? 'STUDENT' : 'OPERATOR',
+            studentId:
+                role === 'SINHVIEN' ? toBigIntId(userId) : undefined,
+            operatorAccountId:
+                role === 'SINHVIEN' ? undefined : toBigIntId(userId),
         },
     })
 }
@@ -90,12 +211,12 @@ export const updatePassword = async (
 ) => {
     if (role === 'SINHVIEN') {
         return prismaClient.student.update({
-            where: { id: userId },
-            data: { password: hashedPassword },
+            where: { id: toBigIntId(userId) },
+            data: { passwordHash: hashedPassword },
         })
     }
-    return prismaClient.user.update({
-        where: { id: userId },
-        data: { password: hashedPassword },
+    return prismaClient.operatorAccount.update({
+        where: { id: toBigIntId(userId) },
+        data: { passwordHash: hashedPassword },
     })
 }

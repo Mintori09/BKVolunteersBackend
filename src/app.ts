@@ -1,4 +1,4 @@
-import express, { type Express } from 'express'
+import express, { type Express, type Request, type Response } from 'express'
 import helmet from 'helmet'
 import cors from 'cors'
 import { xssMiddleware } from 'src/common/middleware/xssMiddleware'
@@ -18,10 +18,19 @@ import path from 'path'
 const app: Express = express()
 
 const swaggerDocs = swaggerJsdoc(swaggerOptions)
+const sepayWebhookPath = '/api/v1/fundraising/sepay/webhook'
+
+const captureRawBody = (req: Request, _res: Response, buf: Buffer) => {
+    const requestPath = req.originalUrl ?? req.url
+
+    if (requestPath?.startsWith(sepayWebhookPath)) {
+        req.rawBody = buf.toString('utf8')
+    }
+}
 
 app.use(helmet(helmetConfig))
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+app.use(express.json({ verify: captureRawBody }))
+app.use(express.urlencoded({ extended: true, verify: captureRawBody }))
 app.use(xssMiddleware())
 app.use(cookieParser())
 app.use(cors(corsConfig))

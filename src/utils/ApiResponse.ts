@@ -5,12 +5,16 @@ export interface ApiResponseSuccess<T> {
     success: true
     message: string
     data: T
+    meta?: unknown
 }
 
 export interface ApiResponseError {
     success: false
-    message: string
-    errors: any
+    error: {
+        code: string
+        message: string
+        details?: unknown
+    }
     stack?: string
 }
 
@@ -19,12 +23,14 @@ export class ApiResponse {
         res: Response,
         data: T,
         message = 'Success',
-        statusCode = HttpStatus.OK
+        statusCode = HttpStatus.OK,
+        meta?: unknown
     ) {
         return res.status(statusCode).json({
             success: true,
             message,
             data,
+            ...(meta !== undefined ? { meta } : {}),
         } satisfies ApiResponseSuccess<T>)
     }
 
@@ -32,13 +38,17 @@ export class ApiResponse {
         res: Response,
         message = 'Error',
         statusCode = HttpStatus.INTERNAL_SERVER_ERROR,
-        errors: any = null,
+        details: unknown = undefined,
+        code = 'INTERNAL_ERROR',
         stack: string | undefined = undefined
     ) {
         return res.status(statusCode).json({
             success: false,
-            message,
-            errors,
+            error: {
+                code,
+                message,
+                ...(details !== undefined && { details }),
+            },
             ...(stack && { stack }),
         } satisfies ApiResponseError)
     }

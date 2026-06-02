@@ -1,95 +1,285 @@
+import { Prisma } from '@prisma/client'
 import { prismaClient } from 'src/config'
 import { UpdateProfileInput } from './types'
 
-export const findById = async (id: string) => {
+const toBigIntId = (id: string) => BigInt(id)
+
+type StudentWithCurrentTitle = Prisma.StudentGetPayload<{
+    include: {
+        currentTitle: true
+    }
+}>
+
+type StudentWithTitleSummary = Prisma.StudentGetPayload<{
+    select: {
+        id: true
+        studentCode: true
+        fullName: true
+        email: true
+        facultyId: true
+        classCode: true
+        phone: true
+        avatarUrl: true
+        major: true
+        year: true
+        totalPoints: true
+        createdAt: true
+        updatedAt: true
+        currentTitle: {
+            select: {
+                id: true
+                name: true
+                description: true
+                minPoints: true
+                iconUrl: true
+                badgeColor: true
+            }
+        }
+    }
+}>
+
+type StudentPublicWithTitle = Prisma.StudentGetPayload<{
+    select: {
+        id: true
+        studentCode: true
+        fullName: true
+        email: true
+        facultyId: true
+        classCode: true
+        totalPoints: true
+        createdAt: true
+        updatedAt: true
+        currentTitle: {
+            select: {
+                id: true
+                name: true
+                minPoints: true
+                iconUrl: true
+                badgeColor: true
+            }
+        }
+    }
+}>
+
+export const findById = async (id: string): Promise<StudentWithCurrentTitle | null> => {
     return prismaClient.student.findUnique({
-        where: { id },
+        where: { id: toBigIntId(id) },
         include: {
-            titles: {
-                include: {
-                    title: true,
-                },
-                orderBy: { unlockedAt: 'desc' },
-            },
+            currentTitle: true,
         },
     })
 }
 
-export const findByIdWithTitles = async (id: string) => {
+export const findByIdWithTitles = async (
+    id: string
+): Promise<StudentWithTitleSummary | null> => {
     return prismaClient.student.findUnique({
-        where: { id },
+        where: { id: toBigIntId(id) },
         select: {
             id: true,
-            mssv: true,
+            studentCode: true,
             fullName: true,
             email: true,
             facultyId: true,
-            className: true,
+            classCode: true,
             phone: true,
+            avatarUrl: true,
+            major: true,
+            year: true,
             totalPoints: true,
             createdAt: true,
             updatedAt: true,
-            titles: {
-                include: {
-                    title: {
-                        select: {
-                            id: true,
-                            name: true,
-                            description: true,
-                            minPoints: true,
-                            iconUrl: true,
-                            badgeColor: true,
-                        },
-                    },
+            currentTitle: {
+                select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                    minPoints: true,
+                    iconUrl: true,
+                    badgeColor: true,
                 },
-                orderBy: { unlockedAt: 'desc' },
             },
         },
     })
 }
 
-export const findByIdPublic = async (id: string) => {
+export const findByIdPublic = async (
+    id: string
+): Promise<StudentPublicWithTitle | null> => {
     return prismaClient.student.findUnique({
-        where: { id },
+        where: { id: toBigIntId(id) },
         select: {
             id: true,
-            mssv: true,
+            studentCode: true,
             fullName: true,
             email: true,
             facultyId: true,
-            className: true,
+            classCode: true,
             totalPoints: true,
             createdAt: true,
             updatedAt: true,
-            titles: {
-                include: {
-                    title: {
-                        select: {
-                            id: true,
-                            name: true,
-                            minPoints: true,
-                            iconUrl: true,
-                        },
-                    },
+            currentTitle: {
+                select: {
+                    id: true,
+                    name: true,
+                    minPoints: true,
+                    iconUrl: true,
+                    badgeColor: true,
                 },
-                orderBy: { unlockedAt: 'desc' },
             },
         },
+    })
+}
+
+export const findDonationsByStudentId = async (studentId: string) => {
+    const id = toBigIntId(studentId)
+    const [moneyDonations, itemPledges] = await Promise.all([
+        prismaClient.moneyDonation.findMany({
+            where: { studentId: id },
+            include: {
+                campaign: { select: { id: true, title: true, slug: true } },
+                module: { select: { id: true, title: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+        }),
+        prismaClient.itemPledge.findMany({
+            where: { studentId: id },
+            include: {
+                campaign: { select: { id: true, title: true, slug: true } },
+                module: { select: { id: true, title: true } },
+                itemTarget: { select: { id: true, name: true, unit: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+        }),
+    ])
+    return { moneyDonations, itemPledges }
+}
+
+export const findStudentDashboardData = async (studentId: string) => {
+    const id = toBigIntId(studentId)
+
+    const [
+        moneyDonations,
+        itemPledges,
+        eventRegistrations,
+        certificates,
+    ] = await Promise.all([
+        prismaClient.moneyDonation.findMany({
+            where: { studentId: id },
+            select: {
+                id: true,
+                campaignId: true,
+                moduleId: true,
+                status: true,
+                amount: true,
+                donorName: true,
+                message: true,
+                createdAt: true,
+                campaign: { select: { id: true, title: true, slug: true } },
+                module: {
+                    select: { id: true, title: true, type: true },
+                },
+            },
+            orderBy: { createdAt: 'desc' },
+        }),
+        prismaClient.itemPledge.findMany({
+            where: { studentId: id },
+            select: {
+                id: true,
+                campaignId: true,
+                moduleId: true,
+                status: true,
+                quantity: true,
+                receivedQuantity: true,
+                donorName: true,
+                createdAt: true,
+                receivedAt: true,
+                campaign: { select: { id: true, title: true, slug: true } },
+                module: {
+                    select: { id: true, title: true, type: true },
+                },
+                itemTarget: { select: { name: true, unit: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+        }),
+        prismaClient.eventRegistration.findMany({
+            where: { studentId: id },
+            select: {
+                id: true,
+                campaignId: true,
+                moduleId: true,
+                status: true,
+                hours: true,
+                createdAt: true,
+                reviewedAt: true,
+                checkedInAt: true,
+                checkedOutAt: true,
+                campaign: { select: { id: true, title: true, slug: true } },
+                module: {
+                    select: { id: true, title: true, type: true },
+                },
+            },
+            orderBy: { createdAt: 'desc' },
+        }),
+        prismaClient.certificate.findMany({
+            where: { studentId: id },
+            select: {
+                id: true,
+                certificateNo: true,
+                campaignId: true,
+                moduleId: true,
+                status: true,
+                issuedAt: true,
+                createdAt: true,
+                campaign: { select: { id: true, title: true, slug: true } },
+                module: { select: { id: true, title: true } },
+                template: { select: { name: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+        }),
+    ])
+
+    return {
+        moneyDonations,
+        itemPledges,
+        eventRegistrations,
+        certificates,
+    }
+}
+
+export const findCertificatesByStudentId = async (studentId: string) => {
+    return prismaClient.certificate.findMany({
+        where: { studentId: toBigIntId(studentId) },
+        include: {
+            campaign: { select: { title: true } },
+            module: { select: { title: true } },
+            template: { select: { name: true } },
+        },
+        orderBy: { createdAt: 'desc' },
     })
 }
 
 export const updateProfile = async (id: string, data: UpdateProfileInput) => {
     return prismaClient.student.update({
-        where: { id },
-        data,
+        where: { id: toBigIntId(id) },
+        data: {
+            phone: data.phone,
+            classCode: data.classCode,
+            avatarUrl: data.avatarUrl,
+            major: data.major,
+            year: data.year,
+        },
         select: {
             id: true,
-            mssv: true,
+            studentCode: true,
             fullName: true,
             email: true,
             facultyId: true,
-            className: true,
+            classCode: true,
             phone: true,
+            avatarUrl: true,
+            major: true,
+            year: true,
             totalPoints: true,
         },
     })

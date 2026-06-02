@@ -13,6 +13,7 @@ describe('restrictTo middleware', () => {
             payload: {
                 userId: '1',
                 role: 'USER',
+                accountType: 'OPERATOR',
             },
         }
         res = {}
@@ -52,6 +53,13 @@ describe('restrictTo middleware', () => {
     it('should allow access for multi-role support', () => {
         req.payload.role = 'ADMIN'
         const middleware = restrictTo('USER', 'ADMIN', 'MODERATOR')
+        middleware(req as Request, res as Response, next)
+
+        expect(next).toHaveBeenCalledWith()
+    })
+
+    it('should allow access by account type keyword', () => {
+        const middleware = restrictTo('OPERATOR')
         middleware(req as Request, res as Response, next)
 
         expect(next).toHaveBeenCalledWith()

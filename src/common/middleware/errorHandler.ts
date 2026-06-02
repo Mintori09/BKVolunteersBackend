@@ -20,12 +20,13 @@ export const errorHandler = (
 
     res.locals.errorMessage = err.message
 
-    const errors = err.errors || null
+    const errors = err.errors || undefined
+    const code = err.code || (statusCode >= 500 ? 'INTERNAL_ERROR' : 'REQUEST_ERROR')
     const stack = config.node_env === 'development' ? err.stack : undefined
 
     if (config.node_env === 'development' || statusCode >= 500) {
         logger.error(err)
     }
 
-    ApiResponse.error(res, message, statusCode, errors, stack)
+    ApiResponse.error(res, message, statusCode, errors, code, stack)
 }

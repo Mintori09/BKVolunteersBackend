@@ -68,6 +68,15 @@ const handleMulterError = (
  *     responses:
  *       200:
  *         description: Image uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/UploadOutput'
  *       400:
  *         description: Invalid file type or size
  *       401:
@@ -105,6 +114,15 @@ uploadRouter.post(
  *     responses:
  *       200:
  *         description: Document uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponseSuccess'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/UploadOutput'
  *       400:
  *         description: Invalid file type or size
  *       401:

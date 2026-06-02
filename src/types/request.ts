@@ -6,12 +6,17 @@ import * as z from 'zod'
 export type TypedRequest<
     ReqBody = Record<string, unknown>,
     QueryString = Record<string, unknown>,
+    Params = Record<string, unknown>,
 > = Request<
-    Record<string, unknown>,
+    DeepPartial<Params>,
     Record<string, unknown>,
     DeepPartial<ReqBody>,
     DeepPartial<QueryString>
 >
+
+export type EmptyParams = Record<string, unknown>
+export type EmptyBody = Record<string, unknown>
+export type EmptyQuery = Record<string, unknown>
 
 export type RequestValidationSchema = RequireAtLeastOne<{
     body?: z.ZodObject<any, any>

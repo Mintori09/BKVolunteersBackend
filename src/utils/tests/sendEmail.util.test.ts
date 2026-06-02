@@ -1,4 +1,4 @@
-import { sendResetEmail, sendVerifyEmail } from '../sendEmail.util'
+import { sendResetCodeEmail, sendVerifyEmail } from '../sendEmail.util'
 
 const mockSendMail = jest.fn()
 const mockLoggerError = jest.fn()
@@ -30,10 +30,10 @@ describe('sendEmail.util', () => {
         jest.clearAllMocks()
     })
 
-    describe('sendResetEmail', () => {
+    describe('sendResetCodeEmail', () => {
         it('should call transporter.sendMail with correct mail options on success', () => {
             const email = 'user@example.com'
-            const token = 'reset-token-123'
+            const code = '123456'
 
             mockSendMail.mockImplementation(
                 (
@@ -44,21 +44,21 @@ describe('sendEmail.util', () => {
                 }
             )
 
-            sendResetEmail(email, token)
+            sendResetCodeEmail(email, code)
 
             expect(mockSendMail).toHaveBeenCalled()
             const mailOptions = mockSendMail.mock.calls[0][0]
             expect(mailOptions).toMatchObject({
                 from: 'noreply@example.com',
                 to: email,
-                subject: 'Reset Your Password',
+                subject: 'Đặt lại mật khẩu - Mã xác thực',
             })
-            expect(mailOptions.html).toContain('reset-token-123')
+            expect(mailOptions.html).toContain('123456')
         })
 
         it('should log error when sendMail fails', () => {
             const email = 'user@example.com'
-            const token = 'reset-token-123'
+            const code = '123456'
             const error = new Error('SMTP connection failed')
 
             mockSendMail.mockImplementation(
@@ -70,14 +70,14 @@ describe('sendEmail.util', () => {
                 }
             )
 
-            sendResetEmail(email, token)
+            sendResetCodeEmail(email, code)
 
             expect(mockLoggerError).toHaveBeenCalledWith(error)
         })
 
         it('should log info when sendMail succeeds', () => {
             const email = 'user@example.com'
-            const token = 'reset-token-123'
+            const code = '123456'
 
             mockSendMail.mockImplementation(
                 (
@@ -88,7 +88,7 @@ describe('sendEmail.util', () => {
                 }
             )
 
-            sendResetEmail(email, token)
+            sendResetCodeEmail(email, code)
 
             expect(mockLoggerInfo).toHaveBeenCalledWith(
                 'Reset password email sent: 250 OK'
@@ -120,6 +120,9 @@ describe('sendEmail.util', () => {
                 subject: 'Verify Your Email Address',
             })
             expect(mailOptions.html).toContain('verify-token-456')
+            expect(mailOptions.html).toContain(
+                'http://localhost:3000/verify-email?token=verify-token-456'
+            )
         })
 
         it('should log error when sendMail fails', () => {

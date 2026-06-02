@@ -7,19 +7,41 @@ import { RequestValidationSchema } from 'src/types/request'
 
 /**
  * Đăng nhập
- * - username: email hoặc MSSV (9 số bắt đầu bằng 1)
+ * - identifier: email hoặc MSSV (9 số bắt đầu bằng 1)
  * - password: 6-50 ký tự
  */
+const mssvRegex = /^1\d{8}$/
+
 export const loginSchema: RequestValidationSchema = {
     body: z.object({
-        username: z
+        identifier: z
             .string()
-            .min(9, 'Username phải có ít nhất 9 ký tự')
-            .max(40, 'Username không được quá 40 ký tự'),
+            .min(1, 'Email hoặc MSSV là bắt buộc')
+            .max(255, 'Email hoặc MSSV không được quá 255 ký tự')
+            .refine(
+                (val) =>
+                    mssvRegex.test(val) ||
+                    z.string().email().safeParse(val).success,
+                {
+                    message: 'Phải là email hợp lệ hoặc MSSV (9 số bắt đầu bằng 1)',
+                }
+            ),
         password: z
             .string()
             .min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
             .max(50, 'Mật khẩu không được quá 50 ký tự'),
+    }),
+}
+
+export const refreshSchema: RequestValidationSchema = {
+    body: z.object({
+        refresh_token: z.string().min(1, 'Refresh token là bắt buộc'),
+    }),
+}
+
+export const logoutSchema: RequestValidationSchema = {
+    body: z.object({
+        refresh_token: z.string().min(1).nullish(),
     }),
 }
 

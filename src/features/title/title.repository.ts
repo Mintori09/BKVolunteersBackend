@@ -1,7 +1,10 @@
 import { prismaClient } from 'src/config'
 import { TitleFilter, CreateTitleInput, UpdateTitleInput } from './types'
-import { PaginatedResult } from '../gamification/types'
-import { Title } from '@prisma/client'
+import { PaginatedResult } from 'src/common/types'
+import { Prisma, Title } from '@prisma/client'
+
+const toBigIntId = (id: string | bigint) =>
+    typeof id === 'bigint' ? id : BigInt(id)
 
 export const create = async (data: CreateTitleInput): Promise<Title> => {
     return prismaClient.title.create({
@@ -11,29 +14,29 @@ export const create = async (data: CreateTitleInput): Promise<Title> => {
             minPoints: data.minPoints,
             iconUrl: data.iconUrl,
             badgeColor: data.badgeColor,
-        },
+        } satisfies Prisma.TitleCreateInput,
     })
 }
 
 export const updateById = async (
-    id: number,
+    id: string | bigint,
     data: UpdateTitleInput
 ): Promise<Title> => {
     return prismaClient.title.update({
-        where: { id },
+        where: { id: toBigIntId(id) },
         data,
     })
 }
 
-export const deleteById = async (id: number): Promise<Title> => {
+export const deleteById = async (id: string | bigint): Promise<Title> => {
     return prismaClient.title.delete({
-        where: { id },
+        where: { id: toBigIntId(id) },
     })
 }
 
-export const findById = async (id: number): Promise<Title | null> => {
+export const findById = async (id: string | bigint): Promise<Title | null> => {
     return prismaClient.title.findUnique({
-        where: { id },
+        where: { id: toBigIntId(id) },
     })
 }
 
@@ -42,9 +45,8 @@ export const findMany = async (
 ): Promise<PaginatedResult<Title>> => {
     const { page = 1, limit = 10, isActive } = filters
 
-    const where: any = {}
-    if (isActive !== undefined) {
-        where.isActive = isActive
+    const where: Prisma.TitleWhereInput = {
+        ...(isActive === undefined ? {} : { isActive }),
     }
 
     const [items, total] = await Promise.all([
@@ -74,7 +76,6 @@ export const findTitlesBelowPoints = async (
     return prismaClient.title.findMany({
         where: {
             minPoints: { lte: points },
-            isActive: true,
         },
         orderBy: { minPoints: 'asc' },
     })

@@ -39,7 +39,10 @@ describe('errorHandler middleware', () => {
         expect(res.json).toHaveBeenCalledWith(
             expect.objectContaining({
                 success: false,
-                message: 'Not found',
+                error: expect.objectContaining({
+                    code: 'INTERNAL_ERROR',
+                    message: 'Not found',
+                }),
                 stack: expect.any(String),
             })
         )
@@ -56,7 +59,10 @@ describe('errorHandler middleware', () => {
         expect(res.json).toHaveBeenCalledWith(
             expect.objectContaining({
                 success: false,
-                message: 'Generic error',
+                error: expect.objectContaining({
+                    code: 'INTERNAL_ERROR',
+                    message: 'Generic error',
+                }),
             })
         )
     })
@@ -71,7 +77,10 @@ describe('errorHandler middleware', () => {
         expect(res.json).toHaveBeenCalledWith(
             expect.objectContaining({
                 success: false,
-                message: 'Internal Server Error',
+                error: expect.objectContaining({
+                    code: 'INTERNAL_ERROR',
+                    message: 'Internal Server Error',
+                }),
             })
         )
     })
@@ -90,8 +99,12 @@ describe('errorHandler middleware', () => {
         expect(res.json).toHaveBeenCalledWith(
             expect.objectContaining({
                 success: false,
-                message: 'Validation failed',
-                errors: errors,
+                error: expect.objectContaining({
+                    code: 'REQUEST_ERROR',
+                    message: 'Validation failed',
+                    details: errors,
+                }),
+                stack: expect.any(String),
             })
         )
     })

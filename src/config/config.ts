@@ -3,42 +3,81 @@ import * as z from 'zod'
 
 dotenv.config()
 
-const envSchema = z.object({
-    NODE_ENV: z
-        .literal(['development', 'test', 'production'])
-        .default('development'),
-    PORT: z.string().default('4000'),
-    SERVER_URL: z.string().optional(),
-    CORS_ORIGIN: z.string().default('*'),
-    ACCESS_TOKEN_SECRET: z
-        .string()
-        .min(8, 'ACCESS_TOKEN_SECRET require min 8 chars')
-        .default('test_access_token_secret'),
-    ACCESS_TOKEN_EXPIRE: z.string().default('20m'),
-    REFRESH_TOKEN_SECRET: z
-        .string()
-        .min(8, 'ACCESS_TOKEN_SECRET require min 8 chars')
-        .default('test_refresh_token_secret'),
+const withEmptyAsUndefined = <T extends z.ZodType>(schema: T) =>
+    z.preprocess((value) => (value === '' ? undefined : value), schema)
 
-    REFRESH_TOKEN_EXPIRE: z.string().default('1d'),
-    REFRESH_TOKEN_COOKIE_NAME: z.string().default('min'),
-    MYSQL_DATABASE: z.string().default('test_db'),
-    MYSQL_ROOT_PASSWORD: z.string().default('test_password'),
-    DATABASE_URL: z
-        .string()
-        .default('mysql://root:test_password@localhost:3306/test_db'),
-    SMTP_HOST: z.string().default('localhost'),
-    SMTP_PORT: z
-        .string()
-        .regex(/^\d+$/, 'SMTP_PORT require number!')
-        .default('587'),
-    SMTP_USERNAME: z.string().default('test_user'),
-    SMTP_PASSWORD: z.string().default('test_password'),
-    EMAIL_FROM: z.email('EMAIL NOT VALID!').default('test@example.com'),
-    UPLOAD_BASE_PATH: z.string().default('/uploads'),
-    UPLOAD_IMAGE_PATH: z.string().default('/uploads/images'),
-    UPLOAD_DOCUMENT_PATH: z.string().default('/uploads/documents'),
-    STATIC_URL_PREFIX: z.string().default('/files'),
+const envSchema = z.object({
+    NODE_ENV: withEmptyAsUndefined(
+        z.enum(['development', 'test', 'production']).default('development')
+    ),
+    PORT: withEmptyAsUndefined(z.string().default('4000')),
+    SERVER_URL: withEmptyAsUndefined(z.string().optional()),
+    CORS_ORIGIN: withEmptyAsUndefined(z.string().default('*')),
+    ACCESS_TOKEN_SECRET: withEmptyAsUndefined(
+        z
+            .string()
+            .min(8, 'ACCESS_TOKEN_SECRET require min 8 chars')
+            .default('test_access_token_secret')
+    ),
+    ACCESS_TOKEN_EXPIRE: withEmptyAsUndefined(z.string().default('20m')),
+    REFRESH_TOKEN_SECRET: withEmptyAsUndefined(
+        z
+            .string()
+            .min(8, 'ACCESS_TOKEN_SECRET require min 8 chars')
+            .default('test_refresh_token_secret')
+    ),
+
+    REFRESH_TOKEN_EXPIRE: withEmptyAsUndefined(z.string().default('1d')),
+    REFRESH_TOKEN_COOKIE_NAME: withEmptyAsUndefined(z.string().default('min')),
+    MYSQL_DATABASE: withEmptyAsUndefined(z.string().default('test_db')),
+    MYSQL_ROOT_PASSWORD: withEmptyAsUndefined(z.string().default('test_password')),
+    DATABASE_URL: withEmptyAsUndefined(
+        z.string().default('mysql://root:test_password@localhost:3306/test_db')
+    ),
+    SMTP_HOST: withEmptyAsUndefined(z.string().default('localhost')),
+    SMTP_PORT: withEmptyAsUndefined(
+        z
+            .string()
+            .regex(/^\d+$/, 'SMTP_PORT require number!')
+            .default('587')
+    ),
+    SMTP_USERNAME: withEmptyAsUndefined(z.string().default('test_user')),
+    SMTP_PASSWORD: withEmptyAsUndefined(z.string().default('test_password')),
+    EMAIL_FROM: withEmptyAsUndefined(
+        z.email('EMAIL NOT VALID!').default('test@example.com')
+    ),
+    UPLOAD_BASE_PATH: withEmptyAsUndefined(z.string().default('/uploads')),
+    UPLOAD_IMAGE_PATH: withEmptyAsUndefined(z.string().default('/uploads/images')),
+    UPLOAD_DOCUMENT_PATH: withEmptyAsUndefined(
+        z.string().default('/uploads/documents')
+    ),
+    STATIC_URL_PREFIX: withEmptyAsUndefined(z.string().default('/files')),
+    MICROSOFT_CLIENT_ID: withEmptyAsUndefined(z.string().optional().default('')),
+    MICROSOFT_CLIENT_SECRET: withEmptyAsUndefined(
+        z.string().optional().default('')
+    ),
+    MICROSOFT_TENANT_ID: withEmptyAsUndefined(
+        z.string().optional().default('consumers')
+    ),
+    MICROSOFT_CALLBACK_URL: withEmptyAsUndefined(
+        z
+            .string()
+            .optional()
+            .default('http://localhost:4000/api/v1/auth/microsoft/callback')
+    ),
+    FRONTEND_URL: withEmptyAsUndefined(
+        z.string().optional().default('http://localhost:3000')
+    ),
+    SEPAY_API_ENABLED: withEmptyAsUndefined(z.string().default('false')),
+    SEPAY_API_BASE_URL: withEmptyAsUndefined(
+        z.string().default('https://userapi.sepay.vn/v2')
+    ),
+    SEPAY_API_TOKEN: withEmptyAsUndefined(z.string().optional().default('')),
+    SEPAY_API_MODE: withEmptyAsUndefined(
+        z.enum(['sandbox', 'live']).default('sandbox')
+    ),
+    SEPAY_VA_ENABLED: withEmptyAsUndefined(z.string().default('false')),
+    SEPAY_ORDER_VA_ENABLED: withEmptyAsUndefined(z.string().default('false')),
 })
 
 const parsedEnv = envSchema.safeParse(process.env)
@@ -96,6 +135,27 @@ const config = {
         imagePath: env.UPLOAD_IMAGE_PATH,
         documentPath: env.UPLOAD_DOCUMENT_PATH,
         staticUrlPrefix: env.STATIC_URL_PREFIX,
+    },
+    microsoft: {
+        clientId: env.MICROSOFT_CLIENT_ID,
+        clientSecret: env.MICROSOFT_CLIENT_SECRET,
+        tenant: env.MICROSOFT_TENANT_ID,
+        callbackUrl: env.MICROSOFT_CALLBACK_URL,
+        isEnabled: Boolean(env.MICROSOFT_CLIENT_ID),
+        authUrl: 'https://login.microsoftonline.com',
+        tokenUrl: 'https://login.microsoftonline.com',
+        graphApi: 'https://graph.microsoft.com/v1.0/me',
+    },
+    frontend: {
+        url: env.FRONTEND_URL,
+    },
+    sepay: {
+        apiEnabled: env.SEPAY_API_ENABLED === 'true',
+        apiBaseUrl: env.SEPAY_API_BASE_URL,
+        apiToken: env.SEPAY_API_TOKEN,
+        apiMode: env.SEPAY_API_MODE,
+        vaEnabled: env.SEPAY_VA_ENABLED === 'true',
+        orderVaEnabled: env.SEPAY_ORDER_VA_ENABLED === 'true',
     },
 } as const
 
