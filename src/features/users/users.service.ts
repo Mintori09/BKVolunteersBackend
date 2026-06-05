@@ -452,11 +452,19 @@ export const updateUserStatus = async (
 
     await getEditableUser(userId)
 
-    return prismaClient.user.update({
-        where: { id: userId },
-        data: {
-            status: data.status as UserAccountStatus,
-        },
+    return prismaClient.$transaction(async (tx) => {
+        if (data.status === 'LOCKED') {
+            await tx.userRefreshToken.deleteMany({
+                where: { userId },
+            })
+        }
+
+        return tx.user.update({
+            where: { id: userId },
+            data: {
+                status: data.status as UserAccountStatus,
+            },
+        })
     })
 }
 

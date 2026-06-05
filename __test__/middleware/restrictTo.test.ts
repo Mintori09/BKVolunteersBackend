@@ -34,9 +34,7 @@ describe('restrictTo middleware', () => {
         expect(next).toHaveBeenCalledWith(expect.any(ApiError))
         const error = (next as jest.Mock).mock.calls[0][0]
         expect(error.statusCode).toBe(HttpStatus.FORBIDDEN)
-        expect(error.message).toBe(
-            'You do not have permission to perform this action'
-        )
+        expect(error.message).toBe('Ban khong duoc phep thuc hien thao tac nay')
     })
 
     it('should call next with ApiError (403) if req.payload is missing', () => {
