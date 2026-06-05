@@ -3,6 +3,7 @@ import {
     LoginInput,
     LoginOutput,
     ChangePasswordInput,
+    UpdateProfileInput,
     MeOutput,
     AuthUser,
 } from './types'
@@ -28,6 +29,7 @@ const mapPublicUser = (user: AuthUser): MeOutput => {
             fullName: user.fullName || `${user.lastName} ${user.firstName}`.trim(),
             email: user.email,
             role: user.role,
+            accountType: 'STUDENT',
             facultyId: user.facultyId,
             firstName: user.firstName,
             lastName: user.lastName,
@@ -35,6 +37,8 @@ const mapPublicUser = (user: AuthUser): MeOutput => {
             className: user.className ?? null,
             phone: user.phone ?? null,
             totalPoints: user.totalPoints ?? 0,
+            facultyName: user.facultyName ?? null,
+            lastLoginAt: user.lastLoginAt ?? null,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
         }
@@ -45,10 +49,14 @@ const mapPublicUser = (user: AuthUser): MeOutput => {
         username: user.username,
         email: user.email,
         role: user.role,
+        accountType: 'OPERATOR',
         facultyId: user.facultyId,
         firstName: user.firstName,
         lastName: user.lastName,
         status: user.status,
+        facultyName: user.facultyName ?? null,
+        managedClubName: user.managedClubName ?? null,
+        lastLoginAt: user.lastLoginAt ?? null,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
     }
@@ -250,5 +258,28 @@ export const handleChangePassword = catchAsync(
         )
 
         return ApiResponse.success(res, null, 'Doi mat khau thanh cong')
+    }
+)
+
+export const updateMe = catchAsync(
+    async (req: TypedRequest<UpdateProfileInput>, res: Response) => {
+        const userId = req.payload?.userId
+        const role = req.payload?.role
+
+        if (!userId || !role) {
+            throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chua xac thuc nguoi dung')
+        }
+
+        const updatedUser = await authService.updateProfile(
+            userId,
+            role,
+            req.body as UpdateProfileInput
+        )
+
+        return ApiResponse.success(
+            res,
+            mapPublicUser(updatedUser),
+            'Cap nhat ho so thanh cong'
+        )
     }
 )

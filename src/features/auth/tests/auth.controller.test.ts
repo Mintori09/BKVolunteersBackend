@@ -5,6 +5,7 @@ import {
     handleRefresh,
     handleChangePassword,
     getMe,
+    updateMe,
 } from 'src/features/auth/auth.controller'
 import * as argon2 from 'argon2'
 import { NextFunction } from 'express'
@@ -400,6 +401,52 @@ describe('Auth Controller', () => {
                 expect.objectContaining({
                     success: true,
                     message: 'Doi mat khau thanh cong',
+                })
+            )
+        })
+    })
+
+    describe('updateMe', () => {
+        it('returns UNAUTHORIZED when payload is missing', async () => {
+            req.payload = null
+
+            await updateMe(req, res, next)
+
+            expect(next).toHaveBeenCalledWith(expect.any(ApiError))
+            expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
+                HttpStatus.UNAUTHORIZED
+            )
+        })
+
+        it('calls updateProfile and returns updated user', async () => {
+            req.payload = { userId: '1', role: 'SINHVIEN' }
+            req.body = {
+                email: 'student@example.com',
+                fullName: 'Sinh Vien Moi',
+                phone: '0901234567',
+            }
+            ;(authService.updateProfile as jest.Mock).mockResolvedValue({
+                ...buildActiveStudent(),
+                fullName: 'Sinh Vien Moi',
+                phone: '0901234567',
+            })
+
+            await updateMe(req, res, next)
+
+            expect(authService.updateProfile).toHaveBeenCalledWith(
+                '1',
+                'SINHVIEN',
+                req.body
+            )
+            expect(res.status).toHaveBeenCalledWith(HttpStatus.OK)
+            expect(res.json).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    success: true,
+                    message: 'Cap nhat ho so thanh cong',
+                    data: expect.objectContaining({
+                        fullName: 'Sinh Vien Moi',
+                        phone: '0901234567',
+                    }),
                 })
             )
         })

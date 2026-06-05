@@ -3,7 +3,12 @@ import {
     createAccessToken,
     createRefreshToken,
 } from 'src/utils/generateTokens.util'
-import { AuthUser, ChangePasswordInput, UserRole } from './types'
+import {
+    AuthUser,
+    ChangePasswordInput,
+    UpdateProfileInput,
+    UserRole,
+} from './types'
 import * as jwt from 'jsonwebtoken'
 import * as authRepository from './auth.repository'
 import { ApiError } from 'src/utils/ApiError'
@@ -42,6 +47,31 @@ export const changePassword = async (
 
     const hashedPassword = await argon2.hash(data.newPassword)
     await authRepository.updatePassword(userId, hashedPassword)
+}
+
+export const updateProfile = async (
+    userId: string,
+    role: UserRole,
+    data: UpdateProfileInput
+) => {
+    const existingUser = await authRepository.getUserById(userId, role)
+
+    if (!existingUser) {
+        throw new ApiError(HttpStatus.NOT_FOUND, 'Tài khoản không tồn tại')
+    }
+
+    await authRepository.updateProfile(userId, role, data)
+
+    const updatedUser = await authRepository.getUserById(userId, role)
+
+    if (!updatedUser) {
+        throw new ApiError(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            'Không thể tải lại hồ sơ sau khi cập nhật'
+        )
+    }
+
+    return updatedUser
 }
 
 export const getUserByEmail = async (email: string) => {

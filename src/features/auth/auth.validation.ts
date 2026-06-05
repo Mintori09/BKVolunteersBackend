@@ -50,3 +50,29 @@ export const changePasswordSchema: RequestValidationSchema = {
             path: ['newPasswordConfirm'],
         }),
 }
+
+/**
+ * Cập nhật hồ sơ hiện tại
+ * - email: bắt buộc
+ * - fullName: chỉ áp dụng cho sinh viên
+ * - phone: chỉ áp dụng cho sinh viên
+ */
+export const updateProfileSchema: RequestValidationSchema = {
+    body: z.object({
+        email: z
+            .string()
+            .trim()
+            .min(1, 'Email là bắt buộc')
+            .email('Email không hợp lệ'),
+        fullName: z
+            .string()
+            .trim()
+            .max(120, 'Họ và tên không được quá 120 ký tự')
+            .optional(),
+        phone: z
+            .string()
+            .trim()
+            .max(20, 'Số điện thoại không được quá 20 ký tự')
+            .optional(),
+    }),
+}

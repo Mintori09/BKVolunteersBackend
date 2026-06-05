@@ -3,6 +3,7 @@
 // ============================================
 
 export type UserRole = 'CLB' | 'LCD' | 'DOANTRUONG' | 'SINHVIEN'
+export type AccountType = 'STUDENT' | 'OPERATOR'
 
 // ============================================
 // INPUT TYPES (Request Body)
@@ -19,6 +20,12 @@ export interface ChangePasswordInput {
     newPasswordConfirm: string
 }
 
+export interface UpdateProfileInput {
+    email: string
+    fullName?: string
+    phone?: string
+}
+
 // ============================================
 // OUTPUT TYPES (Response Data)
 // ============================================
@@ -33,10 +40,14 @@ export interface UserMeOutput {
     username: string
     email: string
     role: UserRole
+    accountType: AccountType
     facultyId: number | null
     firstName: string
     lastName: string
     status: 'ACTIVE' | 'LOCKED' | 'DISABLED'
+    facultyName?: string | null
+    managedClubName?: string | null
+    lastLoginAt?: Date | null
     createdAt: Date
     updatedAt: Date
 }
@@ -48,6 +59,7 @@ export interface StudentMeOutput {
     fullName: string
     email: string
     role: UserRole
+    accountType: AccountType
     facultyId: number | null
     firstName: string
     lastName: string
@@ -55,6 +67,8 @@ export interface StudentMeOutput {
     className: string | null
     phone: string | null
     totalPoints: number
+    facultyName?: string | null
+    lastLoginAt?: Date | null
     createdAt: Date
     updatedAt: Date
 }
@@ -66,6 +80,7 @@ export interface AuthUser {
     username: string
     email: string
     role: UserRole
+    accountType?: AccountType
     facultyId: number | null
     firstName: string
     lastName: string
@@ -73,6 +88,9 @@ export interface AuthUser {
     createdAt: Date
     updatedAt: Date
     passwordHash: string
+    lastLoginAt?: Date | null
+    facultyName?: string | null
+    managedClubName?: string | null
     mssv?: string
     fullName?: string
     className?: string | null

@@ -7,19 +7,13 @@ import * as argon2 from 'argon2'
 jest.mock('../auth.service')
 jest.mock('argon2')
 jest.mock('jsonwebtoken', () => ({
-    verify: jest.fn(
-        (
-            token: string,
-            _secret: string,
-            callback: (err: null, payload: unknown) => void
-        ) => {
-            if (token === 'valid-token') {
-                callback(null, { userId: 'user-123', role: 'LCD' })
-                return
-            }
-            callback(null, { userId: 'user-456', role: 'LCD' })
+    verify: jest.fn((token: string) => {
+        if (token === 'valid-token') {
+            return { userId: 'user-123', role: 'LCD' }
         }
-    ),
+
+        return { userId: 'user-456', role: 'LCD' }
+    }),
 }))
 
 jest.mock('src/config', () => ({
@@ -106,6 +100,7 @@ const mockStudent = {
 describe('Auth Routes Integration', () => {
     beforeEach(() => {
         jest.clearAllMocks()
+        ;(authService.getUserById as jest.Mock).mockResolvedValue(mockUser)
     })
 
     describe('POST /api/v1/auth/login', () => {
@@ -275,6 +270,20 @@ describe('Auth Routes Integration', () => {
             expect(response.status).toBe(HttpStatus.UNAUTHORIZED)
         })
 
+        it('returns 403 when authenticated account is locked', async () => {
+            ;(authService.getUserById as jest.Mock).mockResolvedValue({
+                ...mockUser,
+                status: 'LOCKED',
+            })
+
+            const response = await request(app)
+                .get('/api/v1/auth/me')
+                .set('Authorization', 'Bearer valid-token')
+
+            expect(response.status).toBe(HttpStatus.FORBIDDEN)
+            expect(response.body.message).toContain('khoa')
+        })
+
         it('returns 200 with user data when authenticated', async () => {
             ;(authService.getUserById as jest.Mock).mockResolvedValue(mockUser)
 
@@ -285,6 +294,40 @@ describe('Auth Routes Integration', () => {
             expect(response.status).toBe(HttpStatus.OK)
             expect(response.body).toHaveProperty('success', true)
             expect(response.body.data).toHaveProperty('username', 'testuser99')
+        })
+    })
+
+    describe('PATCH /api/v1/auth/me', () => {
+        it('returns 401 when unauthenticated', async () => {
+            const response = await request(app).patch('/api/v1/auth/me').send({
+                email: 'student@example.com',
+            })
+
+            expect(response.status).toBe(HttpStatus.UNAUTHORIZED)
+        })
+
+        it('returns 200 with updated profile when authenticated', async () => {
+            ;(authService.updateProfile as jest.Mock).mockResolvedValue({
+                ...mockStudent,
+                fullName: 'Sinh Vien Moi',
+                phone: '0901234567',
+            })
+
+            const response = await request(app)
+                .patch('/api/v1/auth/me')
+                .set('Authorization', 'Bearer valid-token')
+                .send({
+                    email: 'student@example.com',
+                    fullName: 'Sinh Vien Moi',
+                    phone: '0901234567',
+                })
+
+            expect(response.status).toBe(HttpStatus.OK)
+            expect(response.body).toHaveProperty('success', true)
+            expect(response.body.data).toHaveProperty(
+                'fullName',
+                'Sinh Vien Moi'
+            )
         })
     })
 

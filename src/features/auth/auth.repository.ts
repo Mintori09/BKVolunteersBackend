@@ -1,17 +1,27 @@
 import { UserAccountStatus, type Prisma } from '@prisma/client'
 import { prismaClient } from 'src/config'
-import { AuthUser, UserRole } from './types'
+import { AuthUser, UpdateProfileInput, UserRole } from './types'
 
 type UserWithProfiles = Prisma.UserGetPayload<{
     include: {
-        managerProfile: true
-        studentProfile: true
+        managerProfile: {
+            include: {
+                faculty: true
+                managedClub: true
+            }
+        }
+        studentProfile: {
+            include: {
+                faculty: true
+            }
+        }
     }
 }>
 
 type StudentWithUser = Prisma.StudentGetPayload<{
     include: {
         user: true
+        faculty: true
     }
 }>
 
@@ -39,6 +49,9 @@ const mapManagerUser = (user: UserWithProfiles): AuthUser | null => {
         firstName: user.username,
         lastName: '',
         status: user.status,
+        lastLoginAt: user.lastLoginAt,
+        facultyName: manager.faculty?.name ?? null,
+        managedClubName: manager.managedClub?.name ?? null,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
         passwordHash: user.passwordHash,
@@ -48,11 +61,23 @@ const mapManagerUser = (user: UserWithProfiles): AuthUser | null => {
 const mapStudentUser = (
     user: Pick<
         UserWithProfiles,
-        'id' | 'email' | 'status' | 'createdAt' | 'updatedAt' | 'passwordHash'
+        | 'id'
+        | 'email'
+        | 'status'
+        | 'lastLoginAt'
+        | 'createdAt'
+        | 'updatedAt'
+        | 'passwordHash'
     >,
     student: Pick<
         StudentWithUser,
-        'mssv' | 'fullName' | 'facultyId' | 'className' | 'phone' | 'totalPoints'
+        | 'mssv'
+        | 'fullName'
+        | 'facultyId'
+        | 'className'
+        | 'phone'
+        | 'totalPoints'
+        | 'faculty'
     >
 ): AuthUser => {
     const { firstName, lastName } = splitName(student.fullName)
@@ -65,6 +90,8 @@ const mapStudentUser = (
         firstName,
         lastName,
         status: user.status,
+        lastLoginAt: user.lastLoginAt,
+        facultyName: student.faculty?.name ?? null,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
         passwordHash: user.passwordHash,
@@ -88,8 +115,17 @@ export const getUserByEmail = async (email: string) => {
     const user = await prismaClient.user.findUnique({
         where: { email },
         include: {
-            managerProfile: true,
-            studentProfile: true,
+            managerProfile: {
+                include: {
+                    faculty: true,
+                    managedClub: true,
+                },
+            },
+            studentProfile: {
+                include: {
+                    faculty: true,
+                },
+            },
         },
     })
     if (!user) return null
@@ -100,8 +136,17 @@ export const getUserByUsername = async (username: string) => {
     const user = await prismaClient.user.findUnique({
         where: { username },
         include: {
-            managerProfile: true,
-            studentProfile: true,
+            managerProfile: {
+                include: {
+                    faculty: true,
+                    managedClub: true,
+                },
+            },
+            studentProfile: {
+                include: {
+                    faculty: true,
+                },
+            },
         },
     })
     if (!user) return null
@@ -111,7 +156,10 @@ export const getUserByUsername = async (username: string) => {
 export const getUserByMssv = async (mssv: string) => {
     const student = await prismaClient.student.findUnique({
         where: { mssv },
-        include: { user: true },
+        include: {
+            user: true,
+            faculty: true,
+        },
     })
 
     if (!student) return null
@@ -123,8 +171,17 @@ export const getUserById = async (userId: string, role?: UserRole) => {
     const user = await prismaClient.user.findUnique({
         where: { id: userId },
         include: {
-            managerProfile: true,
-            studentProfile: true,
+            managerProfile: {
+                include: {
+                    faculty: true,
+                    managedClub: true,
+                },
+            },
+            studentProfile: {
+                include: {
+                    faculty: true,
+                },
+            },
         },
     })
     if (!user) return null
@@ -187,6 +244,38 @@ export const updateLastLoginAt = async (userId: string) => {
     return prismaClient.user.update({
         where: { id: userId },
         data: { lastLoginAt: new Date() },
+    })
+}
+
+const normalizeOptionalString = (value?: string | null) => {
+    const normalized = value?.trim()
+    return normalized ? normalized : null
+}
+
+export const updateProfile = async (
+    userId: string,
+    role: UserRole,
+    data: UpdateProfileInput
+) => {
+    return prismaClient.$transaction(async (tx) => {
+        await tx.user.update({
+            where: { id: userId },
+            data: {
+                email: data.email.trim(),
+            },
+        })
+
+        if (role === 'SINHVIEN') {
+            await tx.student.update({
+                where: { userId },
+                data: {
+                    ...(data.fullName?.trim()
+                        ? { fullName: data.fullName.trim() }
+                        : {}),
+                    phone: normalizeOptionalString(data.phone),
+                },
+            })
+        }
     })
 }
 
