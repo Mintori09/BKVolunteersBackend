@@ -32,6 +32,7 @@ export interface UpdateProfileInput {
 
 export interface LoginOutput {
     accessToken: string
+    refreshToken?: string | null
     user: MeOutput
 }
 

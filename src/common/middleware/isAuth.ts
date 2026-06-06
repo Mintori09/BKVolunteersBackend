@@ -9,7 +9,11 @@ import logger from './logger'
 const isAuth = async (req: Request, _res: Response, next: NextFunction) => {
     const authHeader = req.headers?.authorization
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (
+        !authHeader ||
+        (!authHeader.startsWith('Bearer ') &&
+            !authHeader.startsWith('Apikey '))
+    ) {
         return next(new ApiError(HttpStatus.UNAUTHORIZED, 'Chua xac thuc nguoi dung'))
     }
 

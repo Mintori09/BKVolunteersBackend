@@ -1,18 +1,18 @@
 import * as argon2 from 'argon2'
+import jwt, { type JwtPayload } from 'jsonwebtoken'
+import { HttpStatus } from 'src/common/constants'
+import { ApiError } from 'src/utils/ApiError'
 import {
     createAccessToken,
     createRefreshToken,
 } from 'src/utils/generateTokens.util'
-import {
-    AuthUser,
-    ChangePasswordInput,
-    UpdateProfileInput,
-    UserRole,
-} from './types'
-import * as jwt from 'jsonwebtoken'
 import * as authRepository from './auth.repository'
-import { ApiError } from 'src/utils/ApiError'
-import { HttpStatus } from 'src/common/constants'
+import {
+    type AuthUser,
+    type ChangePasswordInput,
+    type UpdateProfileInput,
+    type UserRole,
+} from './types'
 import { isMssv } from './utils'
 
 export const getUserbyUsernameOrMssv = async (
@@ -21,9 +21,11 @@ export const getUserbyUsernameOrMssv = async (
     if (isMssv(identifier)) {
         return authRepository.getUserByMssv(identifier)
     }
+
     if (identifier.includes('@')) {
         return authRepository.getUserByEmail(identifier)
     }
+
     return authRepository.getUserByUsername(identifier)
 }
 
@@ -33,6 +35,7 @@ export const changePassword = async (
     data: ChangePasswordInput
 ) => {
     const user = await authRepository.getUserById(userId)
+
     if (!user) {
         throw new ApiError(HttpStatus.NOT_FOUND, 'Tài khoản không tồn tại')
     }
@@ -41,6 +44,7 @@ export const changePassword = async (
         user.passwordHash,
         data.oldPassword
     )
+
     if (!isPasswordValid) {
         throw new ApiError(HttpStatus.UNAUTHORIZED, 'Sai mật khẩu cũ')
     }
@@ -57,7 +61,7 @@ export const updateProfile = async (
     const existingUser = await authRepository.getUserById(userId, role)
 
     if (!existingUser) {
-        throw new ApiError(HttpStatus.NOT_FOUND, 'Tài khoản không tồn tại')
+        throw new ApiError(HttpStatus.NOT_FOUND, 'Tai khoan khong ton tai')
     }
 
     await authRepository.updateProfile(userId, role, data)
@@ -67,7 +71,7 @@ export const updateProfile = async (
     if (!updatedUser) {
         throw new ApiError(
             HttpStatus.INTERNAL_SERVER_ERROR,
-            'Không thể tải lại hồ sơ sau khi cập nhật'
+            'Khong the tai lai ho so sau khi cap nhat'
         )
     }
 
@@ -116,15 +120,16 @@ export const updateLastLoginAt = async (userId: string) => {
 export const verifyToken = (
     token: string,
     secret: string
-): Promise<jwt.JwtPayload> => {
+): Promise<JwtPayload> => {
     return new Promise((resolve, reject) => {
-        ;(jwt as any).verify(token, secret, (err: any, payload: any) => {
-            if (err) {
+        jwt.verify(token, secret, (err, payload) => {
+            if (err || !payload || typeof payload === 'string') {
                 return reject(
                     new ApiError(HttpStatus.FORBIDDEN, 'Token không hợp lệ')
                 )
             }
-            resolve(payload as jwt.JwtPayload)
+
+            resolve(payload as JwtPayload)
         })
     })
 }

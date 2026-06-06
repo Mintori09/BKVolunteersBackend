@@ -172,6 +172,7 @@ describe('Auth Controller', () => {
                     success: true,
                     data: expect.objectContaining({
                         accessToken: 'access',
+                        refreshToken: 'refresh',
                     }),
                 })
             )
@@ -269,6 +270,18 @@ describe('Auth Controller', () => {
             expect(authService.deleteRefreshToken).toHaveBeenCalledWith('token')
             expect(res.sendStatus).toHaveBeenCalledWith(HttpStatus.NO_CONTENT)
         })
+
+        it('deletes refresh token from request body when cookie is missing', async () => {
+            req.body = { refresh_token: 'body-token' }
+            ;(
+                authService.getRefreshTokenByToken as jest.Mock
+            ).mockResolvedValue({ token: 'body-token', userId: '1' })
+
+            await handleLogout(req, res, next)
+
+            expect(authService.deleteRefreshToken).toHaveBeenCalledWith('body-token')
+            expect(res.sendStatus).toHaveBeenCalledWith(HttpStatus.NO_CONTENT)
+        })
     })
 
     describe('handleRefresh', () => {
@@ -328,9 +341,33 @@ describe('Auth Controller', () => {
                     success: true,
                     data: expect.objectContaining({
                         accessToken: 'new-access',
+                        refreshToken: 'new-refresh',
                     }),
                 })
             )
+        })
+
+        it('accepts refresh token from request body when cookie is missing', async () => {
+            req.body = { refresh_token: 'body-token' }
+            ;(
+                authService.getRefreshTokenByToken as jest.Mock
+            ).mockResolvedValue({ token: 'body-token', userId: '1' })
+            ;(authService.verifyToken as jest.Mock).mockResolvedValue({
+                userId: '1',
+                role: 'LCD',
+            })
+            ;(authService.getUserById as jest.Mock).mockResolvedValue(
+                buildActiveUser()
+            )
+            ;(authService.createSession as jest.Mock).mockResolvedValue({
+                accessToken: 'new-access',
+                refreshToken: 'new-refresh',
+            })
+
+            await handleRefresh(req, res, next)
+
+            expect(authService.deleteRefreshToken).toHaveBeenCalledWith('body-token')
+            expect(res.status).toHaveBeenCalledWith(HttpStatus.OK)
         })
     })
 

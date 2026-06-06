@@ -158,6 +158,7 @@ describe('Auth Routes Integration', () => {
             expect(response.status).toBe(HttpStatus.OK)
             expect(response.body).toHaveProperty('success', true)
             expect(response.body.data).toHaveProperty('accessToken')
+            expect(response.body.data).toHaveProperty('refreshToken')
             expect(response.body.data).toHaveProperty('user')
             expect(response.headers['set-cookie']).toBeDefined()
         })
@@ -188,9 +189,9 @@ describe('Auth Routes Integration', () => {
     })
 
     describe('POST /api/v1/auth/logout', () => {
-        it('returns 401 when not authenticated', async () => {
+        it('returns 204 when not authenticated and no refresh token is provided', async () => {
             const response = await request(app).post('/api/v1/auth/logout')
-            expect(response.status).toBe(HttpStatus.UNAUTHORIZED)
+            expect(response.status).toBe(HttpStatus.NO_CONTENT)
         })
 
         it('returns 204 when authenticated and token exists', async () => {
@@ -205,6 +206,25 @@ describe('Auth Routes Integration', () => {
                 .post('/api/v1/auth/logout')
                 .set('Authorization', 'Bearer valid-token')
                 .set('Cookie', 'refresh_token=valid-token')
+
+            expect(response.status).toBe(HttpStatus.NO_CONTENT)
+            expect(authService.deleteRefreshToken).toHaveBeenCalledWith(
+                'valid-token'
+            )
+        })
+
+        it('returns 204 when refresh token is sent in the request body', async () => {
+            ;(
+                authService.getRefreshTokenByToken as jest.Mock
+            ).mockResolvedValue({ token: 'valid-token', userId: 'user-123' })
+            ;(authService.deleteRefreshToken as jest.Mock).mockResolvedValue(
+                undefined
+            )
+
+            const response = await request(app)
+                .post('/api/v1/auth/logout')
+                .set('Authorization', 'Bearer valid-token')
+                .send({ refresh_token: 'valid-token' })
 
             expect(response.status).toBe(HttpStatus.NO_CONTENT)
             expect(authService.deleteRefreshToken).toHaveBeenCalledWith(
@@ -260,7 +280,33 @@ describe('Auth Routes Integration', () => {
             expect(response.status).toBe(HttpStatus.OK)
             expect(response.body).toHaveProperty('success', true)
             expect(response.body.data).toHaveProperty('accessToken')
+            expect(response.body.data).toHaveProperty('refreshToken')
             expect(response.body.data).toHaveProperty('user')
+        })
+
+        it('returns 200 when refresh token is sent in the request body', async () => {
+            ;(
+                authService.getRefreshTokenByToken as jest.Mock
+            ).mockResolvedValue({ token: 'valid-token', userId: 'user-123' })
+            ;(authService.verifyToken as jest.Mock).mockResolvedValue({
+                userId: 'user-123',
+                role: 'LCD',
+            })
+            ;(authService.getUserById as jest.Mock).mockResolvedValue(mockUser)
+            ;(authService.createSession as jest.Mock).mockResolvedValue({
+                accessToken: 'new-access-token',
+                refreshToken: 'new-refresh-token',
+            })
+            ;(authService.deleteRefreshToken as jest.Mock).mockResolvedValue(
+                undefined
+            )
+
+            const response = await request(app)
+                .post('/api/v1/auth/refresh')
+                .send({ refresh_token: 'valid-token' })
+
+            expect(response.status).toBe(HttpStatus.OK)
+            expect(response.body.data).toHaveProperty('refreshToken')
         })
     })
 

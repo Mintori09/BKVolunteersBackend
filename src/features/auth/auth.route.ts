@@ -62,7 +62,7 @@ authRouter.post('/login', validate(loginSchema), authController.handleLogin)
  *       401:
  *         description: Unauthorized
  */
-authRouter.post('/logout', isAuth, authController.handleLogout)
+authRouter.post('/logout', authController.handleLogout)
 
 /**
  * @openapi

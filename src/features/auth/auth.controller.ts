@@ -131,6 +131,7 @@ export const handleLogin = catchAsync(
 
         return ApiResponse.success<LoginOutput>(res, {
             accessToken,
+            refreshToken,
             user: mapPublicUser(user),
         })
     }
@@ -138,12 +139,19 @@ export const handleLogin = catchAsync(
 
 export const handleLogout = catchAsync(async (req: Request, res: Response) => {
     const cookies = req.cookies
+    const refreshTokenFromBody =
+        typeof req.body?.refresh_token === 'string'
+            ? req.body.refresh_token
+            : typeof req.body?.refreshToken === 'string'
+              ? req.body.refreshToken
+              : undefined
 
-    if (!cookies[config.jwt.refresh_token.cookie_name]) {
+    const refreshToken =
+        req.cookies[config.jwt.refresh_token.cookie_name] ?? refreshTokenFromBody
+
+    if (!refreshToken) {
         return res.sendStatus(HttpStatus.NO_CONTENT)
     }
-
-    const refreshToken = cookies[config.jwt.refresh_token.cookie_name]
     const foundRft = await authService.getRefreshTokenByToken(refreshToken)
 
     if (!foundRft) {
@@ -165,8 +173,15 @@ export const handleLogout = catchAsync(async (req: Request, res: Response) => {
 })
 
 export const handleRefresh = catchAsync(async (req: Request, res: Response) => {
-    const refreshToken: string | undefined =
+    const refreshTokenFromCookie: string | undefined =
         req.cookies[config.jwt.refresh_token.cookie_name]
+    const refreshTokenFromBody =
+        typeof req.body?.refresh_token === 'string'
+            ? req.body.refresh_token
+            : typeof req.body?.refreshToken === 'string'
+              ? req.body.refreshToken
+              : undefined
+    const refreshToken = refreshTokenFromCookie ?? refreshTokenFromBody
 
     if (!refreshToken) {
         throw new ApiError(HttpStatus.UNAUTHORIZED, 'Khong tim thay refresh token')
@@ -221,6 +236,7 @@ export const handleRefresh = catchAsync(async (req: Request, res: Response) => {
 
     return ApiResponse.success<LoginOutput>(res, {
         accessToken,
+        refreshToken: newRefreshToken,
         user: mapPublicUser(user),
     })
 })
