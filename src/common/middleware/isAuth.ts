@@ -30,7 +30,9 @@ const isAuth = async (req: Request, _res: Response, next: NextFunction) => {
         ) as jwt.JwtPayload
 
         if (!payload?.userId || !payload?.role) {
-            return next(new ApiError(HttpStatus.FORBIDDEN, 'Token khong hop le'))
+            return next(
+                new ApiError(HttpStatus.UNAUTHORIZED, 'Token khong hop le')
+            )
         }
 
         const user = await authService.getUserById(payload.userId, payload.role)
@@ -58,7 +60,7 @@ const isAuth = async (req: Request, _res: Response, next: NextFunction) => {
         logger.warn(
             `Denied invalid token method=${req.method} path=${req.originalUrl}`
         )
-        return next(new ApiError(HttpStatus.FORBIDDEN, 'Token khong hop le'))
+        return next(new ApiError(HttpStatus.UNAUTHORIZED, 'Token khong hop le'))
     }
 }
 

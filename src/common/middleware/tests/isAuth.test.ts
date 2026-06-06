@@ -52,7 +52,7 @@ describe('isAuth middleware', () => {
         )
     })
 
-    it('returns forbidden when token is invalid', async () => {
+    it('returns unauthorized when token is invalid', async () => {
         req.headers = {
             authorization: 'Bearer invalid-token',
         }
@@ -64,7 +64,7 @@ describe('isAuth middleware', () => {
 
         expect(next).toHaveBeenCalledWith(expect.any(ApiError))
         expect((next as jest.Mock).mock.calls[0][0].statusCode).toBe(
-            HttpStatus.FORBIDDEN
+            HttpStatus.UNAUTHORIZED
         )
     })
 
