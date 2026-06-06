@@ -19,6 +19,7 @@
     "dependencies": {
         "@prisma/adapter-mariadb": "^7.4.2",
         "@prisma/client": "^7.4.2",
+        "@supabase/supabase-js": "^2.107.0",
         "@types/argon2": "^0.15.4",
         "@types/compression": "^1.8.1",
         "@types/express-serve-static-core": "^5.1.1",

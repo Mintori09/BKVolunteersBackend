@@ -254,7 +254,7 @@ export const catalogCampaigns: CatalogCampaign[] = [
                 title: 'Quy hoc bong dau nam',
                 description:
                     'Gay quy hoc bong tien mat va hoc cu cho hoc sinh can ho tro.',
-                status: 'READY_FOR_REVIEW',
+                status: 'READY',
                 start_at: '2026-08-01T00:00:00.000Z',
                 end_at: '2026-09-15T00:00:00.000Z',
                 settings: {
@@ -285,7 +285,7 @@ export const catalogCampaigns: CatalogCampaign[] = [
                 title: 'Ngay hoi trao hoc bong',
                 description:
                     'To chuc ngay hoi trao hoc bong va huong dan nhap hoc cho hoc sinh.',
-                status: 'READY_FOR_REVIEW',
+                status: 'READY',
                 start_at: '2026-09-20T00:00:00.000Z',
                 end_at: '2026-09-25T00:00:00.000Z',
                 settings: {

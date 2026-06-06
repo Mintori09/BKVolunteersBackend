@@ -16,5 +16,10 @@ declare namespace NodeJS {
         readonly SMTP_USERNAME: string
         readonly SMTP_PASSWORD: string
         readonly EMAIL_FROM: string
+        readonly SUPABASE_URL?: string
+        readonly SUPABASE_SECRET_KEY?: string
+        readonly SUPABASE_PUBLIC_BUCKET?: string
+        readonly SUPABASE_PRIVATE_BUCKET?: string
+        readonly SUPABASE_STORAGE_SIGNED_URL_TTL?: string
     }
 }

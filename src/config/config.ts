@@ -39,6 +39,14 @@ const envSchema = z.object({
     UPLOAD_IMAGE_PATH: z.string().default('/uploads/images'),
     UPLOAD_DOCUMENT_PATH: z.string().default('/uploads/documents'),
     STATIC_URL_PREFIX: z.string().default('/files'),
+    SUPABASE_URL: z.string().optional(),
+    SUPABASE_SECRET_KEY: z.string().optional(),
+    SUPABASE_PUBLIC_BUCKET: z.string().optional(),
+    SUPABASE_PRIVATE_BUCKET: z.string().optional(),
+    SUPABASE_STORAGE_SIGNED_URL_TTL: z
+        .string()
+        .regex(/^\d+$/, 'SUPABASE_STORAGE_SIGNED_URL_TTL require number!')
+        .default('3600'),
 })
 
 const parsedEnv = envSchema.safeParse(process.env)
@@ -96,6 +104,18 @@ const config = {
         imagePath: env.UPLOAD_IMAGE_PATH,
         documentPath: env.UPLOAD_DOCUMENT_PATH,
         staticUrlPrefix: env.STATIC_URL_PREFIX,
+    },
+    supabase: {
+        url: env.SUPABASE_URL ?? null,
+        serviceRoleKey:
+            env.SUPABASE_SECRET_KEY ?? null,
+        storage: {
+            publicBucket:
+                env.SUPABASE_PUBLIC_BUCKET,
+            privateBucket:
+                env.SUPABASE_PRIVATE_BUCKET,
+            signedUrlTtl: Number(env.SUPABASE_STORAGE_SIGNED_URL_TTL),
+        },
     },
 } as const
 

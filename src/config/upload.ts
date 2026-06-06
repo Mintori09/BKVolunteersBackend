@@ -1,4 +1,5 @@
 import path from 'path'
+import config from './config'
 
 const UPLOAD_BASE_PATH = process.env.UPLOAD_BASE_PATH || '/uploads'
 const UPLOAD_IMAGE_PATH = process.env.UPLOAD_IMAGE_PATH || '/uploads/images'
@@ -8,13 +9,17 @@ const STATIC_URL_PREFIX = process.env.STATIC_URL_PREFIX || '/files'
 
 export const uploadConfig = {
     image: {
+        kind: 'image',
         maxSize: 5 * 1024 * 1024,
         allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
         allowedExtensions: ['.jpg', '.jpeg', '.png', '.webp'],
         storagePath: UPLOAD_IMAGE_PATH,
         urlPrefix: `${STATIC_URL_PREFIX}/images`,
+        bucketName: config.supabase.storage.publicBucket,
+        visibility: 'PUBLIC' as const,
     },
     document: {
+        kind: 'document',
         maxSize: 10 * 1024 * 1024,
         allowedMimeTypes: [
             'application/pdf',
@@ -26,9 +31,12 @@ export const uploadConfig = {
         allowedExtensions: ['.pdf', '.doc', '.docx', '.xls', '.xlsx'],
         storagePath: UPLOAD_DOCUMENT_PATH,
         urlPrefix: `${STATIC_URL_PREFIX}/documents`,
+        bucketName: config.supabase.storage.privateBucket,
+        visibility: 'PRIVATE' as const,
     },
     basePath: UPLOAD_BASE_PATH,
     staticUrlPrefix: STATIC_URL_PREFIX,
+    signedUrlTtl: config.supabase.storage.signedUrlTtl,
 } as const
 
 export const getAbsoluteStoragePath = (relativePath: string): string => {

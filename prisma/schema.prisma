@@ -49,7 +49,6 @@ enum ParticipationScopeType {
 
 enum CampaignStatus {
   DRAFT
-  READY_FOR_REVIEW
   SUBMITTED
   REVISION_REQUIRED
   APPROVED
@@ -66,7 +65,6 @@ enum CampaignDocumentType {
   REGULATION
   BUDGET
   REPORT
-  GUIDELINE
   OTHER
 }
 
@@ -339,12 +337,12 @@ model User {
 }
 
 model ManagerAccount {
-  id            String          @id @default(uuid()) @db.Char(36)
-  userId        String          @unique @db.Char(36)
+  id            String    @id @default(uuid()) @db.Char(36)
+  userId        String    @unique @db.Char(36)
   facultyId     Int?
-  managedClubId String?         @db.Char(36)
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  managedClubId String?   @db.Char(36)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   deletedAt     DateTime?
 
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -480,21 +478,51 @@ model ClubMembership {
   @@map("club_memberships")
 }
 
+enum FileVisibility {
+  PUBLIC  @map("public")
+  PRIVATE @map("private")
+
+  @@map("file_visibility")
+}
+
+// Ảnh chiến dịch:
+// bucket_name = public-assets
+// visibility = public
+// file_url = public URL
+
+// PDF hồ sơ:
+// bucket_name = private-files
+// visibility = private
+// file_url = NULL hoặc không dùng trực tiếp
+// storage_path = users/1/documents/abc.pdf
+
 model File {
-  id                  String    @id @default(uuid()) @db.Char(36)
-  storageKey          String    @unique @db.VarChar(500)
-  storageProvider     String?   @db.VarChar(50)
-  bucketName          String?   @db.VarChar(100)
-  originalName        String    @db.VarChar(255)
-  mimeType            String    @db.VarChar(100)
-  fileSize            BigInt
-  checksumSha256      String?   @db.VarChar(128)
-  publicUrl           String?   @db.VarChar(500)
-  uploadedByManagerId String?   @db.Char(36)
-  uploadedByStudentId String?   @db.Char(36)
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  deletedAt           DateTime?
+  id String @id @default(uuid()) @db.Char(36)
+
+  // Thông tin lưu trữ trên cloud storage (Supabase Storage)
+  bucketName String         @db.VarChar(100)
+  storageKey String         @unique @db.VarChar(500)
+  visibility FileVisibility @default(PRIVATE)
+
+  // Thông tin file gốc
+  originalName   String  @db.VarChar(255)
+  mimeType       String  @db.VarChar(100)
+  fileSize       BigInt
+  extension      String? @db.VarChar(20)
+  checksumSha256 String? @db.Char(64)
+
+  // Chỉ dùng cho file PUBLIC.
+  // File PRIVATE không lưu signed URL ở đây.
+  publicUrl String? @db.Text
+
+  // Người upload
+  uploadedByManagerId String? @db.Char(36)
+  uploadedByStudentId String? @db.Char(36)
+
+  // Timestamp
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   uploadedByManager ManagerAccount? @relation("ManagerUploadedFiles", fields: [uploadedByManagerId], references: [id], onDelete: SetNull)
   uploadedByStudent Student?        @relation("StudentUploadedFiles", fields: [uploadedByStudentId], references: [id], onDelete: SetNull)
@@ -515,6 +543,12 @@ model File {
 
   @@index([uploadedByManagerId])
   @@index([uploadedByStudentId])
+  @@index([bucketName])
+  @@index([visibility])
+  @@index([mimeType])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@index([bucketName, storageKey])
   @@map("files")
 }
 

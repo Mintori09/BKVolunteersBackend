@@ -42,7 +42,7 @@ type ManagedCampaignRecord = {
         description?: string | null
         status:
             | 'DRAFT'
-            | 'READY_FOR_REVIEW'
+            | 'READY'
             | 'APPROVED'
             | 'OPEN'
             | 'CLOSED'

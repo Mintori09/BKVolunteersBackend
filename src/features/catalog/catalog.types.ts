@@ -14,7 +14,7 @@ export type CatalogCampaignStatus =
 
 export type CatalogModuleStatus =
     | 'DRAFT'
-    | 'READY_FOR_REVIEW'
+    | 'READY'
     | 'APPROVED'
     | 'OPEN'
     | 'CLOSED'

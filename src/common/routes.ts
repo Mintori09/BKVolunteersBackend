@@ -13,6 +13,7 @@ import adminOrganizationsRouter from 'src/features/organizations/organizations.a
 import { publicRouter } from 'src/features/public'
 import { reportsRouter } from 'src/features/reports'
 import { studentsRouter } from 'src/features/students'
+import { storageRouter } from 'src/features/storage'
 import { usersRouter } from 'src/features/users'
 import { config } from 'src/config'
 
@@ -75,6 +76,10 @@ const defaultRoutes = [
     {
         path: '/locations',
         route: locationsRouter,
+    },
+    {
+        path: '/storage',
+        route: storageRouter,
     },
 ]
 
