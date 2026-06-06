@@ -22,7 +22,11 @@ const createTestAccount = async () => {
     }
 }
 
-if (
+if (config.node_env === 'test') {
+    transporter = nodemailer.createTransport({
+        jsonTransport: true,
+    })
+} else if (
     config.email.smtp.host !== 'localhost' &&
     config.email.smtp.auth.username !== 'test_user'
 ) {
