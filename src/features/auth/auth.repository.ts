@@ -45,7 +45,10 @@ const mapManagerUser = (user: UserWithProfiles): AuthUser | null => {
         username: user.username,
         email: user.email,
         role: user.role as UserRole,
+        avatarFileId: user.avatarFileId ?? null,
+        managerAccountId: manager.id,
         facultyId: manager.facultyId ?? null,
+        managedClubId: manager.managedClubId ?? null,
         firstName: user.username,
         lastName: '',
         status: user.status,
@@ -55,6 +58,7 @@ const mapManagerUser = (user: UserWithProfiles): AuthUser | null => {
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
         passwordHash: user.passwordHash,
+        deletedAt: user.deletedAt ?? null,
     }
 }
 
@@ -63,14 +67,17 @@ const mapStudentUser = (
         UserWithProfiles,
         | 'id'
         | 'email'
+        | 'avatarFileId'
         | 'status'
         | 'lastLoginAt'
         | 'createdAt'
         | 'updatedAt'
+        | 'deletedAt'
         | 'passwordHash'
     >,
     student: Pick<
         StudentWithUser,
+        | 'id'
         | 'mssv'
         | 'fullName'
         | 'facultyId'
@@ -86,6 +93,8 @@ const mapStudentUser = (
         username: student.mssv,
         email: user.email,
         role: 'SINHVIEN',
+        avatarFileId: user.avatarFileId ?? null,
+        studentProfileId: student.id,
         facultyId: student.facultyId,
         firstName,
         lastName,
@@ -100,6 +109,7 @@ const mapStudentUser = (
         className: student.className,
         phone: student.phone,
         totalPoints: student.totalPoints,
+        deletedAt: user.deletedAt ?? null,
     }
 }
 

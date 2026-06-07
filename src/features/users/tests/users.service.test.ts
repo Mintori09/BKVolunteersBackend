@@ -35,15 +35,41 @@ describe('users.service updateUserStatus', () => {
 
         mockedPrismaClient.user.findFirst.mockResolvedValue({
             id: 'student-2',
+            username: '21110001',
+            email: 'student@example.com',
+            role: 'SINHVIEN',
+            status: 'ACTIVE',
+            avatarFileId: 'file-avatar',
+            lastLoginAt: null,
+            createdAt: new Date('2026-01-01T00:00:00.000Z'),
+            updatedAt: new Date('2026-01-02T00:00:00.000Z'),
             deletedAt: null,
             managerProfile: null,
             studentProfile: {
+                id: 'student-profile-2',
                 userId: 'student-2',
+                facultyId: 1,
+                faculty: {
+                    id: 1,
+                    code: 'CK',
+                    name: 'Co khi',
+                },
+                mssv: '21110001',
+                fullName: 'Nguyen Van A',
+                className: '22TCLC',
+                phone: '0901234567',
+                totalPoints: 12,
             },
         })
 
         mockedPrismaClient.user.update.mockImplementation(
-            async ({ where, data }: { where: { id: string }; data: { status: string } }) => ({
+            async ({
+                where,
+                data,
+            }: {
+                where: { id: string }
+                data: { status: string }
+            }) => ({
                 id: where.id,
                 status: data.status,
             })
@@ -81,7 +107,11 @@ describe('users.service updateUserStatus', () => {
     })
 
     it('revokes refresh tokens before locking an account', async () => {
-        await updateUserStatus('student-2', { status: 'LOCKED' }, 'admin-1')
+        const result = await updateUserStatus(
+            'student-2',
+            { status: 'LOCKED' },
+            'admin-1'
+        )
 
         expect(mockedPrismaClient.user.findFirst).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -91,23 +121,34 @@ describe('users.service updateUserStatus', () => {
                 },
             })
         )
-        expect(mockedPrismaClient.userRefreshToken.deleteMany).toHaveBeenCalledWith(
-            {
-                where: { userId: 'student-2' },
-            }
-        )
+        expect(
+            mockedPrismaClient.userRefreshToken.deleteMany
+        ).toHaveBeenCalledWith({
+            where: { userId: 'student-2' },
+        })
         expect(mockedPrismaClient.user.update).toHaveBeenCalledWith({
             where: { id: 'student-2' },
             data: {
                 status: 'LOCKED',
             },
         })
+        expect(result).toEqual(
+            expect.objectContaining({
+                id: 'student-2',
+                avatarFileId: 'file-avatar',
+                studentProfileId: 'student-profile-2',
+                totalPoints: 12,
+                managedClubId: null,
+            })
+        )
     })
 
     it('updates account status without revoking refresh tokens when unlocking', async () => {
         await updateUserStatus('student-2', { status: 'ACTIVE' }, 'admin-1')
 
-        expect(mockedPrismaClient.userRefreshToken.deleteMany).not.toHaveBeenCalled()
+        expect(
+            mockedPrismaClient.userRefreshToken.deleteMany
+        ).not.toHaveBeenCalled()
         expect(mockedPrismaClient.user.update).toHaveBeenCalledWith({
             where: { id: 'student-2' },
             data: {

@@ -114,9 +114,13 @@ export interface UserManagementItem {
     email: string
     role: UserRole
     status: UserAccountStatus
+    avatarFileId: string | null
+    studentProfileId: string | null
+    managerAccountId: string | null
     lastLoginAt: Date | null
     createdAt: Date
     updatedAt: Date
+    deletedAt: Date | null
     facultyId: number | null
     facultyName: string | null
     managedClubId: string | null
@@ -125,6 +129,7 @@ export interface UserManagementItem {
     fullName: string | null
     className: string | null
     phone: string | null
+    totalPoints: number | null
 }
 
 export interface UserListOutput {

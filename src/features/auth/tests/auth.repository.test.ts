@@ -31,11 +31,17 @@ describe('Auth Repository', () => {
             username: 'manager01',
             email: 'manager@example.com',
             role: 'LCD',
+            avatarFileId: 'file-1',
             passwordHash: 'hash',
             status: 'ACTIVE',
             createdAt: new Date(),
             updatedAt: new Date(),
-            managerProfile: { facultyId: 1 },
+            deletedAt: null,
+            managerProfile: {
+                id: 'manager-1',
+                facultyId: 1,
+                managedClubId: 'club-1',
+            },
             studentProfile: null,
         })
 
@@ -45,7 +51,10 @@ describe('Auth Repository', () => {
             expect.objectContaining({
                 id: 'u1',
                 role: 'LCD',
+                avatarFileId: 'file-1',
+                managerAccountId: 'manager-1',
                 facultyId: 1,
+                managedClubId: 'club-1',
                 passwordHash: 'hash',
             })
         )
@@ -63,9 +72,11 @@ describe('Auth Repository', () => {
             user: {
                 id: 'u2',
                 email: 'student@example.com',
+                avatarFileId: 'file-student',
                 status: 'ACTIVE',
                 createdAt: new Date(),
                 updatedAt: new Date(),
+                deletedAt: null,
                 passwordHash: 'hash-student',
             },
         })
@@ -77,6 +88,8 @@ describe('Auth Repository', () => {
                 id: 'u2',
                 role: 'SINHVIEN',
                 username: '123456789',
+                avatarFileId: 'file-student',
+                studentProfileId: 's1',
                 mssv: '123456789',
                 passwordHash: 'hash-student',
             })
@@ -124,16 +137,16 @@ describe('Auth Repository', () => {
 
     it('deletes refresh token by token', async () => {
         await authRepository.deleteRefreshToken('token-x')
-        expect(mockPrismaClient.userRefreshToken.deleteMany).toHaveBeenCalledWith(
-            { where: { token: 'token-x' } }
-        )
+        expect(
+            mockPrismaClient.userRefreshToken.deleteMany
+        ).toHaveBeenCalledWith({ where: { token: 'token-x' } })
     })
 
     it('deletes all refresh tokens by user id', async () => {
         await authRepository.deleteAllUserRefreshTokens('u9')
-        expect(mockPrismaClient.userRefreshToken.deleteMany).toHaveBeenCalledWith(
-            { where: { userId: 'u9' } }
-        )
+        expect(
+            mockPrismaClient.userRefreshToken.deleteMany
+        ).toHaveBeenCalledWith({ where: { userId: 'u9' } })
     })
 
     it('creates refresh token in userRefreshToken table', async () => {

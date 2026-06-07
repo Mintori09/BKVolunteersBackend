@@ -249,7 +249,9 @@ describe('Auth Service', () => {
             const accessToken = 'access-token-123'
             const refreshToken = 'refresh-token-123'
 
-            ;(authRepository.getUserById as jest.Mock).mockResolvedValue(student)
+            ;(authRepository.getUserById as jest.Mock).mockResolvedValue(
+                student
+            )
             ;(createAccessToken as jest.Mock).mockReturnValue(accessToken)
             ;(createRefreshToken as jest.Mock).mockReturnValue(refreshToken)
             ;(authRepository.createRefreshToken as jest.Mock).mockResolvedValue(
@@ -258,7 +260,10 @@ describe('Auth Service', () => {
 
             const result = await authService.createSession(userId, role)
 
-            expect(authRepository.getUserById).toHaveBeenCalledWith(userId, role)
+            expect(authRepository.getUserById).toHaveBeenCalledWith(
+                userId,
+                role
+            )
             expect(createAccessToken).toHaveBeenCalledWith(userId, role, '101')
             expect(result).toEqual({ accessToken, refreshToken })
         })
@@ -270,7 +275,9 @@ describe('Auth Service', () => {
             const accessToken = 'access-token-123'
             const refreshToken = 'refresh-token-123'
 
-            ;(authRepository.getUserById as jest.Mock).mockResolvedValue(student)
+            ;(authRepository.getUserById as jest.Mock).mockResolvedValue(
+                student
+            )
             ;(createAccessToken as jest.Mock).mockReturnValue(accessToken)
             ;(createRefreshToken as jest.Mock).mockReturnValue(refreshToken)
             ;(authRepository.createRefreshToken as jest.Mock).mockResolvedValue(
@@ -302,7 +309,11 @@ describe('Auth Service', () => {
 
             const result = await authService.createSession(userId, role)
 
-            expect(createAccessToken).toHaveBeenCalledWith(userId, role, undefined)
+            expect(createAccessToken).toHaveBeenCalledWith(
+                userId,
+                role,
+                undefined
+            )
             expect(result).toEqual({ accessToken, refreshToken })
         })
 
@@ -322,7 +333,10 @@ describe('Auth Service', () => {
 
             const result = await authService.createSession(userId, role)
 
-            expect(authRepository.getUserById).toHaveBeenCalledWith(userId, role)
+            expect(authRepository.getUserById).toHaveBeenCalledWith(
+                userId,
+                role
+            )
             expect(createAccessToken).toHaveBeenCalledWith(userId, role, 1)
             expect(result).toEqual({ accessToken, refreshToken })
         })

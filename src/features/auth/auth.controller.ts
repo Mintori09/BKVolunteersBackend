@@ -26,10 +26,13 @@ const mapPublicUser = (user: AuthUser): MeOutput => {
             id: user.id,
             username: user.username,
             mssv: user.mssv || user.username,
-            fullName: user.fullName || `${user.lastName} ${user.firstName}`.trim(),
+            fullName:
+                user.fullName || `${user.lastName} ${user.firstName}`.trim(),
             email: user.email,
             role: user.role,
             accountType: 'STUDENT',
+            avatarFileId: user.avatarFileId ?? null,
+            studentProfileId: user.studentProfileId ?? null,
             facultyId: user.facultyId,
             firstName: user.firstName,
             lastName: user.lastName,
@@ -50,7 +53,10 @@ const mapPublicUser = (user: AuthUser): MeOutput => {
         email: user.email,
         role: user.role,
         accountType: 'OPERATOR',
+        avatarFileId: user.avatarFileId ?? null,
+        managerAccountId: user.managerAccountId ?? null,
         facultyId: user.facultyId,
+        managedClubId: user.managedClubId ?? null,
         firstName: user.firstName,
         lastName: user.lastName,
         status: user.status,
@@ -147,7 +153,8 @@ export const handleLogout = catchAsync(async (req: Request, res: Response) => {
               : undefined
 
     const refreshToken =
-        req.cookies[config.jwt.refresh_token.cookie_name] ?? refreshTokenFromBody
+        req.cookies[config.jwt.refresh_token.cookie_name] ??
+        refreshTokenFromBody
 
     if (!refreshToken) {
         return res.sendStatus(HttpStatus.NO_CONTENT)
@@ -184,7 +191,10 @@ export const handleRefresh = catchAsync(async (req: Request, res: Response) => {
     const refreshToken = refreshTokenFromCookie ?? refreshTokenFromBody
 
     if (!refreshToken) {
-        throw new ApiError(HttpStatus.UNAUTHORIZED, 'Khong tim thay refresh token')
+        throw new ApiError(
+            HttpStatus.UNAUTHORIZED,
+            'Khong tim thay refresh token'
+        )
     }
 
     res.clearCookie(
@@ -216,7 +226,10 @@ export const handleRefresh = catchAsync(async (req: Request, res: Response) => {
     )
 
     if (foundRefreshToken.userId !== payload.userId) {
-        throw new ApiError(HttpStatus.FORBIDDEN, 'Refresh token khong khop user')
+        throw new ApiError(
+            HttpStatus.FORBIDDEN,
+            'Refresh token khong khop user'
+        )
     }
 
     const user = await authService.getUserById(payload.userId, payload.role)
@@ -264,7 +277,10 @@ export const handleChangePassword = catchAsync(
         const role = req.payload?.role
 
         if (!userId || !role) {
-            throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chua xac thuc nguoi dung')
+            throw new ApiError(
+                HttpStatus.UNAUTHORIZED,
+                'Chua xac thuc nguoi dung'
+            )
         }
 
         await authService.changePassword(
@@ -283,7 +299,10 @@ export const updateMe = catchAsync(
         const role = req.payload?.role
 
         if (!userId || !role) {
-            throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chua xac thuc nguoi dung')
+            throw new ApiError(
+                HttpStatus.UNAUTHORIZED,
+                'Chua xac thuc nguoi dung'
+            )
         }
 
         const updatedUser = await authService.updateProfile(

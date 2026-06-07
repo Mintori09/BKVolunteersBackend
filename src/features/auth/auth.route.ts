@@ -95,7 +95,12 @@ authRouter.post('/refresh', authController.handleRefresh)
  *         description: Unauthorized
  */
 authRouter.get('/me', isAuth, authController.getMe)
-authRouter.patch('/me', isAuth, validate(updateProfileSchema), authController.updateMe)
+authRouter.patch(
+    '/me',
+    isAuth,
+    validate(updateProfileSchema),
+    authController.updateMe
+)
 
 /**
  * @openapi

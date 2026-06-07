@@ -11,16 +11,19 @@ const isAuth = async (req: Request, _res: Response, next: NextFunction) => {
 
     if (
         !authHeader ||
-        (!authHeader.startsWith('Bearer ') &&
-            !authHeader.startsWith('Apikey '))
+        (!authHeader.startsWith('Bearer ') && !authHeader.startsWith('Apikey '))
     ) {
-        return next(new ApiError(HttpStatus.UNAUTHORIZED, 'Chua xac thuc nguoi dung'))
+        return next(
+            new ApiError(HttpStatus.UNAUTHORIZED, 'Chua xac thuc nguoi dung')
+        )
     }
 
     const token = authHeader.split(' ')[1]
 
     if (!token) {
-        return next(new ApiError(HttpStatus.UNAUTHORIZED, 'Chua xac thuc nguoi dung'))
+        return next(
+            new ApiError(HttpStatus.UNAUTHORIZED, 'Chua xac thuc nguoi dung')
+        )
     }
 
     try {

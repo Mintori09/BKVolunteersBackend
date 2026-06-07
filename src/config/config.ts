@@ -107,13 +107,10 @@ const config = {
     },
     supabase: {
         url: env.SUPABASE_URL ?? null,
-        serviceRoleKey:
-            env.SUPABASE_SECRET_KEY ?? null,
+        serviceRoleKey: env.SUPABASE_SECRET_KEY ?? null,
         storage: {
-            publicBucket:
-                env.SUPABASE_PUBLIC_BUCKET,
-            privateBucket:
-                env.SUPABASE_PRIVATE_BUCKET,
+            publicBucket: env.SUPABASE_PUBLIC_BUCKET,
+            privateBucket: env.SUPABASE_PRIVATE_BUCKET,
             signedUrlTtl: Number(env.SUPABASE_STORAGE_SIGNED_URL_TTL),
         },
     },

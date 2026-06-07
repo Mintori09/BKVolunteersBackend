@@ -237,7 +237,9 @@ describe('Auth Routes Integration', () => {
         it('returns 401 when refresh token cookie is missing', async () => {
             const response = await request(app).post('/api/v1/auth/refresh')
             expect(response.status).toBe(HttpStatus.UNAUTHORIZED)
-            expect(response.body.message).toContain('Khong tim thay refresh token')
+            expect(response.body.message).toContain(
+                'Khong tim thay refresh token'
+            )
         })
 
         it('returns 403 when token is not found in DB', async () => {

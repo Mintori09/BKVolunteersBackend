@@ -34,12 +34,27 @@ type UserWithRelations = Prisma.UserGetPayload<{
     }
 }>
 
-const isManagedRole = (role: UserRole): role is ManagedRole => role !== 'SINHVIEN'
+const isManagedRole = (role: UserRole): role is ManagedRole =>
+    role !== 'SINHVIEN'
 
 const normalizeOptionalString = (value?: string | null) => {
     const normalized = value?.trim()
     return normalized ? normalized : null
 }
+
+const userManagementInclude = {
+    managerProfile: {
+        include: {
+            faculty: true,
+            managedClub: true,
+        },
+    },
+    studentProfile: {
+        include: {
+            faculty: true,
+        },
+    },
+} satisfies Prisma.UserInclude
 
 const mapUserItem = (user: UserWithRelations): UserManagementItem => ({
     id: user.id,
@@ -47,11 +62,17 @@ const mapUserItem = (user: UserWithRelations): UserManagementItem => ({
     email: user.email,
     role: user.role as UserRole,
     status: user.status,
+    avatarFileId: user.avatarFileId ?? null,
+    studentProfileId: user.studentProfile?.id ?? null,
+    managerAccountId: user.managerProfile?.id ?? null,
     lastLoginAt: user.lastLoginAt,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
+    deletedAt: user.deletedAt ?? null,
     facultyId:
-        user.studentProfile?.facultyId ?? user.managerProfile?.facultyId ?? null,
+        user.studentProfile?.facultyId ??
+        user.managerProfile?.facultyId ??
+        null,
     facultyName:
         user.studentProfile?.faculty.name ??
         user.managerProfile?.faculty?.name ??
@@ -62,7 +83,27 @@ const mapUserItem = (user: UserWithRelations): UserManagementItem => ({
     fullName: user.studentProfile?.fullName ?? null,
     className: user.studentProfile?.className ?? null,
     phone: user.studentProfile?.phone ?? null,
+    totalPoints: user.studentProfile?.totalPoints ?? null,
 })
+
+const loadUserManagementItem = async (
+    userId: string,
+    tx?: Prisma.TransactionClient
+): Promise<UserManagementItem> => {
+    const user = await (tx ?? prismaClient).user.findFirst({
+        where: {
+            id: userId,
+            deletedAt: null,
+        },
+        include: userManagementInclude,
+    })
+
+    if (!user) {
+        throw new ApiError(HttpStatus.NOT_FOUND, 'Khong tim thay tai khoan')
+    }
+
+    return mapUserItem(user)
+}
 
 const ensureFacultyExists = async (
     tx: Prisma.TransactionClient,
@@ -218,19 +259,7 @@ export const listUsers = async (
             skip,
             take: limit,
             orderBy: { createdAt: 'desc' },
-            include: {
-                managerProfile: {
-                    include: {
-                        faculty: true,
-                        managedClub: true,
-                    },
-                },
-                studentProfile: {
-                    include: {
-                        faculty: true,
-                    },
-                },
-            },
+            include: userManagementInclude,
         }),
         prismaClient.user.count({ where }),
     ])
@@ -290,7 +319,10 @@ export const createUser = async (data: CreateUserInput) => {
         let facultyIdForManager: number | null = null
         if (data.role === 'CLB') {
             if (data.managedClubId) {
-                facultyIdForManager = await ensureClubExists(tx, data.managedClubId)
+                facultyIdForManager = await ensureClubExists(
+                    tx,
+                    data.managedClubId
+                )
             } else if (data.facultyId) {
                 await ensureFacultyExists(tx, data.facultyId)
                 facultyIdForManager = data.facultyId
@@ -300,7 +332,7 @@ export const createUser = async (data: CreateUserInput) => {
         const passwordHash = await argon2.hash(data.password)
 
         if (data.role === 'SINHVIEN') {
-            return tx.user.create({
+            const createdUser = await tx.user.create({
                 data: {
                     username: data.mssv,
                     email: data.email,
@@ -318,9 +350,11 @@ export const createUser = async (data: CreateUserInput) => {
                     },
                 },
             })
+
+            return loadUserManagementItem(createdUser.id, tx)
         }
 
-        return tx.user.create({
+        const createdUser = await tx.user.create({
             data: {
                 username: data.username,
                 email: data.email,
@@ -335,12 +369,14 @@ export const createUser = async (data: CreateUserInput) => {
                                 : facultyIdForManager,
                         managedClubId:
                             data.role === 'CLB'
-                                ? data.managedClubId ?? null
+                                ? (data.managedClubId ?? null)
                                 : null,
                     },
                 },
             },
         })
+
+        return loadUserManagementItem(createdUser.id, tx)
     })
 }
 
@@ -360,7 +396,9 @@ export const updateUser = async (userId: string, data: UpdateUserInput) => {
     return prismaClient.$transaction(async (tx) => {
         await ensureUniqueForUpdate(tx, userId, data)
 
-        const passwordHash = data.password ? await argon2.hash(data.password) : null
+        const passwordHash = data.password
+            ? await argon2.hash(data.password)
+            : null
 
         if (data.role === 'SINHVIEN') {
             await ensureFacultyExists(tx, data.facultyId)
@@ -382,7 +420,7 @@ export const updateUser = async (userId: string, data: UpdateUserInput) => {
                 )
             }
 
-            return tx.student.update({
+            await tx.student.update({
                 where: { userId },
                 data: {
                     mssv: data.mssv,
@@ -393,6 +431,8 @@ export const updateUser = async (userId: string, data: UpdateUserInput) => {
                     deletedAt: null,
                 },
             })
+
+            return loadUserManagementItem(userId, tx)
         }
 
         let facultyIdForManager: number | null = null
@@ -402,7 +442,10 @@ export const updateUser = async (userId: string, data: UpdateUserInput) => {
         }
         if (data.role === 'CLB') {
             if (data.managedClubId) {
-                facultyIdForManager = await ensureClubExists(tx, data.managedClubId)
+                facultyIdForManager = await ensureClubExists(
+                    tx,
+                    data.managedClubId
+                )
             } else if (data.facultyId) {
                 await ensureFacultyExists(tx, data.facultyId)
                 facultyIdForManager = data.facultyId
@@ -426,15 +469,17 @@ export const updateUser = async (userId: string, data: UpdateUserInput) => {
             )
         }
 
-        return tx.managerAccount.update({
+        await tx.managerAccount.update({
             where: { userId },
             data: {
                 facultyId: facultyIdForManager,
                 managedClubId:
-                    data.role === 'CLB' ? data.managedClubId ?? null : null,
+                    data.role === 'CLB' ? (data.managedClubId ?? null) : null,
                 deletedAt: null,
             },
         })
+
+        return loadUserManagementItem(userId, tx)
     })
 }
 
@@ -459,12 +504,14 @@ export const updateUserStatus = async (
             })
         }
 
-        return tx.user.update({
+        await tx.user.update({
             where: { id: userId },
             data: {
                 status: data.status as UserAccountStatus,
             },
         })
+
+        return loadUserManagementItem(userId, tx)
     })
 }
 

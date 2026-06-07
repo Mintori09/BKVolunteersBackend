@@ -7,10 +7,14 @@ const hasSupabaseCredentials =
 export const isSupabaseStorageEnabled = hasSupabaseCredentials
 
 export const supabaseAdmin = hasSupabaseCredentials
-    ? createClient(config.supabase.url as string, config.supabase.serviceRoleKey as string, {
-          auth: {
-              autoRefreshToken: false,
-              persistSession: false,
-          },
-      })
+    ? createClient(
+          config.supabase.url as string,
+          config.supabase.serviceRoleKey as string,
+          {
+              auth: {
+                  autoRefreshToken: false,
+                  persistSession: false,
+              },
+          }
+      )
     : null

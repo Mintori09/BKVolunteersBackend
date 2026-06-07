@@ -16,21 +16,35 @@ const getParamAsString = (value: string | string[] | undefined) =>
     typeof value === 'string' ? value : undefined
 
 export const listUsers = catchAsync(
-    async (req: TypedRequest<Record<string, never>, UsersQueryInput>, res: Response) => {
-        const result = await usersService.listUsers(req.query as UsersQueryInput)
+    async (
+        req: TypedRequest<Record<string, never>, UsersQueryInput>,
+        res: Response
+    ) => {
+        const result = await usersService.listUsers(
+            req.query as UsersQueryInput
+        )
         return ApiResponse.success(res, result)
     }
 )
 
-export const getUserOptions = catchAsync(async (_req: Request, res: Response) => {
-    const result = await usersService.getUserOptions()
-    return ApiResponse.success(res, result)
-})
+export const getUserOptions = catchAsync(
+    async (_req: Request, res: Response) => {
+        const result = await usersService.getUserOptions()
+        return ApiResponse.success(res, result)
+    }
+)
 
 export const createUser = catchAsync(
     async (req: TypedRequest<CreateUserInput>, res: Response) => {
-        const created = await usersService.createUser(req.body as CreateUserInput)
-        return ApiResponse.success(res, created, 'Tao tai khoan thanh cong', HttpStatus.CREATED)
+        const created = await usersService.createUser(
+            req.body as CreateUserInput
+        )
+        return ApiResponse.success(
+            res,
+            created,
+            'Tao tai khoan thanh cong',
+            HttpStatus.CREATED
+        )
     }
 )
 
@@ -50,7 +64,11 @@ export const updateUser = catchAsync(
             userId,
             req.body as UpdateUserInput
         )
-        return ApiResponse.success(res, updated, 'Cap nhat tai khoan thanh cong')
+        return ApiResponse.success(
+            res,
+            updated,
+            'Cap nhat tai khoan thanh cong'
+        )
     }
 )
 
@@ -65,7 +83,10 @@ export const updateUserStatus = catchAsync(
         const actorUserId = req.payload?.userId
 
         if (!userId || !actorUserId) {
-            throw new ApiError(HttpStatus.BAD_REQUEST, 'Thieu thong tin tai khoan')
+            throw new ApiError(
+                HttpStatus.BAD_REQUEST,
+                'Thieu thong tin tai khoan'
+            )
         }
 
         const updated = await usersService.updateUserStatus(
@@ -73,7 +94,11 @@ export const updateUserStatus = catchAsync(
             req.body as UpdateUserStatusInput,
             actorUserId
         )
-        return ApiResponse.success(res, updated, 'Cap nhat trang thai thanh cong')
+        return ApiResponse.success(
+            res,
+            updated,
+            'Cap nhat trang thai thanh cong'
+        )
     }
 )
 

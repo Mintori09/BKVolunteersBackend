@@ -279,7 +279,9 @@ describe('Auth Controller', () => {
 
             await handleLogout(req, res, next)
 
-            expect(authService.deleteRefreshToken).toHaveBeenCalledWith('body-token')
+            expect(authService.deleteRefreshToken).toHaveBeenCalledWith(
+                'body-token'
+            )
             expect(res.sendStatus).toHaveBeenCalledWith(HttpStatus.NO_CONTENT)
         })
     })
@@ -366,7 +368,9 @@ describe('Auth Controller', () => {
 
             await handleRefresh(req, res, next)
 
-            expect(authService.deleteRefreshToken).toHaveBeenCalledWith('body-token')
+            expect(authService.deleteRefreshToken).toHaveBeenCalledWith(
+                'body-token'
+            )
             expect(res.status).toHaveBeenCalledWith(HttpStatus.OK)
         })
     })

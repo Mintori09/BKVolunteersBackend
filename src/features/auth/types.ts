@@ -42,7 +42,10 @@ export interface UserMeOutput {
     email: string
     role: UserRole
     accountType: AccountType
+    avatarFileId: string | null
+    managerAccountId: string | null
     facultyId: number | null
+    managedClubId: string | null
     firstName: string
     lastName: string
     status: 'ACTIVE' | 'LOCKED' | 'DISABLED'
@@ -61,6 +64,8 @@ export interface StudentMeOutput {
     email: string
     role: UserRole
     accountType: AccountType
+    avatarFileId: string | null
+    studentProfileId: string | null
     facultyId: number | null
     firstName: string
     lastName: string
@@ -82,13 +87,18 @@ export interface AuthUser {
     email: string
     role: UserRole
     accountType?: AccountType
+    avatarFileId?: string | null
+    studentProfileId?: string | null
+    managerAccountId?: string | null
     facultyId: number | null
+    managedClubId?: string | null
     firstName: string
     lastName: string
     status: 'ACTIVE' | 'LOCKED' | 'DISABLED'
     createdAt: Date
     updatedAt: Date
     passwordHash: string
+    deletedAt?: Date | null
     lastLoginAt?: Date | null
     facultyName?: string | null
     managedClubName?: string | null
