@@ -52,4 +52,3 @@ export const locationCatalog: LocationItem[] = [
             'Van phong doi tac ho tro truyen thong, hop tac su kien va trung chuyen tai nguyen.',
     },
 ]
-

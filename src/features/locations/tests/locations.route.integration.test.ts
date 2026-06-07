@@ -38,4 +38,3 @@ describe('Locations Routes Integration', () => {
         expect(response.body.data.length).toBeGreaterThan(0)
     })
 })
-

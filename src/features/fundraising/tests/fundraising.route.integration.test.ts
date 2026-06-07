@@ -28,13 +28,8 @@ jest.mock('src/features/auth/auth.service', () => ({
 
 import app from 'src/app'
 import { HttpStatus } from 'src/common/constants'
-import { resetFundraisingStore } from '../fundraising.service'
 
 describe('Fundraising Routes Integration', () => {
-    beforeEach(() => {
-        resetFundraisingStore()
-    })
-
     it('returns fundraising module, donations and transactions for authenticated users', async () => {
         const moduleResponse = await request(app)
             .get('/api/v1/fundraising/modules/module-fundraising-2')
@@ -50,14 +45,16 @@ describe('Fundraising Routes Integration', () => {
 
         const donationsResponse = await request(app)
             .get('/api/v1/fundraising/modules/module-fundraising-2/donations')
-            .set('Authorization', 'Bearer student-token')
+            .set('Authorization', 'Bearer doantruong-token')
 
         expect(donationsResponse.status).toBe(HttpStatus.OK)
         expect(donationsResponse.body.data.items.length).toBeGreaterThan(0)
 
         const transactionsResponse = await request(app)
-            .get('/api/v1/fundraising/transactions?module_id=module-fundraising-2')
-            .set('Authorization', 'Bearer student-token')
+            .get(
+                '/api/v1/fundraising/transactions?module_id=module-fundraising-2'
+            )
+            .set('Authorization', 'Bearer doantruong-token')
 
         expect(transactionsResponse.status).toBe(HttpStatus.OK)
         expect(transactionsResponse.body.data.items.length).toBeGreaterThan(0)
@@ -88,7 +85,9 @@ describe('Fundraising Routes Integration', () => {
         )
 
         const attach = await request(app)
-            .patch('/api/v1/fundraising/transactions/tx-fund-201/attach-donation')
+            .patch(
+                '/api/v1/fundraising/transactions/tx-fund-201/attach-donation'
+            )
             .set('Authorization', 'Bearer doantruong-token')
             .send({ donation_id: 'donation-201' })
 

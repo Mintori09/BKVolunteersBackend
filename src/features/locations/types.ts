@@ -9,4 +9,3 @@ export interface LocationItem {
     type: LocationType
     description: string
 }
-

@@ -5,8 +5,7 @@ import * as locationsService from './locations.service'
 import { LocationItem } from './types'
 
 export const listLocations = catchAsync(async (req: Request, res: Response) => {
-    const type =
-        typeof req.query.type === 'string' ? req.query.type : undefined
+    const type = typeof req.query.type === 'string' ? req.query.type : undefined
 
     const data = locationsService.listLocations(type)
 
@@ -16,4 +15,3 @@ export const listLocations = catchAsync(async (req: Request, res: Response) => {
         'Lay danh sach dia diem thanh cong'
     )
 })
-

@@ -6,4 +6,3 @@ const locationsRouter = Router()
 locationsRouter.get('/', listLocations)
 
 export default locationsRouter
-

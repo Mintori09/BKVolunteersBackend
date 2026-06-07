@@ -1,120 +1,280 @@
-import * as authService from 'src/features/auth/auth.service'
+import { Prisma } from '@prisma/client'
+import { prismaClient } from 'src/config'
+import { HttpStatus } from 'src/common/constants'
+import { ApiError } from 'src/utils/ApiError'
+import { mapModuleTypeToLegacy } from 'src/features/catalog/catalog.helpers'
 import type { UserRole } from 'src/features/auth/types'
-import { catalogCampaigns } from 'src/features/catalog/catalog.data'
-import * as campaignsService from 'src/features/campaigns/campaigns.service'
-import { initialEventRegistrations } from './events.data'
-import { EventRegistrationRecord } from './events.types'
 
-let registrationCounter = 100
-let eventRegistrationStore: EventRegistrationRecord[] = initialEventRegistrations.map(
-    (item) => ({
-        ...item,
-        student: { ...item.student },
-        answers: item.answers ? { ...item.answers } : undefined,
-    })
-)
+const eventModuleInclude = {
+    campaign: true,
+    eventConfig: true,
+    registrations: {
+        include: {
+            module: true,
+            student: {
+                include: {
+                    user: true,
+                },
+            },
+            checkins: true,
+        },
+        orderBy: {
+            submittedAt: 'desc' as const,
+        },
+    },
+} as const
 
-const cloneRegistration = (
-    item: EventRegistrationRecord
-): EventRegistrationRecord => ({
-    ...item,
-    student: { ...item.student },
-    answers: item.answers ? { ...item.answers } : undefined,
-})
+type EventModuleRecord = Prisma.PromiseReturnType<typeof findEventModule>
+type EventRegistrationRecord =
+    NonNullable<EventModuleRecord>['registrations'][number]
 
-const findEventModuleEntry = (moduleId: string) => {
-    const mutableCampaign = campaignsService.findManagedCampaignByModuleId(moduleId)
-
-    if (mutableCampaign) {
-        const mutableModule = mutableCampaign.modules.find(
-            (item) => item.id === moduleId && item.type === 'event'
-        )
-
-        if (mutableModule) {
-            return {
-                campaign: mutableCampaign,
-                module: mutableModule,
-            }
-        }
-    }
-
-    for (const campaign of catalogCampaigns) {
-        const module = campaign.modules.find(
-            (item) => item.id === moduleId && item.type === 'event'
-        )
-
-        if (module) {
-            return { campaign, module }
-        }
-    }
-
-    return null
+type ManagerActor = {
+    userId: string
+    role: Exclude<UserRole, 'SINHVIEN'>
+    managerId: string
+    facultyId: number | null
+    managedClubId: string | null
 }
 
-const eventConfigStore = new Map(
-    catalogCampaigns.flatMap((campaign) =>
-        campaign.modules
-            .filter((module) => module.type === 'event')
-            .map((module) => [module.id, { ...module.settings }])
+const findEventModule = async (moduleId: string) =>
+    prismaClient.campaignModule.findFirst({
+        where: {
+            id: moduleId,
+            deletedAt: null,
+            moduleType: 'EVENT',
+        },
+        include: eventModuleInclude,
+    })
+
+const getStudentByUserId = async (userId: string) => {
+    const student = await prismaClient.student.findUnique({
+        where: {
+            userId,
+        },
+        include: {
+            user: true,
+        },
+    })
+
+    if (!student) {
+        throw new ApiError(
+            HttpStatus.NOT_FOUND,
+            'Khong tim thay ho so sinh vien'
+        )
+    }
+
+    return student
+}
+
+const getManagerByUserId = async (userId: string) => {
+    const manager = await prismaClient.managerAccount.findUnique({
+        where: {
+            userId,
+        },
+    })
+
+    if (!manager) {
+        throw new ApiError(
+            HttpStatus.NOT_FOUND,
+            'Khong tim thay tai khoan quan ly'
+        )
+    }
+
+    return manager
+}
+
+const getManagerActor = async (
+    userId: string,
+    role: UserRole
+): Promise<ManagerActor> => {
+    if (role === 'SINHVIEN') {
+        throw new ApiError(
+            HttpStatus.FORBIDDEN,
+            'Sinh vien khong duoc phep thuc hien thao tac nay'
+        )
+    }
+
+    const manager = await getManagerByUserId(userId)
+
+    return {
+        userId,
+        role,
+        managerId: manager.id,
+        facultyId: manager.facultyId,
+        managedClubId: manager.managedClubId ?? null,
+    }
+}
+
+const assertCanManageCampaign = (
+    actor: ManagerActor,
+    campaign: {
+        organizerManagerId: string
+        facultyId: number | null
+        clubId: string | null
+    }
+) => {
+    if (actor.role === 'DOANTRUONG') {
+        return
+    }
+
+    if (campaign.organizerManagerId === actor.managerId) {
+        return
+    }
+
+    if (
+        actor.role === 'CLB' &&
+        actor.managedClubId &&
+        campaign.clubId === actor.managedClubId
+    ) {
+        return
+    }
+
+    if (
+        actor.role === 'LCD' &&
+        actor.facultyId &&
+        campaign.facultyId === actor.facultyId
+    ) {
+        return
+    }
+
+    throw new ApiError(
+        HttpStatus.FORBIDDEN,
+        'Ban khong duoc phep thao tac voi hang muc su kien nay'
     )
-)
+}
 
-const findRegistration = (registrationId: string) =>
-    eventRegistrationStore.find((item) => item.id === registrationId) ?? null
+const mapRegistration = (item: EventRegistrationRecord) => {
+    const latestCheckin = item.checkins
+        .slice()
+        .sort(
+            (
+                left: EventRegistrationRecord['checkins'][number],
+                right: EventRegistrationRecord['checkins'][number]
+            ) =>
+                new Date(right.checkedInAt).getTime() -
+                new Date(left.checkedInAt).getTime()
+        )[0]
 
-const getModuleRegistrations = (moduleId: string) =>
-    eventRegistrationStore.filter((item) => item.module_id === moduleId)
+    const status =
+        item.status === 'COMPLETED'
+            ? 'COMPLETED'
+            : latestCheckin && !latestCheckin.checkedOutAt
+              ? 'CHECKED_IN'
+              : item.status
 
-export const resetEventStore = () => {
-    registrationCounter = 100
-    eventRegistrationStore = initialEventRegistrations.map(cloneRegistration)
-    eventConfigStore.clear()
+    const hours = latestCheckin?.checkedOutAt
+        ? Number(
+              (
+                  (new Date(latestCheckin.checkedOutAt).getTime() -
+                      new Date(latestCheckin.checkedInAt).getTime()) /
+                  (1000 * 60 * 60)
+              ).toFixed(1)
+          )
+        : null
 
-    catalogCampaigns.forEach((campaign) => {
-        campaign.modules
-            .filter((module) => module.type === 'event')
-            .forEach((module) => {
-                eventConfigStore.set(module.id, { ...module.settings })
-            })
+    return {
+        id: item.id,
+        campaign_id: item.module.campaignId,
+        module_id: item.moduleId,
+        student: {
+            id: item.student.userId,
+            full_name: item.student.fullName,
+            student_code: item.student.mssv,
+            email: item.student.user.email,
+        },
+        status,
+        answers: undefined,
+        registered_at: item.submittedAt.toISOString(),
+        reviewed_at: item.reviewedAt?.toISOString() ?? null,
+        review_note: item.rejectionReason ?? item.completionNote ?? null,
+        checked_in_at: latestCheckin?.checkedInAt.toISOString() ?? null,
+        checked_out_at: latestCheckin?.checkedOutAt?.toISOString() ?? null,
+        hours,
+    }
+}
+
+export const resetEventStore = async () => {
+    await prismaClient.checkin.deleteMany({
+        where: {
+            registrationId: {
+                in: ['registration-evt-3', 'registration-evt-4'],
+            },
+        },
+    })
+
+    await prismaClient.moduleRegistration.deleteMany({
+        where: {
+            moduleId: 'module-event-3',
+            id: {
+                notIn: ['registration-evt-3', 'registration-evt-4'],
+            },
+        },
+    })
+
+    await prismaClient.moduleRegistration.update({
+        where: {
+            id: 'registration-evt-3',
+        },
+        data: {
+            status: 'PENDING',
+            reviewedAt: null,
+            rejectionReason: null,
+            completionNote: null,
+        },
+    })
+
+    await prismaClient.moduleRegistration.update({
+        where: {
+            id: 'registration-evt-4',
+        },
+        data: {
+            status: 'PENDING',
+            reviewedAt: null,
+            rejectionReason: null,
+            completionNote: null,
+        },
     })
 }
 
-export const getEventModule = (moduleId: string) => {
-    const entry = findEventModuleEntry(moduleId)
+export const getEventModule = async (moduleId: string) => {
+    const entry = await findEventModule(moduleId)
 
     if (!entry) {
         return null
     }
 
-    const registrations = getModuleRegistrations(moduleId)
-    const approvedCount = registrations.filter((item) =>
-        ['APPROVED', 'CHECKED_IN', 'COMPLETED'].includes(item.status)
+    const approvedCount = entry.registrations.filter((item) =>
+        ['APPROVED', 'COMPLETED'].includes(item.status)
     ).length
 
     return {
-        id: entry.module.id,
-        campaign_id: entry.campaign.id,
-        type: entry.module.type,
-        title: entry.module.title,
-        description: entry.module.description,
-        status: entry.module.status,
-        start_at: entry.module.start_at,
-        end_at: entry.module.end_at,
+        id: entry.id,
+        campaign_id: entry.campaignId,
+        type: mapModuleTypeToLegacy(entry.moduleType),
+        title: entry.title,
+        description: entry.shortDescription,
+        status: entry.status,
+        start_at: entry.moduleStartAt.toISOString(),
+        end_at: entry.moduleEndAt.toISOString(),
         settings_json: {
-            ...(eventConfigStore.get(moduleId) ?? entry.module.settings),
+            location: entry.eventConfig?.eventLocation ?? null,
+            quota: entry.eventConfig?.maxAttendees ?? null,
+            registration_required: true,
+            checkin_required: entry.eventConfig?.checkinEnabled ?? false,
+            benefits_text: entry.eventConfig?.eventAgenda ?? null,
         },
-        registration_count: registrations.length,
+        registration_count: entry.registrations.length,
         approved_count: approvedCount,
         campaign: {
             id: entry.campaign.id,
             title: entry.campaign.title,
-            slug: entry.campaign.slug,
+            slug: entry.campaign.title,
             status: entry.campaign.status,
         },
     }
 }
 
-export const updateEventConfig = (
+export const updateEventConfig = async (
     moduleId: string,
     payload: {
         location?: string
@@ -122,53 +282,85 @@ export const updateEventConfig = (
         registration_required?: boolean
         checkin_required?: boolean
         benefits?: string[]
+    },
+    actor: {
+        userId: string
+        role: UserRole
     }
 ) => {
-    const entry = findEventModuleEntry(moduleId)
+    const entry = await findEventModule(moduleId)
 
     if (!entry) {
         return null
     }
 
-    const current = {
-        ...(eventConfigStore.get(moduleId) ?? entry.module.settings),
-    }
-    const next = {
-        ...current,
-        ...(payload.location !== undefined ? { location: payload.location } : {}),
-        ...(payload.quota !== undefined ? { quota: payload.quota } : {}),
-        ...(payload.registration_required !== undefined
-            ? { registration_required: payload.registration_required }
-            : {}),
-        ...(payload.checkin_required !== undefined
-            ? { checkin_required: payload.checkin_required }
-            : {}),
-        ...(payload.benefits !== undefined
-            ? {
-                  benefits: [...payload.benefits],
-                  benefits_text: payload.benefits.join('\n'),
-              }
-            : {}),
-    }
+    const managerActor = await getManagerActor(actor.userId, actor.role)
+    assertCanManageCampaign(managerActor, entry.campaign)
 
-    eventConfigStore.set(moduleId, next)
+    const updated = await prismaClient.eventModuleConfig.update({
+        where: {
+            moduleId,
+        },
+        data: {
+            ...(payload.location !== undefined
+                ? { eventLocation: payload.location }
+                : {}),
+            ...(payload.quota !== undefined
+                ? { maxAttendees: payload.quota }
+                : {}),
+            ...(payload.checkin_required !== undefined
+                ? { checkinEnabled: payload.checkin_required }
+                : {}),
+            ...(payload.benefits !== undefined
+                ? { eventAgenda: payload.benefits.join('\n') }
+                : {}),
+        },
+    })
 
     return {
         module_id: moduleId,
-        config: { ...next },
+        config: {
+            location: updated.eventLocation,
+            quota: updated.maxAttendees,
+            registration_required: payload.registration_required ?? true,
+            checkin_required: updated.checkinEnabled,
+            benefits: payload.benefits ?? [],
+            benefits_text: updated.eventAgenda,
+        },
     }
 }
 
-export const listEventRegistrations = (params: {
+export const listEventRegistrations = async (params: {
     moduleId: string
     status?: string
     q?: string
+    actor: {
+        userId: string
+        role: UserRole
+    }
 }) => {
+    const module = await findEventModule(params.moduleId)
+
+    if (!module) {
+        return []
+    }
+
+    const managerActor = await getManagerActor(
+        params.actor.userId,
+        params.actor.role
+    )
+    assertCanManageCampaign(managerActor, module.campaign)
+
     const normalizedQuery = String(params.q ?? '')
         .trim()
         .toLowerCase()
 
-    return getModuleRegistrations(params.moduleId)
+    return module.registrations
+        .map((item) => ({
+            ...item,
+            module,
+        }))
+        .map(mapRegistration)
         .filter((item) => !params.status || item.status === params.status)
         .filter((item) => {
             if (!normalizedQuery) {
@@ -179,19 +371,12 @@ export const listEventRegistrations = (params: {
                 item.student.full_name,
                 item.student.student_code,
                 item.student.email,
-                String(item.answers?.faculty ?? ''),
-                String(item.review_note ?? ''),
+                item.review_note ?? '',
             ]
                 .join(' ')
                 .toLowerCase()
                 .includes(normalizedQuery)
         })
-        .sort(
-            (left, right) =>
-                new Date(right.registered_at).getTime() -
-                new Date(left.registered_at).getTime()
-        )
-        .map(cloneRegistration)
 }
 
 export const createEventRegistration = async (input: {
@@ -200,18 +385,20 @@ export const createEventRegistration = async (input: {
     role?: UserRole
     answers?: Record<string, unknown>
 }) => {
-    const entry = findEventModuleEntry(input.moduleId)
+    const entry = await findEventModule(input.moduleId)
 
     if (!entry) {
         return null
     }
 
-    const user = await authService.getUserById(input.userId, input.role)
-    const now = new Date().toISOString()
-    const existing = eventRegistrationStore.find(
-        (item) =>
-            item.module_id === input.moduleId && item.student.id === input.userId
-    )
+    const student = await getStudentByUserId(input.userId)
+    const existing = await prismaClient.moduleRegistration.findFirst({
+        where: {
+            moduleId: input.moduleId,
+            studentId: student.id,
+            registrationType: 'EVENT',
+        },
+    })
 
     if (existing) {
         return {
@@ -220,149 +407,292 @@ export const createEventRegistration = async (input: {
         }
     }
 
-    const registration: EventRegistrationRecord = {
-        id: `registration-evt-${registrationCounter++}`,
-        campaign_id: entry.campaign.id,
-        module_id: input.moduleId,
-        student: {
-            id: input.userId,
-            full_name:
-                `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim() ||
-                String(input.answers?.student_name ?? 'Sinh vien BK'),
-            student_code:
-                user?.username ??
-                String(input.answers?.student_code ?? input.userId),
-            email: user?.email ?? `${input.userId}@example.com`,
+    const created = await prismaClient.moduleRegistration.create({
+        data: {
+            moduleId: input.moduleId,
+            studentId: student.id,
+            registrationType: 'EVENT',
+            status: 'PENDING',
         },
-        status: 'PENDING',
-        answers: input.answers ? { ...input.answers } : undefined,
-        registered_at: now,
-        reviewed_at: null,
-        review_note: null,
-        checked_in_at: null,
-        checked_out_at: null,
-        hours: null,
-    }
+    })
 
-    eventRegistrationStore = [registration, ...eventRegistrationStore]
+    await prismaClient.studentNotification.create({
+        data: {
+            studentId: student.id,
+            type: 'REGISTRATION',
+            title: 'Đăng ký sự kiện thành công',
+            message: `Bạn đã đăng ký ${entry.title} và đang chờ duyệt`,
+            targetType: 'REGISTRATION',
+            targetId: created.id,
+        },
+    })
 
     return {
-        id: registration.id,
-        status: registration.status,
+        id: created.id,
+        status: created.status,
     }
 }
 
-export const approveEventRegistration = (
+export const approveEventRegistration = async (
     registrationId: string,
-    reviewNote?: string
+    reviewNote?: string,
+    actor?: {
+        userId: string
+        role: UserRole
+    }
 ) => {
-    const existing = findRegistration(registrationId)
+    const registration = await prismaClient.moduleRegistration.findUnique({
+        where: {
+            id: registrationId,
+        },
+        include: {
+            student: true,
+            module: {
+                include: {
+                    campaign: true,
+                },
+            },
+        },
+    })
 
-    if (!existing) {
+    if (!registration) {
         return null
     }
 
-    const next: EventRegistrationRecord = {
-        ...existing,
+    if (!actor) {
+        throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chua xac thuc nguoi dung')
+    }
+
+    const managerActor = await getManagerActor(actor.userId, actor.role)
+    assertCanManageCampaign(managerActor, registration.module.campaign)
+
+    await prismaClient.moduleRegistration.update({
+        where: {
+            id: registrationId,
+        },
+        data: {
+            status: 'APPROVED',
+            reviewedAt: new Date(),
+            rejectionReason: null,
+            completionNote: reviewNote ?? null,
+        },
+    })
+
+    await prismaClient.studentNotification.create({
+        data: {
+            studentId: registration.studentId,
+            type: 'REGISTRATION',
+            title: 'Đăng ký đã được duyệt',
+            message: 'Đăng ký tham gia sự kiện của bạn đã được phê duyệt',
+            targetType: 'REGISTRATION',
+            targetId: registrationId,
+        },
+    })
+
+    return {
+        id: registrationId,
         status: 'APPROVED',
-        reviewed_at: new Date().toISOString(),
-        review_note: reviewNote?.trim() || existing.review_note || null,
-    }
-
-    eventRegistrationStore = eventRegistrationStore.map((item) =>
-        item.id === registrationId ? next : item
-    )
-
-    return {
-        id: next.id,
-        status: next.status,
     }
 }
 
-export const rejectEventRegistration = (
+export const rejectEventRegistration = async (
     registrationId: string,
-    reason?: string
+    reason?: string,
+    actor?: {
+        userId: string
+        role: UserRole
+    }
 ) => {
-    const existing = findRegistration(registrationId)
+    const registration = await prismaClient.moduleRegistration.findUnique({
+        where: {
+            id: registrationId,
+        },
+        include: {
+            student: true,
+            module: {
+                include: {
+                    campaign: true,
+                },
+            },
+        },
+    })
 
-    if (!existing) {
+    if (!registration) {
         return null
     }
 
-    const next: EventRegistrationRecord = {
-        ...existing,
+    if (!actor) {
+        throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chua xac thuc nguoi dung')
+    }
+
+    const managerActor = await getManagerActor(actor.userId, actor.role)
+    assertCanManageCampaign(managerActor, registration.module.campaign)
+
+    await prismaClient.moduleRegistration.update({
+        where: {
+            id: registrationId,
+        },
+        data: {
+            status: 'REJECTED',
+            reviewedAt: new Date(),
+            rejectionReason: reason?.trim() || 'Cần bổ sung thêm thông tin',
+        },
+    })
+
+    await prismaClient.studentNotification.create({
+        data: {
+            studentId: registration.studentId,
+            type: 'REGISTRATION',
+            title: 'Đăng ký chưa được duyệt',
+            message: reason?.trim() || 'Đăng ký sự kiện của bạn đã bị từ chối',
+            targetType: 'REGISTRATION',
+            targetId: registrationId,
+        },
+    })
+
+    return {
+        id: registrationId,
         status: 'REJECTED',
-        reviewed_at: new Date().toISOString(),
-        review_note: reason?.trim() || 'Khong dat tieu chi xet duyet',
-    }
-
-    eventRegistrationStore = eventRegistrationStore.map((item) =>
-        item.id === registrationId ? next : item
-    )
-
-    return {
-        id: next.id,
-        status: next.status,
     }
 }
 
-export const checkInEventRegistration = (
+export const checkInEventRegistration = async (
     registrationId: string,
-    checkedInAt?: string
+    checkedInAt?: string,
+    actor?: {
+        userId: string
+        role: UserRole
+    }
 ) => {
-    const existing = findRegistration(registrationId)
+    const registration = await prismaClient.moduleRegistration.findUnique({
+        where: {
+            id: registrationId,
+        },
+        include: {
+            module: {
+                include: {
+                    campaign: true,
+                },
+            },
+        },
+    })
 
-    if (!existing) {
+    if (!registration) {
         return null
     }
 
-    const next: EventRegistrationRecord = {
-        ...existing,
-        status: 'CHECKED_IN',
-        checked_in_at: checkedInAt?.trim() || new Date().toISOString(),
+    if (!actor) {
+        throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chua xac thuc nguoi dung')
     }
 
-    eventRegistrationStore = eventRegistrationStore.map((item) =>
-        item.id === registrationId ? next : item
-    )
+    const managerActor = await getManagerActor(actor.userId, actor.role)
+    assertCanManageCampaign(managerActor, registration.module.campaign)
+
+    await prismaClient.checkin.create({
+        data: {
+            registrationId,
+            checkedById: managerActor.managerId,
+            method: 'MANUAL',
+            checkedInAt: checkedInAt ? new Date(checkedInAt) : new Date(),
+        },
+    })
 
     return {
-        id: next.id,
-        status: next.status,
+        id: registrationId,
+        status: 'CHECKED_IN',
     }
 }
 
-export const completeEventRegistration = (
+export const completeEventRegistration = async (
     registrationId: string,
     payload: {
         checked_out_at?: string
         hours?: number
         note?: string
+        actor?: {
+            userId: string
+            role: UserRole
+        }
     }
 ) => {
-    const existing = findRegistration(registrationId)
+    const registration = await prismaClient.moduleRegistration.findUnique({
+        where: {
+            id: registrationId,
+        },
+        include: {
+            checkins: {
+                orderBy: {
+                    checkedInAt: 'desc',
+                },
+            },
+            student: true,
+            module: {
+                include: {
+                    campaign: true,
+                },
+            },
+        },
+    })
 
-    if (!existing) {
+    if (!registration) {
         return null
     }
 
-    const next: EventRegistrationRecord = {
-        ...existing,
-        status: 'COMPLETED',
-        checked_out_at: payload.checked_out_at?.trim() || new Date().toISOString(),
-        hours:
-            typeof payload.hours === 'number' && Number.isFinite(payload.hours)
-                ? payload.hours
-                : existing.hours ?? 0,
-        review_note: payload.note?.trim() || existing.review_note || null,
+    if (!payload.actor) {
+        throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chua xac thuc nguoi dung')
     }
 
-    eventRegistrationStore = eventRegistrationStore.map((item) =>
-        item.id === registrationId ? next : item
+    const managerActor = await getManagerActor(
+        payload.actor.userId,
+        payload.actor.role
     )
+    assertCanManageCampaign(managerActor, registration.module.campaign)
+
+    const latestCheckin = registration.checkins[0]
+    const checkedOutAt = payload.checked_out_at
+        ? new Date(payload.checked_out_at)
+        : payload.hours && latestCheckin
+          ? new Date(
+                new Date(latestCheckin.checkedInAt).getTime() +
+                    payload.hours * 60 * 60 * 1000
+            )
+          : new Date()
+
+    if (latestCheckin && !latestCheckin.checkedOutAt) {
+        await prismaClient.checkin.update({
+            where: {
+                id: latestCheckin.id,
+            },
+            data: {
+                checkedOutAt,
+            },
+        })
+    }
+
+    await prismaClient.moduleRegistration.update({
+        where: {
+            id: registrationId,
+        },
+        data: {
+            status: 'COMPLETED',
+            completionNote: payload.note ?? registration.completionNote,
+        },
+    })
+
+    await prismaClient.studentNotification.create({
+        data: {
+            studentId: registration.studentId,
+            type: 'REGISTRATION',
+            title: 'Đã ghi nhận hoàn thành sự kiện',
+            message:
+                'Kết quả tham gia sự kiện của bạn đã được cập nhật hoàn thành',
+            targetType: 'REGISTRATION',
+            targetId: registrationId,
+        },
+    })
 
     return {
-        id: next.id,
-        status: next.status,
+        id: registrationId,
+        status: 'COMPLETED',
     }
 }

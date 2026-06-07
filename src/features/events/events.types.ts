@@ -8,7 +8,13 @@ export type EventRegistrationRecord = {
         student_code: string
         email: string
     }
-    status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'CHECKED_IN' | 'COMPLETED'
+    status:
+        | 'PENDING'
+        | 'APPROVED'
+        | 'REJECTED'
+        | 'CANCELLED'
+        | 'CHECKED_IN'
+        | 'COMPLETED'
     answers?: Record<string, unknown>
     registered_at: string
     reviewed_at?: string | null
