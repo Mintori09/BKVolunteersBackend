@@ -2,7 +2,13 @@ import { createHash } from 'crypto'
 import path from 'path'
 import { ApiError } from 'src/utils/ApiError'
 import { HttpStatus } from 'src/common/constants'
-import { config, isSupabaseStorageEnabled, prismaClient, supabaseAdmin, uploadConfig } from 'src/config'
+import {
+    config,
+    isSupabaseStorageEnabled,
+    prismaClient,
+    supabaseAdmin,
+    uploadConfig,
+} from 'src/config'
 import type { UserRole } from 'src/features/auth/types'
 
 type UploadKind = 'image' | 'document'
@@ -39,7 +45,8 @@ const extensionByMimeType: Record<string, string> = {
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
         '.docx',
     'application/vnd.ms-excel': '.xls',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+        '.xlsx',
 }
 
 const assertSupabaseStorageEnabled = () => {
@@ -109,7 +116,10 @@ const validateUploadFile = (
     }
 
     if (!allowedExtensions.includes(extension)) {
-        throw new ApiError(HttpStatus.BAD_REQUEST, 'Phan mo rong file khong hop le')
+        throw new ApiError(
+            HttpStatus.BAD_REQUEST,
+            'Phan mo rong file khong hop le'
+        )
     }
 
     if (file.size > target.maxSize) {
@@ -131,7 +141,10 @@ const resolveUploaderRefs = async (
         })
 
         if (!student) {
-            throw new ApiError(HttpStatus.NOT_FOUND, 'Khong tim thay ho so sinh vien')
+            throw new ApiError(
+                HttpStatus.NOT_FOUND,
+                'Khong tim thay ho so sinh vien'
+            )
         }
 
         return {
@@ -146,7 +159,10 @@ const resolveUploaderRefs = async (
     })
 
     if (!manager) {
-        throw new ApiError(HttpStatus.NOT_FOUND, 'Khong tim thay tai khoan quan ly')
+        throw new ApiError(
+            HttpStatus.NOT_FOUND,
+            'Khong tim thay tai khoan quan ly'
+        )
     }
 
     return {
@@ -202,9 +218,10 @@ const canAccessPrivateFile = (
 ) =>
     Boolean(
         (fileRecord.uploadedByManagerId &&
-            fileRecord.uploadedByManagerId === uploaderRefs.uploadedByManagerId) ||
-            (fileRecord.uploadedByStudentId &&
-                fileRecord.uploadedByStudentId === uploaderRefs.uploadedByStudentId)
+            fileRecord.uploadedByManagerId ===
+                uploaderRefs.uploadedByManagerId) ||
+        (fileRecord.uploadedByStudentId &&
+            fileRecord.uploadedByStudentId === uploaderRefs.uploadedByStudentId)
     )
 
 const normalizeVisibility = (value: string): FileVisibility => {
@@ -212,10 +229,16 @@ const normalizeVisibility = (value: string): FileVisibility => {
         return value
     }
 
-    throw new ApiError(HttpStatus.INTERNAL_SERVER_ERROR, 'Gia tri visibility khong hop le')
+    throw new ApiError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Gia tri visibility khong hop le'
+    )
 }
 
-const requireBucketName = (value: string | undefined, kind: UploadKind): string => {
+const requireBucketName = (
+    value: string | undefined,
+    kind: UploadKind
+): string => {
     if (value) {
         return value
     }
@@ -243,7 +266,8 @@ export const uploadFile = async (input: UploadFileInput) => {
     const checksumSha256 = createHash('sha256')
         .update(input.file.buffer)
         .digest('hex')
-    const extension = path.extname(input.file.originalname).toLowerCase() || null
+    const extension =
+        path.extname(input.file.originalname).toLowerCase() || null
     const uploaderRefs = await resolveUploaderRefs(input.userId, input.role)
 
     const { error } = await supabaseAdmin!.storage
@@ -332,7 +356,10 @@ export const getFileAccessUrl = async (input: RequestFileAccessInput) => {
 
     const uploaderRefs = await resolveUploaderRefs(input.userId, input.role)
 
-    if (visibility === 'PRIVATE' && !canAccessPrivateFile(fileRecord, uploaderRefs)) {
+    if (
+        visibility === 'PRIVATE' &&
+        !canAccessPrivateFile(fileRecord, uploaderRefs)
+    ) {
         throw new ApiError(
             HttpStatus.FORBIDDEN,
             'Ban khong co quyen truy cap file rieng tu nay'

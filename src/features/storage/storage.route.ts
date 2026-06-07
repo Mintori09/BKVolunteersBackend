@@ -12,6 +12,9 @@ storageRouter.post(
     storageUploadMiddleware.single('file'),
     storageController.uploadStorageFile
 )
-storageRouter.get('/files/:id/access-url', storageController.getStorageFileAccessUrl)
+storageRouter.get(
+    '/files/:id/access-url',
+    storageController.getStorageFileAccessUrl
+)
 
 export default storageRouter

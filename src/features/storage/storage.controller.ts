@@ -10,26 +10,37 @@ const getUploadKind = (value: unknown): 'image' | 'document' => {
         return value
     }
 
-    throw new ApiError(HttpStatus.BAD_REQUEST, 'kind phai la image hoac document')
+    throw new ApiError(
+        HttpStatus.BAD_REQUEST,
+        'kind phai la image hoac document'
+    )
 }
 
 export const uploadStorageFile = catchAsync(
     async (req: Request, res: Response) => {
         if (!req.file) {
-            throw new ApiError(HttpStatus.BAD_REQUEST, 'Chua gui file can upload')
+            throw new ApiError(
+                HttpStatus.BAD_REQUEST,
+                'Chua gui file can upload'
+            )
         }
 
         const userId = req.payload?.userId
         const role = req.payload?.role
 
         if (!userId || !role) {
-            throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chua xac thuc nguoi dung')
+            throw new ApiError(
+                HttpStatus.UNAUTHORIZED,
+                'Chua xac thuc nguoi dung'
+            )
         }
 
         const data = await storageService.uploadFile({
             file: req.file,
             folder:
-                typeof req.body?.folder === 'string' ? req.body.folder : undefined,
+                typeof req.body?.folder === 'string'
+                    ? req.body.folder
+                    : undefined,
             kind: getUploadKind(req.body?.kind),
             userId: String(userId),
             role,
@@ -50,7 +61,10 @@ export const getStorageFileAccessUrl = catchAsync(
         const role = req.payload?.role
 
         if (!userId || !role) {
-            throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chua xac thuc nguoi dung')
+            throw new ApiError(
+                HttpStatus.UNAUTHORIZED,
+                'Chua xac thuc nguoi dung'
+            )
         }
 
         const data = await storageService.getFileAccessUrl({
