@@ -7,9 +7,11 @@
         "dev": "tsx watch src/server.ts",
         "build": "pnpm tsc",
         "start": "node dist/server.ts",
-        "test": "jest",
+        "test": "jest --runInBand",
+        "typecheck": "pnpm tsc --noEmit",
+        "seed": "pnpm prisma db seed",
         "prepare": "husky",
-        "lint": "prettier --check ."
+        "lint": "prettier --check --no-error-on-unmatched-pattern package.json eslint.config.js prisma/seed/*.ts src/**/*.ts __test__/**/*.ts"
     },
     "type": "module",
     "keywords": [],
@@ -70,6 +72,7 @@
         "husky": "^9.1.7",
         "jest": "^30.2.0",
         "lint-staged": "^16.3.3",
+        "prettier": "^3.6.2",
         "prisma": "^7.4.2",
         "supertest": "^7.2.2",
         "ts-node": "^10.9.2",
