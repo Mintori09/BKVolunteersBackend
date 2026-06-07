@@ -5,9 +5,10 @@ import { catchAsync } from 'src/utils/catchAsync'
 
 export const listAdminOrganizations = catchAsync(
     async (req: Request, res: Response) => {
-        const items = catalogService.listAdminOrganizations({
+        const items = await catalogService.listAdminOrganizations({
             q: typeof req.query.q === 'string' ? req.query.q : undefined,
-            type: typeof req.query.type === 'string' ? req.query.type : undefined,
+            type:
+                typeof req.query.type === 'string' ? req.query.type : undefined,
             status:
                 typeof req.query.status === 'string'
                     ? req.query.status
@@ -24,7 +25,9 @@ export const listAdminOrganizations = catchAsync(
 
 export const createAdminOrganization = catchAsync(
     async (req: Request, res: Response) => {
-        const organization = catalogService.createAdminOrganization(req.body ?? {})
+        const organization = await catalogService.createAdminOrganization(
+            req.body ?? {}
+        )
 
         return ApiResponse.success(
             res,
@@ -37,7 +40,7 @@ export const createAdminOrganization = catchAsync(
 
 export const updateAdminOrganization = catchAsync(
     async (req: Request, res: Response) => {
-        const organization = catalogService.updateAdminOrganization(
+        const organization = await catalogService.updateAdminOrganization(
             String(req.params.id ?? ''),
             req.body ?? {}
         )
@@ -52,7 +55,9 @@ export const updateAdminOrganization = catchAsync(
 
 export const deleteAdminOrganization = catchAsync(
     async (req: Request, res: Response) => {
-        catalogService.deleteAdminOrganization(String(req.params.id ?? ''))
+        await catalogService.deleteAdminOrganization(
+            String(req.params.id ?? '')
+        )
 
         return ApiResponse.success(res, null, 'Xoa don vi thanh cong')
     }

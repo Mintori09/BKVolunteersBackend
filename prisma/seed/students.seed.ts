@@ -31,7 +31,9 @@ async function hashPassword(password: string): Promise<string> {
     })
 }
 
-function parseStudentsCsv(csvText: string): Array<Omit<StudentCsv, 'facultyId'>> {
+function parseStudentsCsv(
+    csvText: string
+): Array<Omit<StudentCsv, 'facultyId'>> {
     const lines = csvText
         .split(/\r?\n/)
         .map((line) => line.trim())
@@ -48,7 +50,9 @@ function parseStudentsCsv(csvText: string): Array<Omit<StudentCsv, 'facultyId'>>
         const className = columns[2]?.trim() || null
 
         if (!mssv || !fullName) {
-            throw new Error(`Invalid student CSV row at line ${index + 2}: ${line}`)
+            throw new Error(
+                `Invalid student CSV row at line ${index + 2}: ${line}`
+            )
         }
 
         return {

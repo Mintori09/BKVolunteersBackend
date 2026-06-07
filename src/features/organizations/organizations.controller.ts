@@ -7,7 +7,7 @@ import { catchAsync } from 'src/utils/catchAsync'
 
 export const listOrganizations = catchAsync(
     async (_req: Request, res: Response) => {
-        const data = catalogService.listOrganizations()
+        const data = await catalogService.listOrganizations()
 
         return ApiResponse.success(
             res,
@@ -20,7 +20,7 @@ export const listOrganizations = catchAsync(
 export const getOrganizationDetail = catchAsync(
     async (req: Request, res: Response) => {
         const slug = String(req.params.slug ?? '')
-        const data = catalogService.getOrganizationBySlug(slug)
+        const data = await catalogService.getOrganizationBySlug(slug)
 
         if (!data) {
             throw new ApiError(HttpStatus.NOT_FOUND, 'Khong tim thay to chuc')

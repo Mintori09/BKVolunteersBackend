@@ -31,7 +31,9 @@ import { HttpStatus } from 'src/common/constants'
 
 describe('Admin Organizations Routes Integration', () => {
     it('requires DOANTRUONG role to list admin organizations', async () => {
-        const unauthorized = await request(app).get('/api/v1/admin/organizations')
+        const unauthorized = await request(app).get(
+            '/api/v1/admin/organizations'
+        )
         expect(unauthorized.status).toBe(HttpStatus.UNAUTHORIZED)
 
         const forbidden = await request(app)
@@ -57,12 +59,17 @@ describe('Admin Organizations Routes Integration', () => {
     })
 
     it('creates, updates, lists and deletes a managed organization', async () => {
+        const suffix = Date.now().toString()
+        const initialName = `Cau lac bo Moi ${suffix}`
+        const updatedName = `Cau lac bo Moi Cap Nhat ${suffix}`
+        const initialSlug = `cau-lac-bo-moi-${suffix}`
+        const updatedSlug = `cau-lac-bo-moi-cap-nhat-${suffix}`
         const createResponse = await request(app)
             .post('/api/v1/admin/organizations')
             .set('Authorization', 'Bearer doantruong-token')
             .send({
-                code: 'BKV-MOI',
-                name: 'Cau lac bo Moi',
+                code: `BKV-${suffix}`,
+                name: initialName,
                 type: 'CLUB',
                 status: 'ACTIVE',
                 description: 'Don vi vua duoc tao',
@@ -71,32 +78,32 @@ describe('Admin Organizations Routes Integration', () => {
         expect(createResponse.status).toBe(HttpStatus.CREATED)
         expect(createResponse.body.data).toEqual(
             expect.objectContaining({
-                code: 'BKV-MOI',
-                slug: 'cau-lac-bo-moi',
+                code: `BKV-${suffix}`,
+                slug: initialSlug,
             })
         )
 
         const organizationId = createResponse.body.data.id
 
         const publicDetail = await request(app).get(
-            '/api/v1/organizations/cau-lac-bo-moi'
+            `/api/v1/organizations/${initialSlug}`
         )
         expect(publicDetail.status).toBe(HttpStatus.OK)
-        expect(publicDetail.body.data.name).toBe('Cau lac bo Moi')
+        expect(publicDetail.body.data.name).toBe(initialName)
 
         const updateResponse = await request(app)
             .patch(`/api/v1/admin/organizations/${organizationId}`)
             .set('Authorization', 'Bearer doantruong-token')
             .send({
-                name: 'Cau lac bo Moi Cap Nhat',
+                name: updatedName,
                 description: 'Da cap nhat',
             })
 
         expect(updateResponse.status).toBe(HttpStatus.OK)
         expect(updateResponse.body.data).toEqual(
             expect.objectContaining({
-                name: 'Cau lac bo Moi Cap Nhat',
-                slug: 'cau-lac-bo-moi-cap-nhat',
+                name: updatedName,
+                slug: updatedSlug,
             })
         )
 
