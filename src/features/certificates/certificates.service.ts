@@ -1,97 +1,377 @@
-import { catalogCampaigns, catalogOrganizations, catalogStudentActivities } from 'src/features/catalog/catalog.data'
 import {
-    initialCampaignCertificates,
-    initialCertificateTemplates,
-} from './certificates.data'
-import {
-    CampaignCertificateRecord,
-    CertificateTemplateRecord,
-} from './certificates.types'
+    CertificateStatus,
+    CertificateType,
+    OrganizerType,
+    Prisma,
+} from '@prisma/client'
+import { prismaClient } from 'src/config'
 
-let certificateTemplatesStore: CertificateTemplateRecord[] =
-    initialCertificateTemplates.map((item) => ({
-        ...item,
-        layout_json: item.layout_json ? { ...item.layout_json } : null,
-    }))
-
-let campaignCertificatesStore: CampaignCertificateRecord[] =
-    initialCampaignCertificates.map((item) => ({
-        ...item,
-        snapshot_json: { ...item.snapshot_json },
-    }))
-
-let templateCounter = 100
-let certificateCounter = 100
-
-const cloneTemplate = (
-    item: CertificateTemplateRecord
-): CertificateTemplateRecord => ({
-    ...item,
-    layout_json: item.layout_json ? { ...item.layout_json } : null,
-})
-
-const cloneCertificate = (
-    item: CampaignCertificateRecord
-): CampaignCertificateRecord => ({
-    ...item,
-    snapshot_json: { ...item.snapshot_json },
-})
+const BASE_TEMPLATE_IDS = ['tpl-1', 'tpl-2', 'tpl-3']
+const BASE_CERTIFICATE_IDS = ['cert-1', 'cert-2', 'cert-3']
 
 const buildDataUrl = (code: string) =>
     `data:text/plain;charset=utf-8,Certificate%20${encodeURIComponent(code)}%20-%20BKVolunteers`
 
-const findTemplate = (id: string) =>
-    certificateTemplatesStore.find((item) => item.id === id) ?? null
+const toJsonValue = (
+    value: Record<string, unknown> | null | undefined
+): Prisma.InputJsonValue => (value ?? {}) as Prisma.InputJsonValue
 
-const templateIsLocked = (templateId: string) =>
-    campaignCertificatesStore.some((item) => item.template_id === templateId)
+const mapTemplateType = (value?: string | null): CertificateType => {
+    if (value === 'DONOR' || value === 'DONOR_CERTIFICATE') {
+        return 'DONOR_CERTIFICATE'
+    }
 
-export const resetCertificateStore = () => {
-    certificateTemplatesStore = initialCertificateTemplates.map(cloneTemplate)
-    campaignCertificatesStore = initialCampaignCertificates.map(cloneCertificate)
-    templateCounter = 100
-    certificateCounter = 100
+    if (value === 'ORGANIZER' || value === 'ORGANIZER_CERTIFICATE') {
+        return 'ORGANIZER_CERTIFICATE'
+    }
+
+    if (value === 'PARTNER' || value === 'PARTNER_CERTIFICATE') {
+        return 'PARTNER_CERTIFICATE'
+    }
+
+    return 'VOLUNTEER_COMPLETION'
 }
 
-export const listTemplates = () =>
-    certificateTemplatesStore
-        .map((item) => ({
-            ...cloneTemplate(item),
-            is_locked: templateIsLocked(item.id),
-        }))
-        .sort(
-            (left, right) =>
-                new Date(right.updated_at).getTime() -
-                new Date(left.updated_at).getTime()
-        )
+const templateInclude = {
+    versions: {
+        where: {
+            isActive: true,
+        },
+        orderBy: {
+            versionNumber: 'desc' as const,
+        },
+        take: 1,
+    },
+    certificates: {
+        select: {
+            id: true,
+        },
+    },
+} satisfies Prisma.CertificateTemplateInclude
 
-export const createTemplate = (input: {
+const certificateInclude = {
+    campaign: true,
+    module: true,
+    template: true,
+    recipientStudent: true,
+    reissuedCertificates: {
+        select: {
+            id: true,
+        },
+    },
+} satisfies Prisma.CertificateInclude
+
+type TemplateRecord = Prisma.CertificateTemplateGetPayload<{
+    include: typeof templateInclude
+}>
+
+type CertificateRecord = Prisma.CertificateGetPayload<{
+    include: typeof certificateInclude
+}>
+
+type EligibleCertificatePreview = {
+    id: string
+    certificate_no: string
+    campaign_id: string
+    module_id: string | null
+    module_title: string | null
+    student_id: string
+    student_name: string
+    student_code: string
+    template_id: string
+    template_name: string
+    status: string
+    snapshot_json: Record<string, unknown>
+    file_url: string | null
+    file_hash: string | null
+    issued_at: string | null
+    revoked_at: string | null
+    revoked_by: string | null
+    revoke_reason: string | null
+    replacement_certificate_id: string | null
+    created_at: string
+    updated_at: string
+}
+
+const mapTemplate = (item: TemplateRecord) => {
+    const activeVersion = item.versions[0]
+
+    return {
+        id: item.id,
+        name: item.name,
+        type: item.certificateType,
+        file_url: null,
+        layout_json:
+            (activeVersion?.renderConfigJson as Record<
+                string,
+                unknown
+            > | null) ?? null,
+        status: item.isActive ? 'ACTIVE' : 'INACTIVE',
+        is_locked: item.certificates.length > 0,
+        created_by: item.ownerManagerAccountId ?? null,
+        created_at: item.createdAt.toISOString(),
+        updated_at: item.updatedAt.toISOString(),
+    }
+}
+
+const mapCertificate = (item: CertificateRecord) => ({
+    id: item.id,
+    certificate_no: item.serialNumber,
+    campaign_id: item.campaignId ?? '',
+    module_id: item.moduleId ?? null,
+    module_title: item.module?.title ?? null,
+    student_id: item.recipientStudentId ?? '',
+    student_name: item.recipientName,
+    student_code: item.recipientStudent?.mssv ?? '',
+    template_id: item.templateId,
+    template_name: item.template.name,
+    status: item.status,
+    snapshot_json: {},
+    file_url: item.signedFileId
+        ? `/api/v1/certificates/${item.id}/download`
+        : buildDataUrl(item.serialNumber),
+    file_hash: item.checksumSha256 ?? null,
+    issued_at: item.issuedAt?.toISOString() ?? null,
+    revoked_at: item.revokedAt?.toISOString() ?? null,
+    revoked_by: item.createdById ?? null,
+    revoke_reason: item.revocationReason ?? null,
+    replacement_certificate_id: item.reissuedCertificates[0]?.id ?? null,
+    created_at: item.createdAt.toISOString(),
+    updated_at: item.updatedAt.toISOString(),
+})
+
+const getStudentByUserId = async (userId: string) =>
+    prismaClient.student.findUnique({
+        where: {
+            userId,
+        },
+    })
+
+const getManagerByUserId = async (userId: string) =>
+    prismaClient.managerAccount.findUnique({
+        where: {
+            userId,
+        },
+    })
+
+const getTemplateWithActiveVersion = async (id: string) =>
+    prismaClient.certificateTemplate.findUnique({
+        where: {
+            id,
+        },
+        include: templateInclude,
+    })
+
+const getCertificateDetail = async (id: string) =>
+    prismaClient.certificate.findUnique({
+        where: {
+            id,
+        },
+        include: certificateInclude,
+    })
+
+const buildSerialNumber = () => {
+    const now = new Date()
+    const timeFragment = String(now.getTime()).slice(-6)
+    return `CERT-${now.getFullYear()}-${timeFragment}`
+}
+
+const buildPublicId = () => `public-${crypto.randomUUID()}`
+
+const buildEligibleCertificates = async (
+    campaignId: string,
+    templateId: string,
+    moduleId?: string
+): Promise<EligibleCertificatePreview[]> => {
+    const template = await prismaClient.certificateTemplate.findUnique({
+        where: {
+            id: templateId,
+        },
+        include: {
+            versions: {
+                where: {
+                    isActive: true,
+                },
+                orderBy: {
+                    versionNumber: 'desc',
+                },
+                take: 1,
+            },
+        },
+    })
+
+    if (!template || !template.versions[0]) {
+        return []
+    }
+
+    const registrations = await prismaClient.moduleRegistration.findMany({
+        where: {
+            status: 'COMPLETED',
+            module: {
+                campaignId,
+                ...(moduleId ? { id: moduleId } : {}),
+            },
+        },
+        include: {
+            student: true,
+            module: true,
+        },
+        orderBy: {
+            submittedAt: 'asc',
+        },
+    })
+
+    return registrations.map((registration) => ({
+        id: `candidate-${registration.id}`,
+        certificate_no: `CERT-GEN-${registration.id}`,
+        campaign_id: campaignId,
+        module_id: registration.moduleId,
+        module_title: registration.module.title,
+        student_id: registration.studentId,
+        student_name: registration.student.fullName,
+        student_code: registration.student.mssv,
+        template_id: template.id,
+        template_name: template.name,
+        status: 'PENDING',
+        snapshot_json: {
+            registration_id: registration.id,
+            student_name: registration.student.fullName,
+            module_title: registration.module.title,
+        },
+        file_url: null,
+        file_hash: null,
+        issued_at: null,
+        revoked_at: null,
+        revoked_by: null,
+        revoke_reason: null,
+        replacement_certificate_id: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+    }))
+}
+
+export const resetCertificateStore = async () => {
+    await prismaClient.certificate.deleteMany({
+        where: {
+            reissuedFromCertificateId: 'cert-3',
+            id: {
+                notIn: BASE_CERTIFICATE_IDS,
+            },
+        },
+    })
+
+    await prismaClient.certificateTemplateVersion.deleteMany({
+        where: {
+            templateId: {
+                notIn: BASE_TEMPLATE_IDS,
+            },
+        },
+    })
+
+    await prismaClient.certificateTemplate.deleteMany({
+        where: {
+            id: {
+                notIn: BASE_TEMPLATE_IDS,
+            },
+        },
+    })
+
+    await prismaClient.certificateRenderJob.deleteMany({
+        where: {
+            certificateId: {
+                in: ['cert-2', 'cert-3'],
+            },
+        },
+    })
+
+    await prismaClient.certificateAuditLog.deleteMany({
+        where: {
+            certificateId: {
+                in: ['cert-2', 'cert-3'],
+            },
+            action: {
+                in: ['RENDER_SUCCESS', 'REVOKED', 'REISSUED'],
+            },
+        },
+    })
+
+    await prismaClient.certificate.update({
+        where: {
+            id: 'cert-2',
+        },
+        data: {
+            status: 'READY',
+            issuedAt: new Date('2026-07-26T08:30:00.000Z'),
+            revokedAt: null,
+            revocationReason: null,
+        },
+    })
+
+    await prismaClient.certificate.update({
+        where: {
+            id: 'cert-3',
+        },
+        data: {
+            status: 'REVOKED',
+            issuedAt: new Date('2026-07-12T08:00:00.000Z'),
+            revokedAt: new Date('2026-07-20T08:00:00.000Z'),
+            revocationReason: 'Cập nhật sai giờ công',
+            reissuedFromCertificateId: null,
+        },
+    })
+}
+
+export const listTemplates = async () => {
+    const templates = await prismaClient.certificateTemplate.findMany({
+        include: templateInclude,
+        orderBy: {
+            updatedAt: 'desc',
+        },
+    })
+
+    return templates.map(mapTemplate)
+}
+
+export const createTemplate = async (input: {
     name: string
     type: string
     file_url?: string | null
     layout_json?: Record<string, unknown> | null
     created_by?: string | null
 }) => {
-    const now = new Date().toISOString()
-    const template: CertificateTemplateRecord = {
-        id: `tpl-${templateCounter++}`,
-        name: input.name,
-        type: input.type,
-        file_url: input.file_url ?? null,
-        layout_json: input.layout_json ?? null,
-        status: 'ACTIVE',
-        is_locked: false,
-        created_by: input.created_by ?? null,
-        created_at: now,
-        updated_at: now,
-    }
+    const manager = input.created_by
+        ? await getManagerByUserId(input.created_by)
+        : null
 
-    certificateTemplatesStore = [template, ...certificateTemplatesStore]
+    const created = await prismaClient.certificateTemplate.create({
+        data: {
+            name: input.name,
+            certificateType: mapTemplateType(input.type),
+            ownerType: OrganizerType.DOANTRUONG,
+            ownerManagerAccountId: manager?.id ?? null,
+            description: input.name,
+            isActive: true,
+            versions: {
+                create: {
+                    versionNumber: 1,
+                    templateSourceType: 'HTML',
+                    htmlContent: '<div>Chứng nhận</div>',
+                    cssContent: 'body { font-family: serif; }',
+                    placeholderWhitelistJson: [
+                        'recipientName',
+                    ] as Prisma.InputJsonValue,
+                    renderConfigJson: toJsonValue(input.layout_json),
+                    isActive: true,
+                },
+            },
+        },
+        include: templateInclude,
+    })
 
-    return cloneTemplate(template)
+    return mapTemplate(created)
 }
 
-export const updateTemplate = (
+export const updateTemplate = async (
     id: string,
     input: {
         name?: string
@@ -101,132 +381,97 @@ export const updateTemplate = (
         status?: 'ACTIVE' | 'INACTIVE'
     }
 ) => {
-    const existing = findTemplate(id)
+    const template = await prismaClient.certificateTemplate.findUnique({
+        where: {
+            id,
+        },
+        include: {
+            versions: {
+                orderBy: {
+                    versionNumber: 'desc',
+                },
+            },
+        },
+    })
 
-    if (!existing) {
+    if (!template) {
         return null
     }
 
-    const locked = templateIsLocked(id)
-    const next = {
-        ...existing,
-        name: input.name ?? existing.name,
-        status: input.status ?? existing.status,
-        updated_at: new Date().toISOString(),
-        ...(locked
-            ? {}
-            : {
-                  type: input.type ?? existing.type,
-                  file_url:
-                      input.file_url === undefined ? existing.file_url : input.file_url,
-                  layout_json:
-                      input.layout_json === undefined
-                          ? existing.layout_json
-                          : input.layout_json,
-              }),
-    }
+    const nextVersionNumber = (template.versions[0]?.versionNumber ?? 0) + 1
 
-    certificateTemplatesStore = certificateTemplatesStore.map((item) =>
-        item.id === id ? next : item
-    )
-
-    return {
-        ...cloneTemplate(next),
-        is_locked: locked,
-    }
-}
-
-export const deactivateTemplate = (id: string) => {
-    const updated = updateTemplate(id, { status: 'INACTIVE' })
-    return updated
-}
-
-export const listCampaignCertificates = (campaignId: string) =>
-    campaignCertificatesStore
-        .filter((item) => item.campaign_id === campaignId)
-        .sort(
-            (left, right) =>
-                new Date(right.created_at).getTime() -
-                new Date(left.created_at).getTime()
-        )
-        .map(cloneCertificate)
-
-const buildCertificateNo = () => `CERT-2026-${String(certificateCounter++).padStart(3, '0')}`
-
-const buildEligibleCertificates = (campaignId: string, templateId: string, moduleId?: string) => {
-    const template = findTemplate(templateId)
-
-    if (!template) {
-        return []
-    }
-
-    const matchingActivities = catalogStudentActivities.filter((activity) => {
-        if (activity.campaign_id !== campaignId) {
-            return false
-        }
-
-        if (moduleId && activity.module_id !== moduleId) {
-            return false
-        }
-
-        return (
-            activity.status === 'COMPLETED' ||
-            activity.status === 'VERIFIED' ||
-            activity.status === 'RECEIVED'
-        )
-    })
-
-    return matchingActivities.map((activity) => {
-        const code = buildCertificateNo()
-
-        return {
-            id: `cert-${certificateCounter}`,
-            certificate_no: code,
-            campaign_id: campaignId,
-            module_id: activity.module_id,
-            module_title: activity.module_title || null,
-            student_id: activity.id.replace('activity', 'student'),
-            student_name:
-                activity.activity_type === 'certificate'
-                    ? 'Sinh vien BK'
-                    : activity.reference_id === 'REG-2026-001'
-                      ? 'Nguyen Van An'
-                      : activity.reference_id === 'DON-2026-101'
-                        ? 'Le Thi Binh'
-                        : 'Pham Quoc Cuong',
-            student_code:
-                activity.reference_id === 'REG-2026-001'
-                    ? '21110001'
-                    : activity.reference_id === 'DON-2026-101'
-                      ? '21110002'
-                      : '21110003',
-            template_id: template.id,
-            template_name: template.name,
-            status: 'PENDING',
-            snapshot_json: {
-                activity_type: activity.activity_type,
-                campaign_title: activity.campaign_title,
+    await prismaClient.$transaction(async (tx) => {
+        await tx.certificateTemplate.update({
+            where: {
+                id,
             },
-            file_url: null,
-            file_hash: null,
-            issued_at: null,
-            revoked_at: null,
-            revoked_by: null,
-            revoke_reason: null,
-            replacement_certificate_id: null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-        } satisfies CampaignCertificateRecord
+            data: {
+                ...(input.name ? { name: input.name } : {}),
+                ...(input.type
+                    ? { certificateType: mapTemplateType(input.type) }
+                    : {}),
+                ...(input.status
+                    ? { isActive: input.status === 'ACTIVE' }
+                    : {}),
+            },
+        })
+
+        if (input.layout_json !== undefined) {
+            await tx.certificateTemplateVersion.updateMany({
+                where: {
+                    templateId: id,
+                },
+                data: {
+                    isActive: false,
+                },
+            })
+
+            await tx.certificateTemplateVersion.create({
+                data: {
+                    templateId: id,
+                    versionNumber: nextVersionNumber,
+                    templateSourceType: 'HTML',
+                    htmlContent: '<div>Chứng nhận</div>',
+                    cssContent: 'body { font-family: serif; }',
+                    placeholderWhitelistJson: [
+                        'recipientName',
+                    ] as Prisma.InputJsonValue,
+                    renderConfigJson: toJsonValue(input.layout_json),
+                    isActive: true,
+                },
+            })
+        }
     })
+
+    const updated = await getTemplateWithActiveVersion(id)
+
+    return updated ? mapTemplate(updated) : null
 }
 
-export const generateCertificates = (input: {
+export const deactivateTemplate = async (id: string) =>
+    updateTemplate(id, { status: 'INACTIVE' })
+
+export const listCampaignCertificates = async (campaignId: string) => {
+    const certificates = await prismaClient.certificate.findMany({
+        where: {
+            campaignId,
+        },
+        include: certificateInclude,
+        orderBy: {
+            createdAt: 'desc',
+        },
+    })
+
+    return certificates.map(mapCertificate)
+}
+
+export const generateCertificates = async (input: {
     campaign_id: string
     template_id: string
     module_id?: string
     dry_run?: boolean
 }) => {
-    const eligibleItems = buildEligibleCertificates(
+    const candidates = await buildEligibleCertificates(
         input.campaign_id,
         input.template_id,
         input.module_id
@@ -235,50 +480,161 @@ export const generateCertificates = (input: {
     if (input.dry_run) {
         return {
             dry_run: true,
-            candidate_count: eligibleItems.length,
+            candidate_count: candidates.length,
             created_count: 0,
-            items: eligibleItems.map(cloneCertificate),
+            items: candidates,
         }
     }
 
-    campaignCertificatesStore = [...eligibleItems, ...campaignCertificatesStore]
-    certificateTemplatesStore = certificateTemplatesStore.map((template) =>
-        template.id === input.template_id
-            ? {
-                  ...template,
-                  is_locked: true,
-                  updated_at: new Date().toISOString(),
-              }
-            : template
-    )
+    const template = await prismaClient.certificateTemplate.findUniqueOrThrow({
+        where: {
+            id: input.template_id,
+        },
+        include: {
+            versions: {
+                where: {
+                    isActive: true,
+                },
+                orderBy: {
+                    versionNumber: 'desc',
+                },
+                take: 1,
+            },
+        },
+    })
+    const version = template.versions[0]
+
+    if (!version) {
+        return {
+            dry_run: false,
+            candidate_count: candidates.length,
+            created_count: 0,
+            items: await listCampaignCertificates(input.campaign_id),
+        }
+    }
+
+    let createdCount = 0
+
+    for (const candidate of candidates) {
+        const existing = await prismaClient.certificate.findFirst({
+            where: {
+                campaignId: candidate.campaign_id,
+                moduleId: candidate.module_id,
+                recipientStudent: {
+                    mssv: candidate.student_code,
+                },
+                templateId: template.id,
+            },
+        })
+
+        if (existing) {
+            continue
+        }
+
+        const [registration, student] = await Promise.all([
+            prismaClient.moduleRegistration.findFirst({
+                where: {
+                    moduleId: candidate.module_id ?? undefined,
+                    student: {
+                        mssv: candidate.student_code,
+                    },
+                },
+            }),
+            prismaClient.student.findFirstOrThrow({
+                where: {
+                    mssv: candidate.student_code,
+                },
+            }),
+        ])
+
+        const certificate = await prismaClient.certificate.create({
+            data: {
+                publicId: buildPublicId(),
+                serialNumber: `${buildSerialNumber()}-${createdCount}`,
+                templateId: template.id,
+                templateVersionId: version.id,
+                campaignId: candidate.campaign_id,
+                moduleId: candidate.module_id,
+                recipientStudentId: student.id,
+                recipientName: student.fullName,
+                certificateType: template.certificateType,
+                recipientType: 'STUDENT',
+                registrationId: registration?.id ?? null,
+                status: 'PENDING',
+                deliveryStatus: 'NOT_SENT',
+            },
+        })
+
+        await prismaClient.certificateSnapshot.create({
+            data: {
+                certificateId: certificate.id,
+                dataJson: candidate.snapshot_json as Prisma.InputJsonValue,
+            },
+        })
+
+        await prismaClient.certificateAuditLog.create({
+            data: {
+                certificateId: certificate.id,
+                action: 'CREATED',
+                actorType: 'system',
+                note: 'Tạo chứng nhận từ chính sách cấp tự động',
+            },
+        })
+
+        createdCount += 1
+    }
 
     return {
         dry_run: false,
-        candidate_count: eligibleItems.length,
-        created_count: eligibleItems.length,
-        items: eligibleItems.map(cloneCertificate),
+        candidate_count: candidates.length,
+        created_count: createdCount,
+        items: await listCampaignCertificates(input.campaign_id),
     }
 }
 
-export const renderCertificate = (id: string) => {
-    const existing = campaignCertificatesStore.find((item) => item.id === id)
+export const renderCertificate = async (id: string) => {
+    const certificate = await prismaClient.certificate.findUnique({
+        where: {
+            id,
+        },
+    })
 
-    if (!existing) {
+    if (!certificate) {
         return null
     }
 
-    const next = {
-        ...existing,
-        status: existing.status === 'SIGNED' ? 'SIGNED' : 'READY',
-        file_url: existing.file_url ?? buildDataUrl(existing.certificate_no),
-        file_hash: existing.file_hash ?? `hash-${existing.id}`,
-        issued_at: existing.issued_at ?? new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-    }
+    await prismaClient.$transaction(async (tx) => {
+        await tx.certificate.update({
+            where: {
+                id,
+            },
+            data: {
+                status:
+                    certificate.status === CertificateStatus.SIGNED
+                        ? 'SIGNED'
+                        : 'READY',
+                issuedAt: certificate.issuedAt ?? new Date(),
+            },
+        })
 
-    campaignCertificatesStore = campaignCertificatesStore.map((item) =>
-        item.id === id ? next : item
-    )
+        await tx.certificateRenderJob.create({
+            data: {
+                certificateId: id,
+                jobType: 'RENDER',
+                status: 'SUCCESS',
+                finishedAt: new Date(),
+            },
+        })
+
+        await tx.certificateAuditLog.create({
+            data: {
+                certificateId: id,
+                action: 'RENDER_SUCCESS',
+                actorType: 'system',
+                note: 'Đã render chứng nhận',
+            },
+        })
+    })
 
     return {
         queued: true,
@@ -286,140 +642,202 @@ export const renderCertificate = (id: string) => {
     }
 }
 
-export const getCertificateDownload = (id: string) => {
-    const existing = campaignCertificatesStore.find((item) => item.id === id)
+export const getCertificateDownload = async (id: string) => {
+    const certificate = await prismaClient.certificate.findUnique({
+        where: {
+            id,
+        },
+    })
 
-    if (!existing) {
+    if (!certificate) {
         return null
     }
 
     return {
-        id: existing.id,
-        certificate_no: existing.certificate_no,
-        file_url: existing.file_url ?? buildDataUrl(existing.certificate_no),
-        status: existing.status,
+        id: certificate.id,
+        certificate_no: certificate.serialNumber,
+        file_url: buildDataUrl(certificate.serialNumber),
+        status: certificate.status,
     }
 }
 
-export const revokeCertificate = (
+export const revokeCertificate = async (
     id: string,
-    actorId: string,
+    actorUserId: string,
     reason?: string
 ) => {
-    const existing = campaignCertificatesStore.find((item) => item.id === id)
+    const [certificate, manager] = await Promise.all([
+        getCertificateDetail(id),
+        getManagerByUserId(actorUserId),
+    ])
 
-    if (!existing) {
+    if (!certificate) {
         return null
     }
 
-    const next = {
-        ...existing,
-        status: 'REVOKED',
-        revoked_at: new Date().toISOString(),
-        revoked_by: actorId,
-        revoke_reason: reason ?? null,
-        updated_at: new Date().toISOString(),
-    }
+    const updated = await prismaClient.certificate.update({
+        where: {
+            id,
+        },
+        data: {
+            status: 'REVOKED',
+            revokedAt: new Date(),
+            revocationReason: reason ?? null,
+            createdById: manager?.id ?? certificate.createdById,
+        },
+        include: certificateInclude,
+    })
 
-    campaignCertificatesStore = campaignCertificatesStore.map((item) =>
-        item.id === id ? next : item
-    )
+    await prismaClient.certificateAuditLog.create({
+        data: {
+            certificateId: id,
+            action: 'REVOKED',
+            actorType: 'manager',
+            actorId: manager?.id ?? null,
+            note: reason ?? 'Thu hồi chứng nhận',
+        },
+    })
 
-    return cloneCertificate(next)
+    return mapCertificate(updated)
 }
 
-export const reissueCertificate = (id: string) => {
-    const existing = campaignCertificatesStore.find((item) => item.id === id)
+export const reissueCertificate = async (id: string) => {
+    const certificate = await prismaClient.certificate.findUnique({
+        where: {
+            id,
+        },
+        include: {
+            snapshot: true,
+        },
+    })
 
-    if (!existing) {
+    if (!certificate) {
         return null
     }
 
-    const replacementId = `cert-${certificateCounter++}`
-    const replacementNo = buildCertificateNo()
-    const now = new Date().toISOString()
-    const replacement: CampaignCertificateRecord = {
-        ...existing,
-        id: replacementId,
-        certificate_no: replacementNo,
-        status: 'READY',
-        file_url: buildDataUrl(replacementNo),
-        file_hash: `hash-${replacementId}`,
-        issued_at: now,
-        revoked_at: null,
-        revoked_by: null,
-        revoke_reason: null,
-        replacement_certificate_id: null,
-        created_at: now,
-        updated_at: now,
-    }
+    const now = new Date()
+    const replacement = await prismaClient.certificate.create({
+        data: {
+            publicId: buildPublicId(),
+            serialNumber: `${buildSerialNumber()}-RE`,
+            templateId: certificate.templateId,
+            templateVersionId: certificate.templateVersionId,
+            policyId: certificate.policyId,
+            campaignId: certificate.campaignId,
+            moduleId: certificate.moduleId,
+            recipientStudentId: certificate.recipientStudentId,
+            recipientName: certificate.recipientName,
+            certificateType: certificate.certificateType,
+            recipientType: certificate.recipientType,
+            registrationId: certificate.registrationId,
+            moneyContributionId: certificate.moneyContributionId,
+            itemContributionId: certificate.itemContributionId,
+            status: 'READY',
+            deliveryStatus: 'NOT_SENT',
+            issuedAt: now,
+            reissuedFromCertificateId: certificate.id,
+            createdById: certificate.createdById,
+            snapshot: certificate.snapshot
+                ? {
+                      create: {
+                          snapshotVersion:
+                              certificate.snapshot.snapshotVersion + 1,
+                          dataJson: certificate.snapshot
+                              .dataJson as Prisma.InputJsonValue,
+                      },
+                  }
+                : undefined,
+        },
+        include: certificateInclude,
+    })
 
-    const updatedOriginal = {
-        ...existing,
-        replacement_certificate_id: replacementId,
-        updated_at: now,
-    }
+    await prismaClient.certificateAuditLog.create({
+        data: {
+            certificateId: replacement.id,
+            action: 'REISSUED',
+            actorType: 'system',
+            note: 'Cấp lại chứng nhận',
+        },
+    })
 
-    campaignCertificatesStore = [
-        replacement,
-        ...campaignCertificatesStore.map((item) =>
-            item.id === id ? updatedOriginal : item
-        ),
-    ]
-
-    return cloneCertificate(replacement)
+    return mapCertificate(replacement)
 }
 
-export const listStudentCertificates = () =>
-    campaignCertificatesStore
-        .filter((item) => item.student_code === '21110001' || item.student_code === '21110002')
-        .map((item) => {
-            const campaign = catalogCampaigns.find(
-                (campaignItem) => campaignItem.id === item.campaign_id
-            )
+export const listStudentCertificates = async (userId: string) => {
+    const student = await getStudentByUserId(userId)
 
-            return {
-                id: item.id,
-                certificateNo: item.certificate_no,
-                campaignId: item.campaign_id,
-                campaignTitle: campaign?.title ?? 'Unknown campaign',
-                moduleTitle: item.module_title,
-                templateName: item.template_name,
-                status: item.status,
-                fileUrl: item.file_url ?? buildDataUrl(item.certificate_no),
-                issuedAt: item.issued_at,
-                revokedAt: item.revoked_at,
-                createdAt: item.created_at,
-            }
+    if (!student) {
+        return []
+    }
+
+    const certificates = await prismaClient.certificate.findMany({
+        where: {
+            recipientStudentId: student.id,
+        },
+        include: certificateInclude,
+        orderBy: {
+            createdAt: 'desc',
+        },
+    })
+
+    return certificates.map((item) => ({
+        id: item.id,
+        certificateNo: item.serialNumber,
+        campaignId: item.campaignId,
+        campaignTitle: item.campaign?.title ?? 'Chứng nhận hệ thống',
+        moduleTitle: item.module?.title ?? null,
+        templateName: item.template.name,
+        status: item.status,
+        fileUrl: buildDataUrl(item.serialNumber),
+        issuedAt: item.issuedAt?.toISOString() ?? null,
+        revokedAt: item.revokedAt?.toISOString() ?? null,
+        createdAt: item.createdAt.toISOString(),
+    }))
+}
+
+export const verifyCertificate = async (code: string) => {
+    const certificate = await prismaClient.certificate.findFirst({
+        where: {
+            OR: [{ serialNumber: code }, { publicId: code }],
+        },
+        include: {
+            campaign: true,
+        },
+    })
+
+    if (!certificate || certificate.status === CertificateStatus.REVOKED) {
+        await prismaClient.certificateVerificationLog.create({
+            data: {
+                certificateId: certificate?.id ?? null,
+                publicId: code,
+                resultStatus: certificate ? 'REVOKED' : 'NOT_FOUND',
+            },
         })
 
-export const verifyCertificate = (code: string) => {
-    const certificate = campaignCertificatesStore.find(
-        (item) => item.certificate_no.toLowerCase() === code.toLowerCase()
-    )
-
-    if (!certificate || certificate.status === 'REVOKED') {
         return {
             valid: false,
             certificate: null,
         }
     }
 
-    const campaign = catalogCampaigns.find((item) => item.id === certificate.campaign_id)
-    const organization = campaign
-        ? catalogOrganizations.find((item) => item.id === campaign.organization_id)
-        : null
+    await prismaClient.certificateVerificationLog.create({
+        data: {
+            certificateId: certificate.id,
+            publicId: certificate.publicId,
+            resultStatus: 'VALID',
+        },
+    })
 
     return {
         valid: true,
         certificate: {
-            id: Number(certificate.id.replace(/\D+/g, '')) || 0,
-            certificate_no: certificate.certificate_no,
+            id: certificate.id,
+            certificate_no: certificate.serialNumber,
             status: certificate.status,
-            student_name: certificate.student_name,
-            campaign_title: campaign?.title ?? null,
-            organization: organization?.name ?? null,
-            issued_at: certificate.issued_at,
+            student_name: certificate.recipientName,
+            campaign_title: certificate.campaign?.title ?? null,
+            organization: null,
+            issued_at: certificate.issuedAt?.toISOString() ?? null,
         },
     }
 }

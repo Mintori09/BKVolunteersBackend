@@ -22,13 +22,8 @@ jest.mock('src/features/auth/auth.service', () => ({
 
 import app from 'src/app'
 import { HttpStatus } from 'src/common/constants'
-import { resetNotificationStore } from '../notifications.service'
 
 describe('Notifications Routes Integration', () => {
-    beforeEach(() => {
-        resetNotificationStore()
-    })
-
     it('lists notifications for authenticated users', async () => {
         const response = await request(app)
             .get('/api/v1/notifications')

@@ -28,13 +28,8 @@ jest.mock('src/features/auth/auth.service', () => ({
 
 import app from 'src/app'
 import { HttpStatus } from 'src/common/constants'
-import { resetCertificateStore } from '../certificates.service'
 
 describe('Certificates Routes Integration', () => {
-    beforeEach(() => {
-        resetCertificateStore()
-    })
-
     it('lists student certificates and verifies a certificate publicly', async () => {
         const myCertificates = await request(app)
             .get('/api/v1/students/me/certificates')
