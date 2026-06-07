@@ -8,8 +8,14 @@ const approvalsRouter = Router()
 approvalsRouter.use(isAuth, restrictTo('DOANTRUONG'))
 
 approvalsRouter.get('/campaigns', approvalsController.listApprovalCampaigns)
-approvalsRouter.get('/campaigns/:id', approvalsController.getApprovalCampaignDetail)
-approvalsRouter.post('/campaigns/:id/comments', approvalsController.addApprovalComment)
+approvalsRouter.get(
+    '/campaigns/:id',
+    approvalsController.getApprovalCampaignDetail
+)
+approvalsRouter.post(
+    '/campaigns/:id/comments',
+    approvalsController.addApprovalComment
+)
 approvalsRouter.post(
     '/campaigns/:id/:action',
     approvalsController.approvalTransition

@@ -31,7 +31,9 @@ import { HttpStatus } from 'src/common/constants'
 
 describe('Catalog-backed Routes Integration', () => {
     it('returns public campaigns with pagination metadata', async () => {
-        const response = await request(app).get('/api/v1/public/campaigns?limit=2')
+        const response = await request(app).get(
+            '/api/v1/public/campaigns?limit=2'
+        )
 
         expect(response.status).toBe(HttpStatus.OK)
         expect(response.body.data.items).toHaveLength(2)
@@ -62,9 +64,15 @@ describe('Catalog-backed Routes Integration', () => {
 
         expect(unauthorized.status).toBe(HttpStatus.UNAUTHORIZED)
 
-        const authorized = await request(app)
+        const forbidden = await request(app)
             .get('/api/v1/campaigns')
             .set('Authorization', 'Bearer student-token')
+
+        expect(forbidden.status).toBe(HttpStatus.FORBIDDEN)
+
+        const authorized = await request(app)
+            .get('/api/v1/campaigns')
+            .set('Authorization', 'Bearer doantruong-token')
 
         expect(authorized.status).toBe(HttpStatus.OK)
         expect(authorized.body.data.items.length).toBeGreaterThan(0)

@@ -1,10 +1,11 @@
 import { Router } from 'express'
 import isAuth from 'src/common/middleware/isAuth'
+import { restrictTo } from 'src/common/middleware/restrictTo'
 import * as campaignsController from './campaigns.controller'
 
 const campaignsRouter = Router()
 
-campaignsRouter.use(isAuth)
+campaignsRouter.use(isAuth, restrictTo('CLB', 'LCD', 'DOANTRUONG'))
 
 campaignsRouter.get('/', campaignsController.listCampaigns)
 campaignsRouter.post('/', campaignsController.createCampaign)

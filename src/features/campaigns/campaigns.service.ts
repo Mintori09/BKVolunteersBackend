@@ -1,65 +1,13 @@
-import { catalogOrganizations } from 'src/features/catalog/catalog.data'
-import * as catalogService from 'src/features/catalog/catalog.service'
+import { ReviewCommentScopeType, ReviewStatus } from '@prisma/client'
+import { prismaClient } from 'src/config'
 import { HttpStatus } from 'src/common/constants'
 import { ApiError } from 'src/utils/ApiError'
+import * as catalogService from 'src/features/catalog/catalog.service'
+import {
+    mapLegacyModuleTypeToDb,
+    mapLegacyScopeToDb,
+} from 'src/features/catalog/catalog.helpers'
 import type { UserRole } from 'src/features/auth/types'
-
-type ManagedCampaignRecord = {
-    id: string
-    organization_id: string
-    slug: string
-    title: string
-    summary: string
-    description?: string | null
-    cover_image_url?: string | null
-    beneficiary?: string | null
-    scope_type: 'FACULTY' | 'SCHOOL' | 'PUBLIC'
-    status:
-        | 'DRAFT'
-        | 'SUBMITTED'
-        | 'PRE_APPROVED'
-        | 'APPROVED'
-        | 'REVISION_REQUIRED'
-        | 'REJECTED'
-        | 'PUBLISHED'
-        | 'ONGOING'
-        | 'ENDED'
-        | 'ARCHIVED'
-    start_at: string
-    end_at: string
-    published_at?: string | null
-    organization: {
-        id: string
-        code: string
-        name: string
-        type: string
-        faculty_id?: string | null
-    } | null
-    modules: Array<{
-        id: string
-        type: 'fundraising' | 'item_donation' | 'event'
-        title: string
-        description?: string | null
-        status:
-            | 'DRAFT'
-            | 'READY'
-            | 'APPROVED'
-            | 'OPEN'
-            | 'CLOSED'
-            | 'CANCELLED'
-        start_at: string
-        end_at: string
-        settings: Record<string, unknown>
-    }>
-    reviews?: Array<{
-        id: string
-        module_id?: string | null
-        body: string
-        visibility: string
-        attachment_url?: string | null
-        created_at: string
-    }>
-}
 
 type CampaignFilters = {
     q?: string
@@ -69,328 +17,554 @@ type CampaignFilters = {
     limit?: number
 }
 
-type ApprovalAction =
-    | 'pre-approve'
-    | 'approve'
-    | 'request-revision'
-    | 'reject'
+type ApprovalAction = 'pre-approve' | 'approve' | 'request-revision' | 'reject'
 
-let campaignCounter = 100
-let moduleCounter = 100
-let managedCampaignStore: ManagedCampaignRecord[] = []
-
-const cloneCampaign = (item: ManagedCampaignRecord): ManagedCampaignRecord => ({
-    ...item,
-    organization: item.organization ? { ...item.organization } : null,
-    modules: item.modules.map((module) => ({
-        ...module,
-        settings: { ...module.settings },
-    })),
-    reviews: item.reviews?.map((review) => ({ ...review })) ?? [],
-})
-
-const toManagedListItem = (campaign: ManagedCampaignRecord) => ({
-    id: campaign.id,
-    slug: campaign.slug,
-    title: campaign.title,
-    summary: campaign.summary,
-    status: campaign.status,
-    organization_id: campaign.organization_id,
-    start_at: campaign.start_at,
-    end_at: campaign.end_at,
-    module_types: campaign.modules.map((module) => module.type),
-})
-
-const normalizeText = (value: string) => value.trim().toLowerCase()
-
-const slugify = (value: string) =>
-    value
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .slice(0, 80) || `campaign-${campaignCounter}`
-
-const clampPage = (value?: number) => {
-    if (!value || Number.isNaN(value) || value < 1) {
-        return 1
-    }
-
-    return Math.floor(value)
+type ManagerActor = {
+    userId: string
+    role: Exclude<UserRole, 'SINHVIEN'>
+    managerId: string
+    facultyId: number | null
+    managedClubId: string | null
 }
 
-const clampLimit = (value?: number) => {
-    if (!value || Number.isNaN(value) || value < 1) {
-        return 10
+const getManagerAccountByUserId = async (userId: string) => {
+    const manager = await prismaClient.managerAccount.findUnique({
+        where: {
+            userId,
+        },
+    })
+
+    if (!manager) {
+        throw new ApiError(
+            HttpStatus.NOT_FOUND,
+            'Khong tim thay tai khoan quan ly'
+        )
     }
 
-    return Math.min(100, Math.floor(value))
+    return manager
 }
 
-const paginate = <T>(items: T[], page?: number, limit?: number) => {
-    const safePage = clampPage(page)
-    const safeLimit = clampLimit(limit)
-    const total = items.length
-    const totalPages = Math.max(1, Math.ceil(total / safeLimit))
-    const start = (safePage - 1) * safeLimit
+const getManagerActor = async (
+    userId: string,
+    role: UserRole
+): Promise<ManagerActor> => {
+    if (role === 'SINHVIEN') {
+        throw new ApiError(
+            HttpStatus.FORBIDDEN,
+            'Sinh vien khong duoc phep thuc hien thao tac nay'
+        )
+    }
+
+    const manager = await getManagerAccountByUserId(userId)
 
     return {
-        items: items.slice(start, start + safeLimit),
-        pagination: {
-            page: safePage,
-            limit: safeLimit,
-            total,
-            totalPages,
-        },
+        userId,
+        role,
+        managerId: manager.id,
+        facultyId: manager.facultyId,
+        managedClubId: manager.managedClubId ?? null,
     }
 }
 
-const defaultOrganization = catalogOrganizations[0]
-
-const defaultOrganizationSummary = defaultOrganization
-    ? {
-          id: defaultOrganization.id,
-          code: defaultOrganization.code,
-          name: defaultOrganization.name,
-          type: defaultOrganization.type,
-          faculty_id: defaultOrganization.faculty?.id ?? null,
-      }
-    : {
-          id: '1',
-          code: 'BKV',
-          name: 'BK Volunteers',
-          type: 'CLUB',
-          faculty_id: null,
-      }
-
-const matchesFilters = (
-    campaign: ManagedCampaignRecord,
-    filters: CampaignFilters
+const assertCanManageCampaign = (
+    actor: ManagerActor,
+    campaign: {
+        organizerManagerId: string
+        facultyId: number | null
+        clubId: string | null
+    }
 ) => {
-    if (filters.q) {
-        const normalizedQuery = normalizeText(filters.q)
-        const matchesQuery = [
-            campaign.title,
-            campaign.summary,
-            campaign.slug,
-            campaign.organization?.name ?? '',
-            campaign.organization?.code ?? '',
-        ].some((value) => normalizeText(value).includes(normalizedQuery))
-
-        if (!matchesQuery) {
-            return false
-        }
+    if (actor.role === 'DOANTRUONG') {
+        return
     }
 
-    if (filters.status && campaign.status !== filters.status) {
-        return false
+    if (campaign.organizerManagerId === actor.managerId) {
+        return
     }
 
     if (
-        filters.module_type &&
-        !campaign.modules.some((module) => module.type === filters.module_type)
+        actor.role === 'CLB' &&
+        actor.managedClubId &&
+        campaign.clubId === actor.managedClubId
     ) {
-        return false
+        return
     }
 
-    return true
+    if (
+        actor.role === 'LCD' &&
+        actor.facultyId &&
+        campaign.facultyId === actor.facultyId
+    ) {
+        return
+    }
+
+    throw new ApiError(
+        HttpStatus.FORBIDDEN,
+        'Ban khong duoc phep thao tac voi chien dich nay'
+    )
 }
 
-const findManagedCampaign = (campaignId: string) =>
-    managedCampaignStore.find((item) => item.id === campaignId) ?? null
+const getEditableCampaign = async (campaignId: string) => {
+    const campaign = await prismaClient.campaign.findFirst({
+        where: {
+            id: campaignId,
+            deletedAt: null,
+        },
+        include: {
+            reviewRequests: {
+                orderBy: {
+                    submittedAt: 'desc',
+                },
+            },
+            modules: true,
+        },
+    })
 
-export const findManagedCampaignBySlug = (slug: string) =>
-    managedCampaignStore.find((item) => item.slug === slug) ?? null
+    if (!campaign) {
+        throw new ApiError(HttpStatus.NOT_FOUND, 'Khong tim thay chien dich')
+    }
 
-export const findManagedCampaignByModuleId = (moduleId: string) =>
-    managedCampaignStore.find((campaign) =>
-        campaign.modules.some((module) => module.id === moduleId)
-    ) ?? null
-
-export const resetManagedCampaignStore = () => {
-    campaignCounter = 100
-    moduleCounter = 100
-    managedCampaignStore = []
+    return campaign
 }
 
-export const listManagedCampaigns = (filters: CampaignFilters) => {
-    const catalogPage = catalogService.listManagedCampaigns(filters)
-    const mutableItems = managedCampaignStore
-        .filter((campaign) => matchesFilters(campaign, filters))
-        .sort(
-            (left, right) =>
-                new Date(right.start_at).getTime() - new Date(left.start_at).getTime()
+const getLatestReviewRequest = async (campaignId: string) => {
+    return prismaClient.campaignReviewRequest.findFirst({
+        where: {
+            campaignId,
+        },
+        orderBy: {
+            submittedAt: 'desc',
+        },
+    })
+}
+
+const notifyBoard = async (
+    title: string,
+    message: string,
+    targetId?: string
+) => {
+    const boardManagers = await prismaClient.managerAccount.findMany({
+        where: {
+            user: {
+                role: 'DOANTRUONG',
+                deletedAt: null,
+            },
+        },
+        select: {
+            id: true,
+        },
+    })
+
+    if (boardManagers.length === 0) {
+        return
+    }
+
+    await prismaClient.managerNotification.createMany({
+        data: boardManagers.map((manager) => ({
+            managerId: manager.id,
+            type: 'CAMPAIGN',
+            title,
+            message,
+            targetType: targetId ? 'CAMPAIGN' : null,
+            targetId: targetId ?? null,
+        })),
+        skipDuplicates: true,
+    })
+}
+
+const notifyCampaignCreator = async (
+    campaignId: string,
+    title: string,
+    message: string
+) => {
+    const campaign = await prismaClient.campaign.findUnique({
+        where: {
+            id: campaignId,
+        },
+        select: {
+            organizerManagerId: true,
+        },
+    })
+
+    if (!campaign) {
+        return
+    }
+
+    await prismaClient.managerNotification.create({
+        data: {
+            managerId: campaign.organizerManagerId,
+            type: 'CAMPAIGN',
+            title,
+            message,
+            targetType: 'CAMPAIGN',
+            targetId: campaignId,
+        },
+    })
+}
+
+export const resetManagedCampaignStore = async () => {
+    await prismaClient.campaign.deleteMany({
+        where: {
+            OR: [
+                {
+                    title: {
+                        startsWith: 'Chien dich cong dong moi',
+                    },
+                },
+                {
+                    title: {
+                        in: [
+                            'Chien dich can duyet',
+                            'Chien dich he tinh nguyen 2026',
+                        ],
+                    },
+                },
+            ],
+        },
+    })
+}
+
+export const listManagedCampaigns = async (filters: CampaignFilters) =>
+    catalogService.listManagedCampaigns(filters)
+
+export const getManagedCampaignById = async (campaignId: string) =>
+    catalogService.getManagedCampaignById(campaignId)
+
+export const findManagedCampaignBySlug = async (slug: string) =>
+    catalogService.getPublicCampaignBySlug(slug)
+
+export const findManagedCampaignByModuleId = async (moduleId: string) => {
+    const module = await prismaClient.campaignModule.findUnique({
+        where: {
+            id: moduleId,
+        },
+        select: {
+            campaignId: true,
+        },
+    })
+
+    if (!module) {
+        return null
+    }
+
+    return catalogService.getManagedCampaignById(module.campaignId)
+}
+
+export const createManagedCampaign = async (
+    payload: {
+        title: string
+        summary: string
+        description?: string
+        scope_type: 'FACULTY' | 'SCHOOL' | 'PUBLIC'
+        start_at: string
+        end_at: string
+    },
+    actor: {
+        userId: string
+        role: UserRole
+    }
+) => {
+    if (actor.role === 'SINHVIEN') {
+        throw new ApiError(
+            HttpStatus.FORBIDDEN,
+            'Sinh vien khong duoc phep tao chien dich'
         )
-        .map(toManagedListItem)
-
-    const combined = [...mutableItems, ...catalogPage.items]
-    return paginate(combined, filters.page, filters.limit)
-}
-
-export const getManagedCampaignById = (campaignId: string) => {
-    const mutable = findManagedCampaign(campaignId)
-    if (mutable) {
-        return cloneCampaign(mutable)
     }
 
-    return catalogService.getManagedCampaignById(campaignId)
-}
+    const manager = await getManagerAccountByUserId(actor.userId)
+    const startAt = new Date(payload.start_at)
+    const endAt = new Date(payload.end_at)
 
-export const createManagedCampaign = (payload: {
-    title: string
-    summary: string
-    description?: string
-    scope_type: 'FACULTY' | 'SCHOOL' | 'PUBLIC'
-    start_at: string
-    end_at: string
-}) => {
-    const id = `campaign-${campaignCounter++}`
-    const slug = slugify(payload.title)
-    const campaign: ManagedCampaignRecord = {
-        id,
-        organization_id: defaultOrganizationSummary.id,
-        slug,
-        title: payload.title.trim(),
-        summary: payload.summary.trim(),
-        description: payload.description?.trim() || null,
-        cover_image_url: null,
-        beneficiary: null,
-        scope_type: payload.scope_type,
-        status: 'DRAFT',
-        start_at: payload.start_at,
-        end_at: payload.end_at,
-        published_at: null,
-        organization: { ...defaultOrganizationSummary },
-        modules: [],
-        reviews: [],
+    if (
+        !payload.title ||
+        !payload.summary ||
+        Number.isNaN(startAt.getTime()) ||
+        Number.isNaN(endAt.getTime())
+    ) {
+        throw new ApiError(
+            HttpStatus.BAD_REQUEST,
+            'Thong tin chien dich khong hop le'
+        )
     }
 
-    managedCampaignStore = [campaign, ...managedCampaignStore]
+    const created = await prismaClient.campaign.create({
+        data: {
+            title: payload.title,
+            organizerManagerId: manager.id,
+            organizerType:
+                actor.role === 'CLB'
+                    ? 'CLB'
+                    : actor.role === 'LCD'
+                      ? 'LCD'
+                      : 'DOANTRUONG',
+            facultyId: manager.facultyId,
+            clubId: manager.managedClubId,
+            shortDescription: payload.summary,
+            overallObjective: payload.description ?? null,
+            beneficiaryDescription: payload.description ?? null,
+            campaignStartAt: startAt,
+            campaignEndAt: endAt,
+            participationScopeType: mapLegacyScopeToDb(payload.scope_type),
+            status: 'DRAFT',
+        },
+    })
 
-    return { id: campaign.id }
+    await prismaClient.campaignStatusHistory.create({
+        data: {
+            campaignId: created.id,
+            fromStatus: null,
+            toStatus: 'DRAFT',
+            changedById: manager.id,
+            note: 'Tạo chiến dịch mới',
+        },
+    })
+
+    return {
+        id: created.id,
+    }
 }
 
-export const createCampaignModule = (
+export const createCampaignModule = async (
     campaignId: string,
     payload: {
-        type: 'fundraising' | 'item_donation' | 'event'
+        type: 'fundraising' | 'item_donation' | 'event' | 'volunteer'
         title: string
         description?: string
         start_at: string
         end_at: string
         settings: Record<string, unknown>
+    },
+    actor: {
+        userId: string
+        role: UserRole
     }
 ) => {
-    const existing = findManagedCampaign(campaignId)
+    const managerActor = await getManagerActor(actor.userId, actor.role)
+    const campaign = await getEditableCampaign(campaignId)
+    assertCanManageCampaign(managerActor, campaign)
 
-    if (!existing) {
-        return null
+    const createdModule = await prismaClient.campaignModule.create({
+        data: {
+            campaignId,
+            moduleType: mapLegacyModuleTypeToDb(payload.type),
+            title: payload.title,
+            shortDescription: payload.description ?? null,
+            displayOrder:
+                (await prismaClient.campaignModule.count({
+                    where: {
+                        campaignId,
+                    },
+                })) + 1,
+            moduleStartAt: new Date(payload.start_at),
+            moduleEndAt: new Date(payload.end_at),
+            registrationStartAt: new Date(payload.start_at),
+            registrationEndAt: new Date(payload.end_at),
+            status: 'DRAFT',
+            visibilityStatus: payload.type === 'event' ? 'PUBLIC' : 'INTERNAL',
+        },
+    })
+
+    if (payload.type === 'event') {
+        await prismaClient.eventModuleConfig.create({
+            data: {
+                moduleId: createdModule.id,
+                eventFormat: 'OFFLINE',
+                eventLocation:
+                    typeof payload.settings.location === 'string'
+                        ? payload.settings.location
+                        : null,
+                maxAttendees:
+                    typeof payload.settings.quota === 'number'
+                        ? payload.settings.quota
+                        : typeof payload.settings.quota === 'string'
+                          ? Number(payload.settings.quota)
+                          : null,
+                eventAgenda:
+                    typeof payload.settings.agenda === 'string'
+                        ? payload.settings.agenda
+                        : null,
+                checkinEnabled:
+                    typeof payload.settings.checkin_required === 'boolean'
+                        ? payload.settings.checkin_required
+                        : true,
+            },
+        })
+    } else if (payload.type === 'fundraising') {
+        const paymentAccount =
+            await prismaClient.organizerPaymentAccount.findFirstOrThrow({
+                where: {
+                    deletedAt: null,
+                },
+                orderBy: {
+                    isDefault: 'desc',
+                },
+            })
+
+        await prismaClient.fundraisingModuleConfig.create({
+            data: {
+                moduleId: createdModule.id,
+                fundraisingGoalAmount:
+                    typeof payload.settings.target_amount === 'number'
+                        ? payload.settings.target_amount
+                        : 0,
+                minimumContributionAmount: 10000,
+                paymentMethodType: 'MANUAL_TRANSFER',
+                organizerPaymentAccountId: paymentAccount.id,
+                displayPublicProgress: true,
+            },
+        })
+    } else if (payload.type === 'item_donation') {
+        await prismaClient.itemDonationModuleConfig.create({
+            data: {
+                moduleId: createdModule.id,
+                receiveLocation:
+                    typeof payload.settings.receive_location === 'string'
+                        ? payload.settings.receive_location
+                        : 'Văn phòng Đoàn trường',
+                receiverContactName:
+                    typeof payload.settings.receiver_name === 'string'
+                        ? payload.settings.receiver_name
+                        : 'Ban tổ chức',
+                receiverContactPhone:
+                    typeof payload.settings.receiver_phone === 'string'
+                        ? payload.settings.receiver_phone
+                        : null,
+                handoverConfirmationMethod: 'MANUAL_CONFIRM',
+                allowPreRegistration: true,
+            },
+        })
+    } else {
+        await prismaClient.volunteerModuleConfig.create({
+            data: {
+                moduleId: createdModule.id,
+                jobDescription:
+                    typeof payload.settings.job_description === 'string'
+                        ? payload.settings.job_description
+                        : null,
+                requiredQuantity:
+                    typeof payload.settings.required_quantity === 'number'
+                        ? payload.settings.required_quantity
+                        : typeof payload.settings.required_quantity === 'string'
+                          ? Number(payload.settings.required_quantity)
+                          : null,
+                requirementsText:
+                    typeof payload.settings.requirements === 'string'
+                        ? payload.settings.requirements
+                        : null,
+                activityLocation:
+                    typeof payload.settings.location === 'string'
+                        ? payload.settings.location
+                        : null,
+                autoCertificateEnabled: true,
+                checkinRequired: true,
+            },
+        })
     }
 
-    const module = {
-        id: `module-${payload.type}-${moduleCounter++}`,
-        type: payload.type,
-        title: payload.title.trim(),
-        description: payload.description?.trim() || null,
-        status: 'DRAFT' as const,
-        start_at: payload.start_at,
-        end_at: payload.end_at,
-        settings: { ...payload.settings },
+    return {
+        id: createdModule.id,
     }
-
-    const next = {
-        ...existing,
-        modules: [...existing.modules, module],
-    }
-
-    managedCampaignStore = managedCampaignStore.map((item) =>
-        item.id === campaignId ? next : item
-    )
-
-    return { id: module.id }
 }
 
-export const submitCampaignReview = (campaignId: string) => {
-    const existing = findManagedCampaign(campaignId)
+export const submitCampaignReview = async (
+    campaignId: string,
+    actorUserId: string,
+    actorRole: UserRole
+) => {
+    const actor = await getManagerActor(actorUserId, actorRole)
+    const campaign = await getEditableCampaign(campaignId)
+    assertCanManageCampaign(actor, campaign)
 
-    if (!existing) {
-        return null
-    }
-
-    if (!['DRAFT', 'REVISION_REQUIRED'].includes(existing.status)) {
+    if (!['DRAFT', 'REVISION_REQUIRED'].includes(campaign.status)) {
         throw new ApiError(
             HttpStatus.CONFLICT,
             'Chi duoc gui duyet chien dich dang o trang thai nhap hoac yeu cau chinh sua'
         )
     }
 
-    const fromStatus = existing.status
-    const next = {
-        ...existing,
-        status: 'SUBMITTED' as const,
-    }
+    await prismaClient.$transaction(async (tx) => {
+        await tx.campaign.update({
+            where: {
+                id: campaignId,
+            },
+            data: {
+                status: 'SUBMITTED',
+                submittedAt: new Date(),
+            },
+        })
 
-    managedCampaignStore = managedCampaignStore.map((item) =>
-        item.id === campaignId ? next : item
+        await tx.campaignReviewRequest.create({
+            data: {
+                campaignId,
+                submittedById: actor.managerId,
+                reviewStatus: 'SUBMITTED',
+            },
+        })
+
+        await tx.campaignStatusHistory.create({
+            data: {
+                campaignId,
+                fromStatus: campaign.status,
+                toStatus: 'SUBMITTED',
+                changedById: actor.managerId,
+                note: 'Gửi chiến dịch để duyệt',
+            },
+        })
+    })
+
+    await notifyBoard(
+        'Có chiến dịch mới chờ duyệt',
+        `Chiến dịch ${campaign.title} vừa được gửi duyệt`,
+        campaignId
     )
 
     return {
         id: campaignId,
-        from_status: fromStatus,
-        to_status: next.status,
+        from_status: campaign.status,
+        to_status: 'SUBMITTED',
     }
 }
 
-export const addApprovalComment = (
+export const addApprovalComment = async (
     campaignId: string,
     payload: {
         body: string
         visibility?: 'INTERNAL' | 'PUBLIC'
         module_id?: string
-    }
+    },
+    actorUserId: string
 ) => {
-    const existing = findManagedCampaign(campaignId)
+    const manager = await getManagerAccountByUserId(actorUserId)
+    const latestReviewRequest = await getLatestReviewRequest(campaignId)
 
-    if (!existing) {
+    if (!latestReviewRequest) {
         return null
     }
 
-    const comment = {
-        id: `review-${Date.now()}`,
-        module_id: payload.module_id?.trim() || null,
-        body: payload.body.trim(),
-        visibility: payload.visibility ?? 'PUBLIC',
-        attachment_url: null,
-        created_at: new Date().toISOString(),
-    }
-
-    const next = {
-        ...existing,
-        reviews: [...(existing.reviews ?? []), comment],
-    }
-
-    managedCampaignStore = managedCampaignStore.map((item) =>
-        item.id === campaignId ? next : item
-    )
+    const created = await prismaClient.campaignReviewComment.create({
+        data: {
+            reviewRequestId: latestReviewRequest.id,
+            scopeType: payload.module_id
+                ? ReviewCommentScopeType.MODULE
+                : ReviewCommentScopeType.CAMPAIGN,
+            moduleId: payload.module_id ?? null,
+            commentText: payload.body,
+            authorId: manager.id,
+        },
+    })
 
     return {
-        id: comment.id,
+        id: created.id,
     }
 }
 
-export const transitionApproval = (
+export const transitionApproval = async (
     campaignId: string,
     action: ApprovalAction,
     actorRole: UserRole,
+    actorUserId: string,
     reason?: string
 ) => {
-    const existing = findManagedCampaign(campaignId)
-
-    if (!existing) {
-        return null
-    }
-
     if (actorRole !== 'DOANTRUONG') {
         throw new ApiError(
             HttpStatus.FORBIDDEN,
@@ -398,182 +572,194 @@ export const transitionApproval = (
         )
     }
 
+    const manager = await getManagerAccountByUserId(actorUserId)
+    const campaign = await getEditableCampaign(campaignId)
+    const latestReviewRequest = await getLatestReviewRequest(campaignId)
+
+    if (!latestReviewRequest) {
+        return null
+    }
+
     const transitionMap: Record<
         ApprovalAction,
         {
-            allowedStatuses: ManagedCampaignRecord['status'][]
-            nextStatus: ManagedCampaignRecord['status']
+            allowedStatuses: ReviewStatus[]
+            nextReviewStatus: ReviewStatus
+            nextCampaignStatus?: 'APPROVED' | 'REVISION_REQUIRED' | 'CANCELLED'
             defaultMessage: string
-            visibility: 'PUBLIC' | 'INTERNAL'
         }
     > = {
         'pre-approve': {
             allowedStatuses: ['SUBMITTED'],
-            nextStatus: 'PRE_APPROVED',
-            defaultMessage: 'Ho so da dat yeu cau so duyet',
-            visibility: 'INTERNAL',
+            nextReviewStatus: 'PRE_APPROVED',
+            defaultMessage: 'Hồ sơ đã đạt yêu cầu sơ duyệt',
         },
         approve: {
             allowedStatuses: ['PRE_APPROVED'],
-            nextStatus: 'APPROVED',
-            defaultMessage: 'Ho so da duoc phe duyet',
-            visibility: 'PUBLIC',
+            nextReviewStatus: 'FINAL_APPROVED',
+            nextCampaignStatus: 'APPROVED',
+            defaultMessage: 'Chiến dịch đã được phê duyệt',
         },
         'request-revision': {
             allowedStatuses: ['SUBMITTED', 'PRE_APPROVED'],
-            nextStatus: 'REVISION_REQUIRED',
-            defaultMessage: 'Yeu cau don vi bo sung va chinh sua ho so',
-            visibility: 'PUBLIC',
+            nextReviewStatus: 'REVISION_REQUIRED',
+            nextCampaignStatus: 'REVISION_REQUIRED',
+            defaultMessage: 'Yêu cầu đơn vị bổ sung hồ sơ',
         },
         reject: {
             allowedStatuses: ['SUBMITTED', 'PRE_APPROVED'],
-            nextStatus: 'REJECTED',
-            defaultMessage: 'Ho so bi tu choi sau khi tham dinh',
-            visibility: 'PUBLIC',
+            nextReviewStatus: 'REJECTED',
+            nextCampaignStatus: 'CANCELLED',
+            defaultMessage: 'Hồ sơ bị từ chối',
         },
     }
 
     const config = transitionMap[action]
 
-    if (!config.allowedStatuses.includes(existing.status)) {
+    if (!config.allowedStatuses.includes(latestReviewRequest.reviewStatus)) {
         throw new ApiError(
             HttpStatus.CONFLICT,
             'Trang thai chien dich khong hop le cho thao tac phe duyet nay'
         )
     }
 
-    const reviewEntry = {
-        id: `review-${Date.now()}`,
-        module_id: null,
-        body: reason?.trim() || config.defaultMessage,
-        visibility: config.visibility,
-        attachment_url: null,
-        created_at: new Date().toISOString(),
-    }
+    await prismaClient.$transaction(async (tx) => {
+        await tx.campaignReviewRequest.update({
+            where: {
+                id: latestReviewRequest.id,
+            },
+            data: {
+                reviewStatus: config.nextReviewStatus,
+                currentReviewerId: manager.id,
+                reviewedAt: new Date(),
+            },
+        })
 
-    const next = {
-        ...existing,
-        status: config.nextStatus,
-        reviews: [...(existing.reviews ?? []), reviewEntry],
-    }
+        await tx.campaignReviewComment.create({
+            data: {
+                reviewRequestId: latestReviewRequest.id,
+                scopeType: 'CAMPAIGN',
+                commentText: reason?.trim() || config.defaultMessage,
+                authorId: manager.id,
+            },
+        })
 
-    managedCampaignStore = managedCampaignStore.map((item) =>
-        item.id === campaignId ? next : item
+        if (config.nextCampaignStatus) {
+            await tx.campaign.update({
+                where: {
+                    id: campaignId,
+                },
+                data: {
+                    status: config.nextCampaignStatus,
+                },
+            })
+
+            await tx.campaignStatusHistory.create({
+                data: {
+                    campaignId,
+                    fromStatus: campaign.status,
+                    toStatus: config.nextCampaignStatus,
+                    changedById: manager.id,
+                    note: reason?.trim() || config.defaultMessage,
+                },
+            })
+        }
+    })
+
+    await notifyCampaignCreator(
+        campaignId,
+        'Cập nhật trạng thái duyệt chiến dịch',
+        reason?.trim() || config.defaultMessage
     )
 
     return {
         campaign_id: campaignId,
-        from_status: existing.status,
-        to_status: next.status,
+        from_status:
+            action === 'pre-approve'
+                ? 'SUBMITTED'
+                : action === 'approve'
+                  ? 'PRE_APPROVED'
+                  : campaign.status,
+        to_status:
+            action === 'pre-approve'
+                ? 'PRE_APPROVED'
+                : action === 'approve'
+                  ? 'APPROVED'
+                  : action === 'request-revision'
+                    ? 'REVISION_REQUIRED'
+                    : 'REJECTED',
     }
 }
 
-export const publishCampaign = (campaignId: string, actorRole: UserRole) => {
-    const existing = findManagedCampaign(campaignId)
-
-    if (!existing) {
-        return null
+export const publishCampaign = async (
+    campaignId: string,
+    actor: {
+        userId: string
+        role: UserRole
     }
+) => {
+    const managerActor = await getManagerActor(actor.userId, actor.role)
+    const campaign = await getEditableCampaign(campaignId)
+    assertCanManageCampaign(managerActor, campaign)
 
-    if (!['LCD', 'CLB'].includes(actorRole)) {
-        throw new ApiError(
-            HttpStatus.FORBIDDEN,
-            'Chi don vi tao chien dich moi duoc cong khai chien dich'
-        )
-    }
-
-    if (existing.status !== 'APPROVED') {
+    if (campaign.status !== 'APPROVED') {
         throw new ApiError(
             HttpStatus.CONFLICT,
             'Chi duoc cong khai chien dich sau khi Doan truong phe duyet'
         )
     }
 
-    const next = {
-        ...existing,
-        status: 'PUBLISHED' as const,
-        published_at: new Date().toISOString(),
-    }
-
-    managedCampaignStore = managedCampaignStore.map((item) =>
-        item.id === campaignId ? next : item
-    )
+    await prismaClient.campaign.update({
+        where: {
+            id: campaignId,
+        },
+        data: {
+            status: 'PUBLISHED',
+            publishedAt: new Date(),
+        },
+    })
 
     return {
         id: campaignId,
-        status: next.status,
+        status: 'PUBLISHED',
     }
 }
 
-export const deleteCampaign = (campaignId: string) => {
-    const existing = findManagedCampaign(campaignId)
+export const deleteCampaign = async (
+    campaignId: string,
+    actor: {
+        userId: string
+        role: UserRole
+    }
+) => {
+    const managerActor = await getManagerActor(actor.userId, actor.role)
+    const campaign = await prismaClient.campaign.findFirst({
+        where: {
+            id: campaignId,
+            deletedAt: null,
+        },
+    })
 
-    if (!existing) {
+    if (!campaign) {
         return false
     }
 
-    managedCampaignStore = managedCampaignStore.filter(
-        (item) => item.id !== campaignId
-    )
+    assertCanManageCampaign(managerActor, campaign)
+
+    await prismaClient.campaign.update({
+        where: {
+            id: campaignId,
+        },
+        data: {
+            deletedAt: new Date(),
+        },
+    })
 
     return true
 }
 
-export const listManagedApprovalQueue = (filters: CampaignFilters) => {
-    return managedCampaignStore
-        .filter((campaign) =>
-            ['SUBMITTED', 'PRE_APPROVED'].includes(campaign.status)
-        )
-        .filter((campaign) => matchesFilters(campaign, filters))
-        .sort(
-            (left, right) =>
-                new Date(right.start_at).getTime() - new Date(left.start_at).getTime()
-        )
-        .map((campaign) => ({
-            id: campaign.id,
-            slug: campaign.slug,
-            title: campaign.title,
-            summary: campaign.summary,
-            status: campaign.status,
-            organization: campaign.organization
-                ? {
-                      id: campaign.organization.id,
-                      code: campaign.organization.code,
-                      name: campaign.organization.name,
-                      type: campaign.organization.type,
-                  }
-                : {
-                      id: campaign.organization_id,
-                      code: '',
-                      name: 'Unknown organization',
-                      type: 'UNKNOWN',
-                  },
-            module_types: campaign.modules.map((module) => module.type),
-            submitted_at: campaign.reviews?.at(-1)?.created_at ?? campaign.start_at,
-        }))
-}
+export const listManagedApprovalQueue = async (filters: CampaignFilters) =>
+    catalogService.getApprovalQueue(filters)
 
-export const getManagedApprovalCampaignDetail = (campaignId: string) => {
-    const existing = findManagedCampaign(campaignId)
-
-    if (!existing) {
-        return null
-    }
-
-    if (
-        ![
-            'SUBMITTED',
-            'PRE_APPROVED',
-            'APPROVED',
-            'REVISION_REQUIRED',
-            'REJECTED',
-            'PUBLISHED',
-            'ONGOING',
-            'ENDED',
-        ].includes(existing.status)
-    ) {
-        return null
-    }
-
-    return cloneCampaign(existing)
-}
+export const getManagedApprovalCampaignDetail = async (campaignId: string) =>
+    catalogService.getApprovalCampaignDetail(campaignId)

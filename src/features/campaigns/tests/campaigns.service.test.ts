@@ -8,41 +8,58 @@ import {
 } from '../campaigns.service'
 
 describe('campaigns.service', () => {
-    beforeEach(() => {
-        resetManagedCampaignStore()
+    beforeEach(async () => {
+        await resetManagedCampaignStore()
     })
 
-    it('creates a campaign, adds module data and moves it to submitted state', () => {
-        const created = createManagedCampaign({
-            title: 'Chien dich he tinh nguyen 2026',
-            summary: 'Dong hanh cung cong dong dia phuong',
-            description: 'Mo ta chi tiet',
-            scope_type: 'PUBLIC',
-            start_at: '2026-07-01T01:00:00.000Z',
-            end_at: '2026-07-15T10:00:00.000Z',
-        })
-
-        expect(created.id).toMatch(/^campaign-/)
-
-        const createdModule = createCampaignModule(created.id, {
-            type: 'event',
-            title: 'Tuyen tinh nguyen vien',
-            description: 'Mo ta module',
-            start_at: '2026-07-01T01:00:00.000Z',
-            end_at: '2026-07-15T10:00:00.000Z',
-            settings: {
-                quota: 50,
-                location: 'Toa A1',
+    it('creates a campaign, adds module data and moves it to submitted state', async () => {
+        const created = await createManagedCampaign(
+            {
+                title: 'Chien dich he tinh nguyen 2026',
+                summary: 'Dong hanh cung cong dong dia phuong',
+                description: 'Mo ta chi tiet',
+                scope_type: 'PUBLIC',
+                start_at: '2026-07-01T01:00:00.000Z',
+                end_at: '2026-07-15T10:00:00.000Z',
             },
-        })
+            {
+                userId: 'lcd-user',
+                role: 'LCD',
+            }
+        )
+
+        expect(created.id).toEqual(expect.any(String))
+
+        const createdModule = await createCampaignModule(
+            created.id,
+            {
+                type: 'event',
+                title: 'Tuyen tinh nguyen vien',
+                description: 'Mo ta module',
+                start_at: '2026-07-01T01:00:00.000Z',
+                end_at: '2026-07-15T10:00:00.000Z',
+                settings: {
+                    quota: 50,
+                    location: 'Toa A1',
+                },
+            },
+            {
+                userId: 'lcd-user',
+                role: 'LCD',
+            }
+        )
 
         expect(createdModule).toEqual(
             expect.objectContaining({
-                id: expect.stringMatching(/^module-event-/),
+                id: expect.any(String),
             })
         )
 
-        const submitted = submitCampaignReview(created.id)
+        const submitted = await submitCampaignReview(
+            created.id,
+            'lcd-user',
+            'LCD'
+        )
 
         expect(submitted).toEqual({
             id: created.id,
@@ -50,7 +67,7 @@ describe('campaigns.service', () => {
             to_status: 'SUBMITTED',
         })
 
-        const list = listManagedCampaigns({})
+        const list = await listManagedCampaigns({})
         expect(list.items).toEqual(
             expect.arrayContaining([
                 expect.objectContaining({
@@ -61,7 +78,7 @@ describe('campaigns.service', () => {
             ])
         )
 
-        const detail = getManagedCampaignById(created.id)
+        const detail = await getManagedCampaignById(created.id)
         expect(detail).toEqual(
             expect.objectContaining({
                 id: created.id,

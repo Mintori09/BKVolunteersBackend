@@ -34,45 +34,67 @@ import {
     publishCampaign,
     submitCampaignReview,
     transitionApproval,
-    resetManagedCampaignStore,
 } from '../campaigns.service'
-import { resetEventStore } from 'src/features/events/events.service'
 
 describe('Campaign runtime fallback integration', () => {
-    beforeEach(() => {
-        resetManagedCampaignStore()
-        resetEventStore()
-    })
-
     it('exposes newly created managed campaigns to events, public detail and reports', async () => {
-        const createdCampaign = createManagedCampaign({
-            title: 'Chien dich cong dong moi',
-            summary: 'Tom tat chien dich moi',
-            description: 'Mo ta cho campaign vua tao',
-            scope_type: 'PUBLIC',
-            start_at: '2026-08-01T00:00:00.000Z',
-            end_at: '2026-08-10T00:00:00.000Z',
-        })
-
-        const createdModule = createCampaignModule(createdCampaign.id, {
-            type: 'event',
-            title: 'Su kien moi',
-            description: 'Module event vua tao',
-            start_at: '2026-08-01T00:00:00.000Z',
-            end_at: '2026-08-02T00:00:00.000Z',
-            settings: {
-                location: 'San truong B1',
-                quota: 25,
-                registration_required: true,
-                checkin_required: true,
-                benefits: ['Chung nhan'],
+        const suffix = Date.now().toString()
+        const campaignTitle = `Chien dich cong dong moi ${suffix}`
+        const campaignSlug = `chien-dich-cong-dong-moi-${suffix}`
+        const createdCampaign = await createManagedCampaign(
+            {
+                title: campaignTitle,
+                summary: 'Tom tat chien dich moi',
+                description: 'Mo ta cho campaign vua tao',
+                scope_type: 'PUBLIC',
+                start_at: '2026-08-01T00:00:00.000Z',
+                end_at: '2026-08-10T00:00:00.000Z',
             },
-        })
+            {
+                userId: 'lcd-user',
+                role: 'LCD',
+            }
+        )
 
-        submitCampaignReview(createdCampaign.id)
-        transitionApproval(createdCampaign.id, 'pre-approve', 'DOANTRUONG')
-        transitionApproval(createdCampaign.id, 'approve', 'DOANTRUONG')
-        publishCampaign(createdCampaign.id, 'LCD')
+        const createdModule = await createCampaignModule(
+            createdCampaign.id,
+            {
+                type: 'event',
+                title: 'Su kien moi',
+                description: 'Module event vua tao',
+                start_at: '2026-08-01T00:00:00.000Z',
+                end_at: '2026-08-02T00:00:00.000Z',
+                settings: {
+                    location: 'San truong B1',
+                    quota: 25,
+                    registration_required: true,
+                    checkin_required: true,
+                    benefits: ['Chung nhan'],
+                },
+            },
+            {
+                userId: 'lcd-user',
+                role: 'LCD',
+            }
+        )
+
+        await submitCampaignReview(createdCampaign.id, 'lcd-user', 'LCD')
+        await transitionApproval(
+            createdCampaign.id,
+            'pre-approve',
+            'DOANTRUONG',
+            'board-user'
+        )
+        await transitionApproval(
+            createdCampaign.id,
+            'approve',
+            'DOANTRUONG',
+            'board-user'
+        )
+        await publishCampaign(createdCampaign.id, {
+            userId: 'lcd-user',
+            role: 'LCD',
+        })
 
         const eventResponse = await request(app)
             .get(`/api/v1/events/modules/${createdModule?.id}`)
@@ -87,14 +109,14 @@ describe('Campaign runtime fallback integration', () => {
         )
 
         const publicResponse = await request(app).get(
-            '/api/v1/public/campaigns/chien-dich-cong-dong-moi'
+            `/api/v1/public/campaigns/${campaignSlug}`
         )
 
         expect(publicResponse.status).toBe(HttpStatus.OK)
         expect(publicResponse.body.data).toEqual(
             expect.objectContaining({
                 id: createdCampaign.id,
-                slug: 'chien-dich-cong-dong-moi',
+                slug: campaignSlug,
                 modules: expect.arrayContaining([
                     expect.objectContaining({
                         id: createdModule?.id,
@@ -110,13 +132,15 @@ describe('Campaign runtime fallback integration', () => {
         expect(reportResponse.status).toBe(HttpStatus.OK)
         expect(reportResponse.body.data.campaign).toEqual(
             expect.objectContaining({
-                title: 'Chien dich cong dong moi',
-                slug: 'chien-dich-cong-dong-moi',
+                title: campaignTitle,
+                slug: campaignSlug,
             })
         )
 
         const reconciliationResponse = await request(app)
-            .get(`/api/v1/reports/campaigns/${createdCampaign.id}/reconciliation`)
+            .get(
+                `/api/v1/reports/campaigns/${createdCampaign.id}/reconciliation`
+            )
             .set('Authorization', 'Bearer doantruong-token')
 
         expect(reconciliationResponse.status).toBe(HttpStatus.OK)

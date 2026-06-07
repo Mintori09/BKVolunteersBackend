@@ -35,8 +35,8 @@ import { HttpStatus } from 'src/common/constants'
 import { resetManagedCampaignStore } from '../campaigns.service'
 
 describe('Campaign approval flow integration', () => {
-    beforeEach(() => {
-        resetManagedCampaignStore()
+    beforeEach(async () => {
+        await resetManagedCampaignStore()
     })
 
     it('prevents LCD from publishing before DOANTRUONG approval and allows publish after approval', async () => {
