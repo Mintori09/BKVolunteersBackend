@@ -1,12 +1,11 @@
 import { Title } from '@prisma/client'
-import { PaginatedResult } from '../gamification/types'
+import { PaginatedResult } from 'src/common/types'
 
 export interface CreateTitleInput {
     name: string
     description?: string
     minPoints: number
     iconUrl?: string
-    badgeColor?: string
 }
 
 export interface UpdateTitleInput {
@@ -14,12 +13,9 @@ export interface UpdateTitleInput {
     description?: string
     minPoints?: number
     iconUrl?: string
-    badgeColor?: string
-    isActive?: boolean
 }
 
 export interface TitleFilter {
-    isActive?: boolean
     page?: number
     limit?: number
 }

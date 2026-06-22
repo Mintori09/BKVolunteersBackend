@@ -8,15 +8,22 @@ import * as jwt from 'jsonwebtoken'
 import * as authRepository from './auth.repository'
 import { ApiError } from 'src/utils/ApiError'
 import { HttpStatus } from 'src/common/constants'
-import { isMssv } from './utils'
+import { AccountType } from 'src/common/types/canonical.types'
+export const getUserByEmail = async (email: string) => {
+    const operator = await authRepository.getUserByEmail(email)
+    if (operator) return operator
 
-export const getUserbyUsernameOrMssv = async (username: string) => {
-    const isMssvFlag: boolean = isMssv(username)
-    if (isMssvFlag) {
-        return authRepository.getUserByMssv(username)
-    } else {
-        return authRepository.getUserByUsername(username)
-    }
+    return authRepository.getUserByStudentEmail(email)
+}
+
+export const getUserByIdentifier = async (identifier: string) => {
+    const student = await authRepository.getUserByMssv(identifier)
+    if (student) return student
+
+    const operator = await authRepository.getUserByEmail(identifier)
+    if (operator) return operator
+
+    return authRepository.getUserByStudentEmail(identifier)
 }
 
 export const changePassword = async (
@@ -38,13 +45,14 @@ export const changePassword = async (
     await authRepository.updatePassword(userId, hashedPassword, role)
 }
 
-export const getUserByEmail = async (email: string) => {
-    return authRepository.getUserByEmail(email)
-}
-
 export const getUserById = async (userId: string, role: UserRole) => {
     return authRepository.getUserById(userId, role)
 }
+
+export const getUserByPrincipal = async (
+    userId: string,
+    accountType: AccountType
+) => authRepository.getUserByPrincipal(userId, accountType)
 
 export const getRefreshTokenByToken = async (token: string) => {
     return authRepository.getRefreshTokenByToken(token)
@@ -62,23 +70,21 @@ export const deleteAllUserRefreshTokens = async (
 }
 
 export const createSession = async (userId: string, role: UserRole) => {
-    let facultyId: string | number | null | undefined = undefined
+    const accountType: AccountType = role === 'SINHVIEN' ? 'STUDENT' : 'OPERATOR'
+    const user = await authRepository.getUserByPrincipal(userId, accountType)
+    const facultyId =
+        user && 'facultyId' in user ? (user.facultyId ?? null) : null
+    const organizationId =
+        user && 'organizationId' in user ? (user.organizationId ?? null) : null
 
-    if (role === 'SINHVIEN') {
-        const student = await authRepository.getUserById(userId, role)
-        if (student && 'mssv' in student) {
-            facultyId =
-                (student as { facultyId: string | null }).facultyId ?? null
-        }
-    } else {
-        const user = await authRepository.getUserById(userId, role)
-        if (user && 'facultyId' in user) {
-            facultyId = (user as { facultyId: number | null }).facultyId ?? null
-        }
-    }
-
-    const accessToken = createAccessToken(userId, role, facultyId)
-    const refreshToken = createRefreshToken(userId)
+    const accessToken = createAccessToken(
+        userId,
+        accountType,
+        role,
+        organizationId,
+        facultyId
+    )
+    const refreshToken = createRefreshToken(userId, accountType, role)
 
     await authRepository.createRefreshToken(userId, refreshToken, role)
 

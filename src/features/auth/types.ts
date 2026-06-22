@@ -1,16 +1,21 @@
-// ============================================
-// SHARED TYPES
-// ============================================
-
-export type UserRole = 'CLB' | 'LCD' | 'DOANTRUONG' | 'SINHVIEN'
+import { UserRole } from 'src/common/types'
+export type { UserRole }
 
 // ============================================
 // INPUT TYPES (Request Body)
 // ============================================
 
 export interface LoginInput {
-    username: string
+    identifier: string
     password: string
+}
+
+export interface RefreshInput {
+    refresh_token: string
+}
+
+export interface LogoutInput {
+    refresh_token: string
 }
 
 export interface ChangePasswordInput {
@@ -25,32 +30,35 @@ export interface ChangePasswordInput {
 
 export interface LoginOutput {
     accessToken: string
+    refreshToken?: string
 }
 
-export interface UserMeOutput {
-    id: string
-    username: string
-    email: string
-    role: Exclude<UserRole, 'SINHVIEN'>
-    facultyId: number | null
-    createdAt: Date
-    updatedAt: Date
+export interface MeOutput {
+    account_type: 'STUDENT' | 'OPERATOR'
+    role: UserRole
+    organization: {
+        id: number
+        name: string
+        type: string
+    } | null
+    faculty: {
+        id: number
+        code: string
+        name: string
+    } | null
+    student?: {
+        id: number
+        student_code: string
+        full_name: string
+        email: string
+        class_code: string | null
+    }
+    operator?: {
+        id: number
+        full_name: string
+        email: string
+    }
 }
-
-export interface StudentMeOutput {
-    id: string
-    mssv: string
-    fullName: string
-    email: string
-    facultyId: string | null
-    className: string | null
-    phone: string | null
-    totalPoints: number
-    createdAt: Date
-    updatedAt: Date
-}
-
-export type MeOutput = UserMeOutput | StudentMeOutput
 
 export interface ChangePasswordOutput {
     message: string

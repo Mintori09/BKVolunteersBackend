@@ -14,7 +14,7 @@ Guidelines for agentic coding agents working in this Express/TypeScript codebase
 
 - `pnpm test` - Run all tests with coverage
 - `pnpm exec jest <file_path>` - Run single test file
-  - Example: `pnpm exec jest src/features/auth/tests/auth.controller.test.ts`
+    - Example: `pnpm exec jest src/features/auth/tests/auth.controller.test.ts`
 - `pnpm exec jest --watch` - Run tests in watch mode
 
 ### Linting & Formatting
@@ -63,9 +63,9 @@ src/
 - Import entire modules with `* as` for services/repositories
 
 ```typescript
-import { HttpStatus } from "src/common/constants";
-import * as authService from "./auth.service";
-import { catchAsync } from "src/utils/catchAsync";
+import { HttpStatus } from 'src/common/constants'
+import * as authService from './auth.service'
+import { catchAsync } from 'src/utils/catchAsync'
 ```
 
 ### Naming Conventions
@@ -90,13 +90,13 @@ export const getUserById = async (userId: string) => { ... }
 ```typescript
 // types.ts structure
 export interface LoginInput {
-  username: string;
-  password: string;
+    username: string
+    password: string
 }
 export interface LoginOutput {
-  accessToken: string;
+    accessToken: string
 }
-export type UserRole = "CLB" | "LCD" | "DOANTRUONG" | "SINHVIEN";
+export type UserRole = 'CLB' | 'LCD' | 'DOANTRUONG' | 'SINHVIEN'
 ```
 
 ### Error Handling
@@ -115,9 +115,9 @@ export const handleLogin = catchAsync(async (req, res) => { ... })
 - Use `ApiResponse` class for consistent JSON output
 
 ```typescript
-ApiResponse.success<LoginOutput>(res, { accessToken });
-ApiResponse.success(res, null, "Password changed successfully");
-res.sendStatus(HttpStatus.NO_CONTENT);
+ApiResponse.success<LoginOutput>(res, { accessToken })
+ApiResponse.success(res, null, 'Password changed successfully')
+res.sendStatus(HttpStatus.NO_CONTENT)
 ```
 
 ### Validation
@@ -127,13 +127,13 @@ res.sendStatus(HttpStatus.NO_CONTENT);
 
 ```typescript
 export const loginSchema: RequestValidationSchema = {
-  body: z.object({
-    username: z.string().min(9).max(40),
-    password: z.string().min(6).max(50),
-  }),
-};
+    body: z.object({
+        username: z.string().min(9).max(40),
+        password: z.string().min(6).max(50),
+    }),
+}
 
-authRouter.post("/login", validate(loginSchema), authController.handleLogin);
+authRouter.post('/login', validate(loginSchema), authController.handleLogin)
 ```
 
 ### Controllers
@@ -144,12 +144,12 @@ authRouter.post("/login", validate(loginSchema), authController.handleLogin);
 
 ```typescript
 export const handleLogin = catchAsync(
-  async (req: TypedRequest<LoginInput>, res: Response) => {
-    const { username, password } = req.body;
-    // ... business logic via service calls
-    return ApiResponse.success<LoginOutput>(res, { accessToken });
-  },
-);
+    async (req: TypedRequest<LoginInput>, res: Response) => {
+        const { username, password } = req.body
+        // ... business logic via service calls
+        return ApiResponse.success<LoginOutput>(res, { accessToken })
+    }
+)
 ```
 
 ### Services
@@ -165,8 +165,8 @@ export const handleLogin = catchAsync(
 
 ```typescript
 export const getUserByEmail = async (email: string) => {
-  return prismaClient.user.findUnique({ where: { email } });
-};
+    return prismaClient.user.findUnique({ where: { email } })
+}
 ```
 
 ## Testing

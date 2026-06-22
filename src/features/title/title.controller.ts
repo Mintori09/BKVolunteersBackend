@@ -33,17 +33,11 @@ export const deleteTitle = catchAsync(async (req, res: Response) => {
 })
 
 export const getAllTitles = catchAsync(async (req, res: Response) => {
-    const { page, limit, isActive } = req.query as any
+    const { page, limit } = req.query as any
 
     const titles = await titleService.getAllTitles({
         page: page ? parseInt(page, 10) : undefined,
         limit: limit ? parseInt(limit, 10) : undefined,
-        isActive:
-            isActive === 'true'
-                ? true
-                : isActive === 'false'
-                  ? false
-                  : undefined,
     })
 
     return ApiResponse.success(res, titles)

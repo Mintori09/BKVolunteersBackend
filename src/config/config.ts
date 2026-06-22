@@ -39,6 +39,11 @@ const envSchema = z.object({
     UPLOAD_IMAGE_PATH: z.string().default('/uploads/images'),
     UPLOAD_DOCUMENT_PATH: z.string().default('/uploads/documents'),
     STATIC_URL_PREFIX: z.string().default('/files'),
+    MICROSOFT_CLIENT_ID: z.string().optional().default(''),
+    MICROSOFT_CLIENT_SECRET: z.string().optional().default(''),
+    MICROSOFT_TENANT_ID: z.string().optional().default('consumers'),
+    MICROSOFT_CALLBACK_URL: z.string().optional().default('http://localhost:4000/api/v1/auth/microsoft/callback'),
+    FRONTEND_URL: z.string().optional().default('http://localhost:3000'),
 })
 
 const parsedEnv = envSchema.safeParse(process.env)
@@ -96,6 +101,19 @@ const config = {
         imagePath: env.UPLOAD_IMAGE_PATH,
         documentPath: env.UPLOAD_DOCUMENT_PATH,
         staticUrlPrefix: env.STATIC_URL_PREFIX,
+    },
+    microsoft: {
+        clientId: env.MICROSOFT_CLIENT_ID,
+        clientSecret: env.MICROSOFT_CLIENT_SECRET,
+        tenant: env.MICROSOFT_TENANT_ID,
+        callbackUrl: env.MICROSOFT_CALLBACK_URL,
+        isEnabled: Boolean(env.MICROSOFT_CLIENT_ID),
+        authUrl: 'https://login.microsoftonline.com',
+        tokenUrl: 'https://login.microsoftonline.com',
+        graphApi: 'https://graph.microsoft.com/v1.0/me',
+    },
+    frontend: {
+        url: env.FRONTEND_URL,
     },
 } as const
 

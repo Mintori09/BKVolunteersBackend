@@ -3,13 +3,13 @@ import { HttpStatus } from 'src/common/constants'
 import { ApiError } from 'src/utils/ApiError'
 
 const isCreator = (req: Request, res: Response, next: NextFunction) => {
-    const role = req.payload?.role
+    const accountType = req.payload?.accountType
 
-    if (!role) {
+    if (!accountType) {
         throw new ApiError(HttpStatus.UNAUTHORIZED, 'Chưa xác thực người dùng')
     }
 
-    if (role === 'SINHVIEN') {
+    if (accountType === 'STUDENT') {
         throw new ApiError(
             HttpStatus.FORBIDDEN,
             'Sinh viên không có quyền thực hiện thao tác này'

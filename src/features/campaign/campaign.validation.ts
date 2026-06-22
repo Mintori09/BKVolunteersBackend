@@ -1,119 +1,110 @@
 import * as z from 'zod'
 import { RequestValidationSchema } from 'src/types/request'
-import { CAMPAIGN_STATUS_VALUES, CAMPAIGN_SCOPE_VALUES } from './types'
+import {
+    CAMPAIGN_MODULE_TYPE_VALUES,
+    CAMPAIGN_SCOPE_TYPE_VALUES,
+    CAMPAIGN_STATUS_VALUES,
+} from './types'
+
+const idParam = z.object({
+    id: z.string().regex(/^\d+$/, 'ID không hợp lệ'),
+})
+
+const moduleIdParam = z.object({
+    id: z.string().regex(/^\d+$/, 'ID không hợp lệ'),
+    moduleId: z.string().regex(/^\d+$/, 'Module ID không hợp lệ'),
+})
+
+const isoDatetime = z.string().datetime({
+    message: 'Thời gian phải là ISO datetime hợp lệ',
+})
 
 export const createCampaignSchema: RequestValidationSchema = {
     body: z.object({
-        title: z
-            .string({
-                message: 'Tiêu đề không được để trống',
-            })
-            .min(1, 'Tiêu đề không được để trống')
-            .max(255, 'Tiêu đề không được quá 255 ký tự'),
-        description: z.string().optional(),
-        scope: z.enum(CAMPAIGN_SCOPE_VALUES, {
-            message: 'Phạm vi không hợp lệ',
-        }),
+        title: z.string().min(1).max(255),
+        slug: z.string().min(3).max(255),
+        summary: z.string().min(1).max(500),
+        description: z.string().nullable().optional(),
+        cover_image_url: z.string().url().nullable().optional(),
+        beneficiary: z.string().max(255).nullable().optional(),
+        scope_type: z.enum(CAMPAIGN_SCOPE_TYPE_VALUES),
+        organization_id: z.number().int().positive().optional(),
+        faculty_id: z.number().int().positive().nullable().optional(),
+        start_at: isoDatetime,
+        end_at: isoDatetime,
     }),
 }
 
 export const updateCampaignSchema: RequestValidationSchema = {
-    params: z.object({
-        id: z.string().min(1, 'ID không hợp lệ'),
-    }),
+    params: idParam,
     body: z.object({
-        title: z
-            .string()
-            .min(1, 'Tiêu đề không được để trống')
-            .max(255, 'Tiêu đề không được quá 255 ký tự')
-            .optional(),
-        description: z.string().optional(),
+        title: z.string().min(1).max(255).optional(),
+        slug: z.string().min(3).max(255).optional(),
+        summary: z.string().min(1).max(500).optional(),
+        description: z.string().nullable().optional(),
+        cover_image_url: z.string().url().nullable().optional(),
+        beneficiary: z.string().max(255).nullable().optional(),
+        scope_type: z.enum(CAMPAIGN_SCOPE_TYPE_VALUES).optional(),
+        faculty_id: z.number().int().positive().nullable().optional(),
+        start_at: isoDatetime.optional(),
+        end_at: isoDatetime.optional(),
     }),
 }
 
 export const campaignIdSchema: RequestValidationSchema = {
-    params: z.object({
-        id: z.string().min(1, 'ID không hợp lệ'),
+    params: idParam,
+}
+
+export const reviewCampaignSchema: RequestValidationSchema = {
+    params: idParam,
+    body: z.object({
+        comment: z.string().min(1).max(1000),
     }),
 }
 
 export const approveCampaignSchema: RequestValidationSchema = {
-    params: z.object({
-        id: z.string().min(1, 'ID không hợp lệ'),
-    }),
+    params: idParam,
     body: z.object({
-        comment: z
-            .string()
-            .max(1000, 'Ghi chú không được quá 1000 ký tự')
-            .optional(),
+        comment: z.string().max(1000).optional(),
     }),
 }
 
-export const rejectCampaignSchema: RequestValidationSchema = {
-    params: z.object({
-        id: z.string().min(1, 'ID không hợp lệ'),
-    }),
-    body: z.object({
-        comment: z
-            .string()
-            .min(1, 'Lý do từ chối là bắt buộc')
-            .max(1000, 'Lý do không được quá 1000 ký tự'),
-    }),
-}
-
-export const completeCampaignSchema: RequestValidationSchema = {
-    params: z.object({
-        id: z.string().min(1, 'ID không hợp lệ'),
-    }),
-    body: z.object({
-        eventPhotos: z.array(z.string().url()).optional(),
-    }),
-}
-
-export const uploadPlanFileSchema: RequestValidationSchema = {
-    params: z.object({
-        id: z.string().min(1, 'ID không hợp lệ'),
-    }),
-    body: z.object({
-        planFileUrl: z.string().url('URL file không hợp lệ'),
-    }),
-}
-
-export const uploadBudgetFileSchema: RequestValidationSchema = {
-    params: z.object({
-        id: z.string().min(1, 'ID không hợp lệ'),
-    }),
-    body: z.object({
-        budgetFileUrl: z.string().url('URL file không hợp lệ'),
-    }),
+export const endCampaignSchema: RequestValidationSchema = {
+    params: idParam,
 }
 
 export const getCampaignsSchema: RequestValidationSchema = {
     query: z.object({
+        page: z.string().regex(/^\d+$/).optional(),
+        limit: z.string().regex(/^\d+$/).optional(),
         status: z.enum(CAMPAIGN_STATUS_VALUES).optional(),
-        scope: z.enum(CAMPAIGN_SCOPE_VALUES).optional(),
-        facultyId: z.coerce.number().int().positive().optional(),
-        creatorId: z.string().optional(),
-        page: z
-            .string()
-            .regex(/^\d+$/, 'Page phải là số nguyên dương')
-            .optional(),
-        limit: z
-            .string()
-            .regex(/^\d+$/, 'Limit phải là số nguyên dương')
-            .optional(),
+        scope_type: z.enum(CAMPAIGN_SCOPE_TYPE_VALUES).optional(),
+        organization_id: z.string().regex(/^\d+$/).optional(),
+        faculty_id: z.string().regex(/^\d+$/).optional(),
     }),
 }
 
-export const getAvailableCampaignsSchema: RequestValidationSchema = {
-    query: z.object({
-        page: z
-            .string()
-            .regex(/^\d+$/, 'Page phải là số nguyên dương')
-            .optional(),
-        limit: z
-            .string()
-            .regex(/^\d+$/, 'Limit phải là số nguyên dương')
-            .optional(),
+export const createCampaignModuleSchema: RequestValidationSchema = {
+    params: idParam,
+    body: z.object({
+        type: z.enum(CAMPAIGN_MODULE_TYPE_VALUES),
+        title: z.string().min(1).max(255),
+        description: z.string().nullable().optional(),
+        start_at: isoDatetime,
+        end_at: isoDatetime,
+        status: z.string().max(40).optional(),
+        settings_json: z.record(z.string(), z.unknown()).optional(),
+    }),
+}
+
+export const updateCampaignModuleSchema: RequestValidationSchema = {
+    params: moduleIdParam,
+    body: z.object({
+        title: z.string().min(1).max(255).optional(),
+        description: z.string().nullable().optional(),
+        start_at: isoDatetime.optional(),
+        end_at: isoDatetime.optional(),
+        status: z.string().max(40).optional(),
+        settings_json: z.record(z.string(), z.unknown()).optional(),
     }),
 }

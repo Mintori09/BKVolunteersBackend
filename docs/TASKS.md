@@ -244,43 +244,47 @@
 
 ---
 
-## 🔴 EPIC CHƯA TRIỂN KHAI (1/11)
+## 📘 EPIC TRẠNG THÁI CẬP NHẬT
 
-### E-09: Notification System 🔴 0%
+Phần dưới đây giữ vai trò nhật ký kế hoạch. Trạng thái hiện tại của các API đã được phản ánh trong `docs/api/` và `docs/PRODUCT_BACKLOG.md`.
 
-| ID     | User Story                       | Status             | API Endpoint                  |
-| ------ | -------------------------------- | ------------------ | ----------------------------- |
-| US-072 | Xem danh sách thông báo          | ❌ Chưa triển khai | `GET /notifications/me`       |
-| US-073 | Đánh dấu thông báo đã đọc        | ❌ Chưa triển khai | `PUT /notifications/:id/read` |
-| US-074 | Đánh dấu tất cả thông báo đã đọc | ❌ Chưa triển khai | `PUT /notifications/read-all` |
+### E-09: Notification System ✅ 100%
 
-**Cần triển khai:**
+| ID     | User Story                       | Status        | API Endpoint                  |
+| ------ | -------------------------------- | ------------- | ----------------------------- |
+| US-072 | Xem danh sách thông báo          | ✅ Hoàn thành | `GET /notifications/me`       |
+| US-073 | Đánh dấu thông báo đã đọc        | ✅ Hoàn thành | `PUT /notifications/:id/read` |
+| US-074 | Đánh dấu tất cả thông báo đã đọc | ✅ Hoàn thành | `PUT /notifications/read-all` |
 
-- [ ] Tạo Prisma schema cho Notification
-- [ ] Tạo notification.module
-- [ ] Implement notification.service.ts
-- [ ] Implement notification.controller.ts
-- [ ] Implement notification.repository.ts
-- [ ] Tích hợp gửi notification vào các service khác
+**Đã triển khai:**
 
----
-
-### E-10: Statistics & Reporting 🔴 33%
-
-| ID     | User Story                 | Status             | API Endpoint                    |
-| ------ | -------------------------- | ------------------ | ------------------------------- |
-| US-075 | Xem thống kê chiến dịch    | ✅ Hoàn thành      | `GET /campaigns/:id/statistics` |
-| US-076 | Xem thống kê theo khoa     | ❌ Chưa triển khai | `GET /faculties/:id/statistics` |
-| US-077 | Xem thống kê toàn hệ thống | ❌ Chưa triển khai | `GET /statistics/system`        |
-
-**Cần triển khai:**
-
-- [ ] US-076: Thống kê theo khoa
-- [ ] US-077: Dashboard thống kê toàn hệ thống
+- [x] Tạo Prisma schema cho Notification
+- [x] Tạo notification module
+- [x] Implement notification.service.ts
+- [x] Implement notification.controller.ts
+- [x] Implement notification.repository.ts
+- [x] Tích hợp gửi notification vào các service khác
 
 ---
 
-## 📋 SPRINT BACKLOG - CÔNG VIỆC TIẾP THEO
+### E-10: Statistics & Reporting ✅ 100%
+
+| ID     | User Story                 | Status        | API Endpoint                    |
+| ------ | -------------------------- | ------------- | ------------------------------- |
+| US-075 | Xem thống kê chiến dịch    | ✅ Hoàn thành | `GET /campaigns/:id/statistics` |
+| US-076 | Xem thống kê theo khoa     | ✅ Hoàn thành | `GET /faculties/:id/statistics` |
+| US-077 | Xem thống kê toàn hệ thống | ✅ Hoàn thành | `GET /statistics/system`        |
+
+**Đã triển khai:**
+
+- [x] US-076: Thống kê theo khoa
+- [x] US-077: Dashboard thống kê toàn hệ thống
+
+---
+
+## 📋 SPRINT BACKLOG - LỊCH SỬ TRIỂN KHAI
+
+Các task bên dưới giữ lại để tham chiếu trong quá trình triển khai trước đó. Trạng thái thực tế đã được cập nhật ở các phần phía trên.
 
 ### 🔴 Priority 1: KHẨN CẤP - Notification System
 
@@ -338,10 +342,12 @@ model Notification {
 
 Cần tích hợp vào các service sau:
 
-- [ ] Campaign Service: Gửi notification khi approve/reject campaign
-- [ ] Donation Service: Gửi notification khi verify donation
-- [ ] Event Service: Gửi notification khi approve/reject/check-in participant
+- [x] Campaign Service: Gửi notification khi approve/reject campaign
+- [x] Donation Service: Gửi notification khi verify donation
+- [x] Event Service: Gửi notification khi approve/reject/check-in participant
 - [ ] Gamification Service: Gửi notification khi đạt danh hiệu mới
+
+Ghi chú: các luồng Campaign/Donation/Event đã được tích hợp notification. Gamification Service vẫn chưa có side effect notification trong code hiện tại.
 
 ---
 
@@ -486,4 +492,3 @@ Cần tích hợp vào các service sau:
 
 **Last Updated:** 2026-04-18
 **Next Review:** Weekly Sprint Review
-
